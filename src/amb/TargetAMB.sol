@@ -159,8 +159,9 @@ contract TargetAMB is ReentrancyGuard {
         {
             // bytes memory key = rlpIndex(txIndex); // TODO maybe we can save calldata by
             // passing in the txIndex and rlp encode it here
-            bytes32 receiptMessageRoot =
-                MPT.verifyAMBReceipt(receiptProof, receiptsRoot, txIndexRLPEncoded, logIndex, sourceAMB);
+            bytes32 receiptMessageRoot = MPT.verifyAMBReceipt(
+                receiptProof, receiptsRoot, txIndexRLPEncoded, logIndex, sourceAMB
+            );
             require(receiptMessageRoot == messageRoot, "Invalid message hash.");
         }
 

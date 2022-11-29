@@ -10,8 +10,8 @@ contract SourceAMB {
 
     constructor() {
         nonce = 1; // We initialize with 1 to get accurate gas numbers during testing
-        // since changing a slot from 0 is different the changing it from any other number.
-    } 
+            // since changing a slot from 0 is different the changing it from any other number.
+    }
 
     function send(address recipient, uint16 recipientChainId, uint256 gasLimit, bytes calldata data)
         external
@@ -24,11 +24,13 @@ contract SourceAMB {
         emit SentMessage(nonce++, messageRoot, message);
         return messageRoot;
     }
-    
-    function sendViaLog(address recipient, uint16 recipientChainId, uint256 gasLimit, bytes calldata data)
-        external
-        returns (bytes32)
-    {
+
+    function sendViaLog(
+        address recipient,
+        uint16 recipientChainId,
+        uint256 gasLimit,
+        bytes calldata data
+    ) external returns (bytes32) {
         // Heavily gas optimized
         bytes memory message =
             abi.encode(nonce, msg.sender, recipient, recipientChainId, gasLimit, data);
