@@ -168,13 +168,13 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
 
         uint256 syncCommitteeSSZNumeric = uint256(update.syncCommitteeSSZ);
         for (uint256 i = 0; i < 32; i++) {
-            inputs[32 - 1 - i] = syncCommitteeSSZNumeric % 2**8;
-            syncCommitteeSSZNumeric = syncCommitteeSSZNumeric / 2**8;
+            inputs[32 - 1 - i] = syncCommitteeSSZNumeric % 2 ** 8;
+            syncCommitteeSSZNumeric = syncCommitteeSSZNumeric / 2 ** 8;
         }
         uint256 finalizedHeaderRootNumeric = uint256(update.step.finalizedHeaderRoot);
         for (uint256 i = 0; i < 32; i++) {
-            inputs[64 - 1 - i] = finalizedHeaderRootNumeric % 2**8;
-            finalizedHeaderRootNumeric = finalizedHeaderRootNumeric / 2**8;
+            inputs[64 - 1 - i] = finalizedHeaderRootNumeric % 2 ** 8;
+            finalizedHeaderRootNumeric = finalizedHeaderRootNumeric / 2 ** 8;
         }
         inputs[64] = uint256(SSZ.toLittleEndian(uint256(update.syncCommitteePoseidon)));
 
