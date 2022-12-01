@@ -10,7 +10,7 @@ contract LightClientMock {
     mapping(uint256 => bytes32) public executionStateRoots;
     event HeadUpdate(uint256 indexed slot, bytes32 indexed root);
 
-    function setHeader(uint64 slot, bytes32 headerRoot) external {
+    function setHeader(uint256 slot, bytes32 headerRoot) external {
         headers[slot] = headerRoot;
         // NOTE that the stateRoot emitted here is not the same as the header root
         // in the real LightClient

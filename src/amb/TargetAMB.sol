@@ -3,26 +3,10 @@ pragma experimental ABIEncoderV2;
 
 import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "./libraries/MerklePatriciaTrie.sol";
-import "src/lightclient/interfaces/ILightClient.sol";
-import "../lightclient/libraries/SimpleSerialize.sol";
-import "forge-std/console.sol";
+import "src/lightclient/libraries/SimpleSerialize.sol";
+import "src/amb/interfaces/IAMB.sol";
 
-struct Message {
-    uint256 nonce;
-    address sender;
-    address receiver;
-    uint16 chainId;
-    uint256 gasLimit;
-    bytes data;
-}
-
-enum MessageStatus {
-    NOT_EXECUTED,
-    EXECUTION_FAILED,
-    EXECUTION_SUCCEEDED
-}
-
-contract TargetAMB is ReentrancyGuard {
+contract TargetAMB is IReciever, ReentrancyGuard {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
@@ -33,9 +17,6 @@ contract TargetAMB is ReentrancyGuard {
     uint256 internal constant HISTORICAL_ROOTS_LIMIT = 16777216;
     uint256 internal constant SLOTS_PER_HISTORICAL_ROOT = 8192;
 
-    event ExecutedMessage(
-        uint256 indexed nonce, bytes32 indexed msgHash, bytes message, bool status
-    );
 
     constructor(address _lightClient, address _sourceAMB) {
         lightClient = ILightClient(_lightClient);

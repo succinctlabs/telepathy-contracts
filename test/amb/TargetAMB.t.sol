@@ -5,7 +5,7 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 import "./LightClientMock.sol";
-import "../../src/amb/TargetAMB.sol";
+import "src/amb/TargetAMB.sol";
 import "src/lightclient/libraries/SimpleSerialize.sol";
 
 contract TargetAMBTest is Test {
