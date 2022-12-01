@@ -1,12 +1,12 @@
 pragma solidity 0.8.14;
 pragma experimental ABIEncoderV2;
 
-contract SourceAMB {
+import "src/amb/interfaces/IAMB.sol";
+
+contract SourceAMB is IBroadcaster {
+
     mapping(uint256 => bytes32) public messages;
     uint256 public nonce;
-
-    event SentMessage(uint256 indexed nonce, bytes32 indexed msgHash, bytes message);
-    event ShortSentMessage(uint256 indexed nonce, bytes32 indexed msgHash);
 
     constructor() {
         nonce = 1; // We initialize with 1 to get accurate gas numbers during testing
