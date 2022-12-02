@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 import "src/amb/interfaces/IAMB.sol";
 
 contract SourceAMB is IBroadcaster {
-
     mapping(uint256 => bytes32) public messages;
     uint256 public nonce;
 
