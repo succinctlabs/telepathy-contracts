@@ -17,7 +17,6 @@ contract TargetAMB is IReciever, ReentrancyGuard {
     uint256 internal constant HISTORICAL_ROOTS_LIMIT = 16777216;
     uint256 internal constant SLOTS_PER_HISTORICAL_ROOT = 8192;
 
-
     constructor(address _lightClient, address _sourceAMB) {
         lightClient = ILightClient(_lightClient);
         sourceAMB = _sourceAMB;

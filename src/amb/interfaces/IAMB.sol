@@ -3,25 +3,17 @@ pragma solidity 0.8.14;
 import "src/lightclient/interfaces/ILightClient.sol";
 
 interface IBroadcaster {
-
     event SentMessage(uint256 indexed nonce, bytes32 indexed msgHash, bytes message);
     event ShortSentMessage(uint256 indexed nonce, bytes32 indexed msgHash);
 
-    function send(
-        address receiver,
-        uint16 chainId,
-        uint256 gasLimit,
-        bytes calldata data
-    ) external returns (bytes32);
+    function send(address receiver, uint16 chainId, uint256 gasLimit, bytes calldata data)
+        external
+        returns (bytes32);
 
-    function sendViaLog(
-        address receiver,
-        uint16 chainId,
-        uint256 gasLimit,
-        bytes calldata data
-    ) external returns (bytes32);
-
-}    
+    function sendViaLog(address receiver, uint16 chainId, uint256 gasLimit, bytes calldata data)
+        external
+        returns (bytes32);
+}
 
 enum MessageStatus {
     NOT_EXECUTED,
@@ -39,7 +31,6 @@ struct Message {
 }
 
 interface IReciever {
-
     event ExecutedMessage(
         uint256 indexed nonce, bytes32 indexed msgHash, bytes message, bool status
     );
@@ -60,5 +51,4 @@ interface IReciever {
         bytes memory txIndexRLPEncoded,
         uint256 logIndex
     ) external;
-
 }
