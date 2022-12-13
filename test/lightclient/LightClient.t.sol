@@ -16,6 +16,7 @@ contract LightClientTest is Test {
         );
         uint256 genesisTime = 1616508000;
         uint256 secondsPerSlot = 12;
+        uint256 slotsPerPeriod = 8192;
         uint256 syncCommitteePeriod = 532;
         bytes32 syncCommitteePoseidon = SSZ.toLittleEndian(7032059424740925146199071046477651269705772793323287102921912953216115444414);
 
@@ -23,10 +24,39 @@ contract LightClientTest is Test {
             genesisValidatorsRoot,
             genesisTime,
             secondsPerSlot,
+            slotsPerPeriod,
             syncCommitteePeriod,
             syncCommitteePoseidon
         );
         vm.warp(9999999999999);
+    }
+
+    function testFinalityProofEthereum() public {
+        uint256 index = 105;
+        bytes32[] memory branch = new bytes32[](6);
+        branch[0] = bytes32(0xe424020000000000000000000000000000000000000000000000000000000000);
+        branch[1] = bytes32(0x75410a8f37f9506fb3f972cce6ece955e381e51037e432ce4ca47479c9cd9158);
+        branch[2] = bytes32(0xe6af38835c0ac3c2b0d561dfaec168171d7d77c1c2e8e74ff9b1891cf43faf8d);
+        branch[3] = bytes32(0x3e4fb2d12bd835bc6ee23b5ec65a43f4493e32f5ef45d46bd2c38830b17672bb);
+        branch[4] = bytes32(0x880548f4df2d4003f7be2fbbde112eb46b8f756b5e33202e04863000e4383f3b);
+        branch[5] = bytes32(0x88475251bcec25245a44bddd92b2c36db6c9c48bc6d91b5d0da78af3229ff783);
+        bytes32 root = bytes32(0xe81a65c5c0f2a36e40b6872fcfdd62dbb67d47f3d49a6b978c0d4440341e723f);
+        bytes32 leaf = bytes32(0xd85d3181f1178b07e89691aa2bfcd4d88837f011fcda3326b4ce9a68ec6d9e44);
+        require(SSZ.isValidMerkleBranch(leaf, index, branch, root) == true);
+    }
+
+    function testFinalityProofGnosis() public {
+        uint256 index = 105;
+        bytes32[] memory branch = new bytes32[](6);
+        branch[0] = bytes32(0x4304060000000000000000000000000000000000000000000000000000000000);
+        branch[1] = bytes32(0x13d781c6071a2b891edb67074f277c7c23d36a6e64ee7686ff26c69e01cedd92);
+        branch[2] = bytes32(0xdec4894b48bdfd9658bb724dfdef690c3cebefbb13cd1f4a8511963279e37673);
+        branch[3] = bytes32(0x96eb26d63d5c650d76a9ee178f9f4270b025564ecddb671ac47aa50b6c97d893);
+        branch[4] = bytes32(0x742273899db19d04656d63f8cb8f6c21da144d482746769ab8d4500fbb06981f);
+        branch[5] = bytes32(0xcbc5ef1e4f078df1b83d9ffea0f1f112382da4bfb871e07fef353cd236b94489);
+        bytes32 root = bytes32(0x93d340d3b741c02e7605b7356ba861c74ec371572d3a5a5b23bf0b6dd6823d35);
+        bytes32 leaf = bytes32(0x27f156361ae4aa32fb323cb48e5bc47f84af8e25f659bb44ef8d34cb7cec349d);
+        require(SSZ.isValidMerkleBranch(leaf, index, branch, root) == true);
     }
 
     function testProof() public {
