@@ -31,10 +31,8 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     bytes32 public immutable GENESIS_VALIDATORS_ROOT;
     uint256 public immutable GENESIS_TIME;
     uint256 public immutable SECONDS_PER_SLOT;
+    uint256 public immutable SLOTS_PER_PERIOD;
 
-    uint256 internal constant OPTIMISTIC_UPDATE_TIMEOUT = 86400;
-    uint256 internal constant SLOTS_PER_EPOCH = 32;
-    uint256 internal constant SLOTS_PER_SYNC_COMMITTEE_PERIOD = 8192;
     uint256 internal constant MIN_SYNC_COMMITTEE_PARTICIPANTS = 10;
     uint256 internal constant SYNC_COMMITTEE_SIZE = 512;
     uint256 internal constant FINALIZED_ROOT_INDEX = 105;
@@ -55,12 +53,14 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         bytes32 genesisValidatorsRoot,
         uint256 genesisTime,
         uint256 secondsPerSlot,
+        uint256 slotsPerPeriod,
         uint256 syncCommitteePeriod,
         bytes32 syncCommitteePoseidon
     ) {
         GENESIS_VALIDATORS_ROOT = genesisValidatorsRoot;
         GENESIS_TIME = genesisTime;
         SECONDS_PER_SLOT = secondsPerSlot;
+        SLOTS_PER_PERIOD = slotsPerPeriod;
         setSyncCommitteePoseidon(syncCommitteePeriod, syncCommitteePoseidon);
     }
 
@@ -181,8 +181,8 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         require(verifyProofRotate(proof.a, proof.b, proof.c, inputs) == true);
     }
 
-    function getSyncCommitteePeriod(uint256 slot) internal pure returns (uint256) {
-        return slot / SLOTS_PER_SYNC_COMMITTEE_PERIOD;
+    function getSyncCommitteePeriod(uint256 slot) internal view returns (uint256) {
+        return slot / SLOTS_PER_PERIOD;
     }
 
     function getCurrentSlot() internal view returns (uint256) {
