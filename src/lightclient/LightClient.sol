@@ -208,10 +208,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     }
 
     function setSyncCommitteePoseidon(uint256 period, bytes32 poseidon) internal {
-        if (
-            syncCommitteePoseidons[period] != bytes32(0)
-                && syncCommitteePoseidons[period] != poseidon
-        ) {
+        if (syncCommitteePoseidons[period] != bytes32(0) && syncCommitteePoseidons[period] != poseidon) {
             consistent = false;
             return;
         }

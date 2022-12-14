@@ -1,37 +1,37 @@
-name: Tests
+name: Contracts Linting and Testing
 
 on: [pull_request]
 
 jobs:
-    tests:
-      runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v2
+  tests:
+    runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
 
-          - name: Install Foundry
-            uses: onbjerg/foundry-toolchain@v1
-            with:
-                version: nightly
+        - name: Install Foundry
+          uses: onbjerg/foundry-toolchain@v1
+          with:
+              version: nightly
 
-          - name: Check formatting
-            working-directory: .
-            run: forge fmt --check src/
+        - name: Check formatting
+          working-directory: .
+          run: forge fmt --check src/
 
-          - name: Install dependencies
-            working-directory: .
-            run: forge install
+        - name: Install dependencies
+          working-directory: .
+          run: forge install
 
-          - name: Check contract sizes
-            working-directory: .
-            run: forge build --sizes
+        - name: Check contract sizes
+          working-directory: .
+          run: forge build --sizes
 
-          # - name: Check gas snapshots
-          #   working-directory: .
-          #   run: forge snapshot --check
+        # - name: Check gas snapshots
+        #   working-directory: .
+        #   run: forge snapshot --check
 
-          - name: Run tests
-            working-directory: .
-            run: forge test --no-match-test testExecuteMessageFromLog
-            env:
-              # Only fuzz intensely if we're running this action on a push to main or for a PR going into main:
-              FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'intense' }}
+        - name: Run tests
+          working-directory: .
+          run: forge test --no-match-test testExecuteMessageFromLog
+          env:
+            # Only fuzz intensely if we're running this action on a push to main or for a PR going into main:
+            FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'intense' }}
