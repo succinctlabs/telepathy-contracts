@@ -11,14 +11,13 @@ contract LightClientTest is Test {
     LightClient lc;
 
     function setUp() public {
-        bytes32 genesisValidatorsRoot = bytes32(
-            0x043db0d9a83813551ee2f33450d23797757d430911a9320530ad8a0eabc43efb
-        );
+        bytes32 genesisValidatorsRoot = bytes32(0x043db0d9a83813551ee2f33450d23797757d430911a9320530ad8a0eabc43efb);
         uint256 genesisTime = 1616508000;
         uint256 secondsPerSlot = 12;
         uint256 slotsPerPeriod = 8192;
         uint256 syncCommitteePeriod = 532;
-        bytes32 syncCommitteePoseidon = SSZ.toLittleEndian(7032059424740925146199071046477651269705772793323287102921912953216115444414);
+        bytes32 syncCommitteePoseidon =
+            SSZ.toLittleEndian(7032059424740925146199071046477651269705772793323287102921912953216115444414);
 
         lc = new LightClient(
             genesisValidatorsRoot,
@@ -83,15 +82,12 @@ contract LightClientTest is Test {
     }
 
     function testPublicInputsRoot() public {
-        bytes32 finalizedHeaderRoot = bytes32(
-            0xfad3ba4e53d01e392d6c191294d6191f51d769666bae2869ca3d2ac962c2cace
-        );
+        bytes32 finalizedHeaderRoot = bytes32(0xfad3ba4e53d01e392d6c191294d6191f51d769666bae2869ca3d2ac962c2cace);
         bytes32 finalizedSlotLE = SSZ.toLittleEndian(4359712);
         bytes32 participationLE = SSZ.toLittleEndian(426);
-        bytes32 executionStateRoot = bytes32(
-            0x6fc15b26deadfb27063a8ee1147dd66e060ddea457a7b9bb4473199dc352ab47
-        );
-        bytes32 syncCommitteePoseidon = SSZ.toLittleEndian(7032059424740925146199071046477651269705772793323287102921912953216115444414);
+        bytes32 executionStateRoot = bytes32(0x6fc15b26deadfb27063a8ee1147dd66e060ddea457a7b9bb4473199dc352ab47);
+        bytes32 syncCommitteePoseidon =
+            SSZ.toLittleEndian(7032059424740925146199071046477651269705772793323287102921912953216115444414);
 
         bytes32 h;
         h = sha256(bytes.concat(finalizedSlotLE, finalizedHeaderRoot));
@@ -108,12 +104,8 @@ contract LightClientTest is Test {
     function testStep() public {
         uint256 finalizedSlot = 4359840;
         uint256 participation = 432;
-        bytes32 finalizedHeaderRoot = bytes32(
-            0x70d0a7f53a459dd88eb37c6cfdfb8c48f120e504c96b182357498f2691aa5653
-        );
-        bytes32 executionStateRoot = bytes32(
-            0x69d746cb81cd1fb4c11f4dcc04b6114596859b518614da0dd3b4192ff66c3a58
-        );
+        bytes32 finalizedHeaderRoot = bytes32(0x70d0a7f53a459dd88eb37c6cfdfb8c48f120e504c96b182357498f2691aa5653);
+        bytes32 executionStateRoot = bytes32(0x69d746cb81cd1fb4c11f4dcc04b6114596859b518614da0dd3b4192ff66c3a58);
 
         uint256[2] memory a = [
             14717729948616455402271823418418032272798439132063966868750456734930753033999,
@@ -134,19 +126,13 @@ contract LightClientTest is Test {
             11977981471972649035068934866969447415783144961145315609294880087827694234248
         ];
 
-
         Groth16Proof memory proof;
         proof.a = a;
         proof.b = b;
         proof.c = c;
 
-        LightClientStep memory update = LightClientStep(
-            finalizedSlot,
-            participation,
-            finalizedHeaderRoot,
-            executionStateRoot,
-            proof
-        );
+        LightClientStep memory update =
+            LightClientStep(finalizedSlot, participation, finalizedHeaderRoot, executionStateRoot, proof);
 
         lc.step(update);
     }
@@ -154,12 +140,8 @@ contract LightClientTest is Test {
     function testRotate() public {
         uint256 finalizedSlot = 4360032;
         uint256 participation = 413;
-        bytes32 finalizedHeaderRoot = bytes32(
-            0xb6c60352d13b5a1028a99f11ec314004da83c9dbc58b7eba72ae71b3f3373c30
-        );
-        bytes32 executionStateRoot = bytes32(
-            0xef6dc7ca7a8a7d3ab379fa196b1571398b0eb9744e2f827292c638562090f0cb
-        );
+        bytes32 finalizedHeaderRoot = bytes32(0xb6c60352d13b5a1028a99f11ec314004da83c9dbc58b7eba72ae71b3f3373c30);
+        bytes32 executionStateRoot = bytes32(0xef6dc7ca7a8a7d3ab379fa196b1571398b0eb9744e2f827292c638562090f0cb);
 
         uint256[2] memory a = [
             2389393404492058253160068022258603729350770245558596428430133000235269498543,
@@ -180,19 +162,13 @@ contract LightClientTest is Test {
             10878155942650055578211805190943912843265267774943864267206635407924778282720
         ];
 
-
         Groth16Proof memory proof;
         proof.a = a;
         proof.b = b;
         proof.c = c;
 
-        LightClientStep memory step = LightClientStep(
-            finalizedSlot,
-            participation,
-            finalizedHeaderRoot,
-            executionStateRoot,
-            proof
-        );
+        LightClientStep memory step =
+            LightClientStep(finalizedSlot, participation, finalizedHeaderRoot, executionStateRoot, proof);
 
         uint256[2] memory a2 = [
             19432175986645681540999611667567820365521443728844489852797484819167568900221,
@@ -217,17 +193,11 @@ contract LightClientTest is Test {
         proof2.b = b2;
         proof2.c = c2;
 
-        bytes32 syncCommitteeSSZ = bytes32(
-            0xc1c5193ee38508e60af26d51b83e2c6ba6934fd00d2bb8cb36e95d5402fbfc94
-        );
-        bytes32 syncCommitteePoseidon = SSZ.toLittleEndian(13340003662261458565835017692041308090002736850267009725732232370707087749826);
+        bytes32 syncCommitteeSSZ = bytes32(0xc1c5193ee38508e60af26d51b83e2c6ba6934fd00d2bb8cb36e95d5402fbfc94);
+        bytes32 syncCommitteePoseidon =
+            SSZ.toLittleEndian(13340003662261458565835017692041308090002736850267009725732232370707087749826);
 
-        LightClientRotate memory update = LightClientRotate(
-            step,
-            syncCommitteeSSZ,
-            syncCommitteePoseidon,
-            proof2
-        );
+        LightClientRotate memory update = LightClientRotate(step, syncCommitteeSSZ, syncCommitteePoseidon, proof2);
 
         lc.rotate(update);
     }
