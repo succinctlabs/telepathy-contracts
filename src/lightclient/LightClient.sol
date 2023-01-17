@@ -27,6 +27,10 @@ struct LightClientRotate {
     Groth16Proof proof;
 }
 
+/// @title Light Client
+/// @author Succinct Labs
+/// @notice Uses Ethereum 2's Sync Committee Protocol to keep up-to-date with block headers from a
+///         Beacon Chain. This is done in a gas-efficient manner using zero-knowledge proofs.
 contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     bytes32 public immutable GENESIS_VALIDATORS_ROOT;
     uint256 public immutable GENESIS_TIME;
@@ -39,11 +43,22 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     uint256 internal constant NEXT_SYNC_COMMITTEE_INDEX = 55;
     uint256 internal constant EXECUTION_STATE_ROOT_INDEX = 402;
 
+    /// @notice Whether the light client has had two different headers validate for the same slot.
     bool public consistent = true;
+
+    /// @notice The latest slot the light client has a finalized header for.
     uint256 public head = 0;
+
+    /// @notice Maps from a slot to a beacon block header root.
     mapping(uint256 => bytes32) public headers;
+
+    /// @notice Maps from a slot to the current finalized ethereum1 execution state root.
     mapping(uint256 => bytes32) public executionStateRoots;
+
+    /// @notice Maps from a period to the poseidon commitment for the sync committee.
     mapping(uint256 => bytes32) public syncCommitteePoseidons;
+
+    /// @notice Maps from a period to the rotate call with the most participation.
     mapping(uint256 => LightClientRotate) public bestUpdates;
 
     event HeadUpdate(uint256 indexed slot, bytes32 indexed root);
@@ -64,13 +79,11 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         setSyncCommitteePoseidon(syncCommitteePeriod, syncCommitteePoseidon);
     }
 
-    /*
-     * @dev Updates the head of the light client. The conditions for updating
-     * involve checking the existence of:
-     *   1) At least 2n/3+1 signatures from the current sync committee for n=512
-     *   2) A valid finality proof
-     *   3) A valid execution state root proof
-     */
+    /// @notice Updates the head of the light client to the provided slot.
+    /// @dev The conditions for updating the head of the light client involve checking:
+    ///      1) At least 2n/3+1 signatures from the current sync committee for n=512
+    ///      2) A valid finality proof
+    ///      3) A valid execution state root proof
     function step(LightClientStep memory update) external {
         bool finalized = processStep(update);
 
@@ -84,12 +97,10 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         }
     }
 
-    /*
-     * @dev Sets the sync committee validator set root for the next sync
-     * committee period. This root is signed by the current sync committee. In
-     * the case there is no finalization, we will keep track of the best
-     * optimistic update.
-     */
+    /// @notice Sets the sync committee for the next sync committeee period.
+    /// @dev A commitment to the the next sync committeee is signed by the current sync committee.
+    ///      In the case there is no finalization, we will keep track of the best optimistic update
+    ///      and then resolve at the end of the period.
     function rotate(LightClientRotate memory update) external {
         LightClientStep memory step = update.step;
         bool finalized = processStep(update.step);
@@ -109,11 +120,9 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         }
     }
 
-    /*
-      * @dev In the case that there is no finalization for a sync committee
-      * rotation, applies the update with the most signatures throughout the
-      * period.
-      */
+    /// @notice In the case there is no finalization for a sync committee rotation, this method
+    ///         is used to apply the rotate update with the most signatures throughout the period.
+    /// @param period The period for which we are trying to apply the best rotate update for.
     function force(uint256 period) external {
         LightClientRotate memory update = bestUpdates[period];
         uint256 nextPeriod = period + 1;
@@ -129,6 +138,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         setSyncCommitteePoseidon(nextPeriod, update.syncCommitteePoseidon);
     }
 
+    /// @notice Verifies that the header has enough signatures for finality.
     function processStep(LightClientStep memory update) internal view returns (bool) {
         uint256 currentPeriod = getSyncCommitteePeriod(update.finalizedSlot);
 
@@ -143,6 +153,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         return 3 * update.participation > 2 * SYNC_COMMITTEE_SIZE;
     }
 
+    /// @notice Serializes the public inputs into a compressed form and verifies the step proof.
     function zkLightClientStep(LightClientStep memory update) internal view {
         bytes32 finalizedSlotLE = SSZ.toLittleEndian(update.finalizedSlot);
         bytes32 participationLE = SSZ.toLittleEndian(update.participation);
@@ -162,6 +173,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         require(verifyProofStep(proof.a, proof.b, proof.c, inputs) == true);
     }
 
+    /// @notice Serializes the public inputs and verifies the rotate proof.
     function zkLightClientRotate(LightClientRotate memory update) internal view {
         Groth16Proof memory proof = update.proof;
         uint256[65] memory inputs;
@@ -181,14 +193,17 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         require(verifyProofRotate(proof.a, proof.b, proof.c, inputs) == true);
     }
 
+    /// @notice Gets the sync committee period from a slot.
     function getSyncCommitteePeriod(uint256 slot) internal view returns (uint256) {
         return slot / SLOTS_PER_PERIOD;
     }
 
+    /// @notice Gets the current slot for the chain the light client is reflecting.
     function getCurrentSlot() internal view returns (uint256) {
         return (block.timestamp - GENESIS_TIME) / SECONDS_PER_SLOT;
     }
 
+    /// @notice Gets the current slot for the chain the light client is reflecting.
     function setHead(uint256 slot, bytes32 root) internal {
         if (headers[slot] != bytes32(0) && headers[slot] != root) {
             consistent = false;
@@ -199,6 +214,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         emit HeadUpdate(slot, root);
     }
 
+    /// @notice Sets the execution state root for a given slot.
     function setExecutionStateRoot(uint256 slot, bytes32 root) internal {
         if (executionStateRoots[slot] != bytes32(0) && executionStateRoots[slot] != root) {
             consistent = false;
@@ -207,6 +223,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         executionStateRoots[slot] = root;
     }
 
+    /// @notice Sets the sync committee poseidon for a given period.
     function setSyncCommitteePoseidon(uint256 period, bytes32 poseidon) internal {
         if (
             syncCommitteePoseidons[period] != bytes32(0)
@@ -219,6 +236,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         emit SyncCommitteeUpdate(period, poseidon);
     }
 
+    /// @notice Sets the the best update for a given period.
     function setBestUpdate(uint256 period, LightClientRotate memory update) internal {
         bestUpdates[period] = update;
     }

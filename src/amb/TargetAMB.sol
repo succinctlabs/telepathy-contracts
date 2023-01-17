@@ -6,12 +6,20 @@ import "./libraries/MerklePatriciaTrie.sol";
 import "src/lightclient/libraries/SimpleSerialize.sol";
 import "src/amb/interfaces/IAMB.sol";
 
+/// @title Target Arbitrary Message Bridge
+/// @author Succinct Labs
+/// @notice Executes the messages sent from the source chain on the target chain.
 contract TargetAMB is IReciever, ReentrancyGuard {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
+    /// @notice The reference light client contract.
     ILightClient public lightClient;
+
+    /// @notice Mapping between a message root and its status.
     mapping(bytes32 => MessageStatus) public messageStatus;
+
+    /// @notice Address of the SourceAMB on the source chain.
     address public sourceAMB;
 
     uint256 internal constant HISTORICAL_ROOTS_LIMIT = 16777216;
@@ -22,6 +30,11 @@ contract TargetAMB is IReciever, ReentrancyGuard {
         sourceAMB = _sourceAMB;
     }
 
+    /// @notice Executes a message given a storage proof.
+    /// @param slot Specifies which execution state root should be read from the light client.
+    /// @param messageBytes The message we want to execute provided as bytes.
+    /// @param accountProof Used to prove the SourceAMB's state root.
+    /// @param storageProof Used to prove the existence of the message root inside the SourceAMB.
     function executeMessage(
         uint64 slot,
         bytes calldata messageBytes,
@@ -75,12 +88,20 @@ contract TargetAMB is IReciever, ReentrancyGuard {
         emit ExecutedMessage(message.nonce, messageRoot, messageBytes, status);
     }
 
+    /// @notice Executes a message given an event proof.
+    /// @param srcSlotTxSlotPack The slot where we want to read the header from and the slot where
+    ///                          the tx executed, packed as two uint64s.
+    /// @param messageBytes The message we want to execute provided as bytes.
+    /// @param receiptsRootProof A merkle proof proving the receiptsRoot in the block header.
+    /// @param receiptsRoot The receipts root which contains our "SentMessage" event.
+    /// @param txIndexRLPEncoded The index of our transaction inside the block RLP encoded.
+    /// @param logIndex The index of the event in our transaction.
     function executeMessageFromLog(
         bytes calldata srcSlotTxSlotPack,
         bytes calldata messageBytes,
         bytes32[] calldata receiptsRootProof,
         bytes32 receiptsRoot,
-        bytes[] calldata receiptProof, // receipt proof against receipt root
+        bytes[] calldata receiptProof,
         bytes memory txIndexRLPEncoded,
         uint256 logIndex
     ) external nonReentrant {
