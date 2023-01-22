@@ -5,6 +5,7 @@ import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "./libraries/MerklePatriciaTrie.sol";
 import "src/lightclient/libraries/SimpleSerialize.sol";
 import "src/amb/interfaces/IAMB.sol";
+import "forge-std/console.sol";
 
 /// @title Target Arbitrary Message Bridge
 /// @author Succinct Labs
@@ -73,10 +74,10 @@ contract TargetAMB is IReciever, ReentrancyGuard {
         if ((gasleft() * 63) / 64 <= message.gasLimit + 40000) {
             revert("Insufficient gas");
         } else {
-            bytes memory recieveCall = abi.encodeWithSignature(
+            bytes memory receiveCall = abi.encodeWithSignature(
                 "receiveSuccinct(address,bytes)", message.sender, message.data
             );
-            (status,) = message.receiver.call{gas: message.gasLimit}(recieveCall);
+            (status,) = message.receiver.call{gas: message.gasLimit}(receiveCall);
         }
 
         if (status) {
@@ -105,38 +106,36 @@ contract TargetAMB is IReciever, ReentrancyGuard {
         bytes memory txIndexRLPEncoded,
         uint256 logIndex
     ) external nonReentrant {
-        // verify receiptsRoot
+        // verify receiptsRoot against the light client header root
         {
             (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
-            // TODO change this to match real light client
-            bytes32 stateRoot = lightClient.headers(srcSlot);
-            require(stateRoot != bytes32(0), "TrustlessAMB: stateRoot is missing");
+            bytes32 headerRoot = lightClient.headers(srcSlot);
+            require(headerRoot != bytes32(0), "TrustlessAMB: headerRoot is missing");
 
             uint256 index;
             if (txSlot == srcSlot) {
-                index = 32 + 24;
-                index = index * 16 + 3;
+                index = 8 + 3;
+                index = index * 2 ** 9 + 387;
             } else if (txSlot + SLOTS_PER_HISTORICAL_ROOT <= srcSlot) {
-                revert("Not implemented yet");
-                index = 32 + 7;
+                index = 8 + 3;
+                index = index * 2 ** 5 + 7;
                 index = index * 2 + 0;
                 index = index * HISTORICAL_ROOTS_LIMIT + txSlot / SLOTS_PER_HISTORICAL_ROOT;
                 index = index * 2 + 1;
                 index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
-                index = index * 32 + 24;
-                index = index * 16 + 3;
+                index = index * 2 ** 9 + 387;
             } else if (txSlot < srcSlot) {
-                index = 32 + 6;
+                index = 8 + 3;
+                index = index * 2 ** 5 + 6;
                 index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
-                index = index * 32 + 24;
-                index = index * 16 + 3;
+                index = index * 2 ** 9 + 387;
             } else {
                 revert("TrustlessAMB: invalid target slot");
             }
             // TODO we could reduce gas costs by calling `restoreMerkleRoot` here
             // and not passing in the receiptsRoot
             bool isValid =
-                SSZ.isValidMerkleBranch(receiptsRoot, index, receiptsRootProof, stateRoot);
+                SSZ.isValidMerkleBranch(receiptsRoot, index, receiptsRootProof, headerRoot);
             require(isValid, "TrustlessAMB: invalid receipts root proof");
         }
 
