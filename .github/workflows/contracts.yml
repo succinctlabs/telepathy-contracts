@@ -34,7 +34,7 @@ jobs:
 
       - name: Run tests
         working-directory: .
-        run: forge test --no-match-test testExecuteMessageFromLog
+        run: forge test --no-match-test testUnimplemented
         env:
           # Only fuzz intensely if we're running this action on a push to main or for a PR going into main:
           FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'intense' }}

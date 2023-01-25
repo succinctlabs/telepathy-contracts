@@ -1,27 +1,22 @@
 pragma solidity 0.8.14;
-pragma experimental ABIEncoderV2;
 
-import "../../src/amb/SourceAMB.sol";
+import {ITelepathyHandler, ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
 
-contract Counter {
+contract Counter is ITelepathyHandler {
     // We put together the sending the recieving counters instead of
     // separating them out for ease of use.
 
     uint256 public nonce;
-    SourceAMB sourceAMB;
+    ITelepathyBroadcaster broadcaster;
     mapping(uint16 => address) public otherSideCounterMap;
     address otherSideCounter;
-    uint16 chainId;
     address targetAMB;
 
-    event Incremented(
-        uint256 indexed nonce, uint16 indexed chainId
-    );
+    event Incremented(uint256 indexed nonce, uint16 indexed chainId);
 
-
-    constructor(SourceAMB _sourceAMB, address _counter, address _targetAMB) {
+    constructor(ITelepathyBroadcaster _broadcaster, address _counter, address _targetAMB) {
         // Only relevant for controlling counter
-        sourceAMB = _sourceAMB;
+        broadcaster = _broadcaster;
         // This is only relevant for the recieving counter
         otherSideCounter = _counter;
         targetAMB = _targetAMB;
@@ -31,8 +26,8 @@ contract Counter {
     // Controlling counter functions
 
     // Relevant for controlling counter
-    function setSourceAMB(SourceAMB _sourceAMB) external {
-        sourceAMB = _sourceAMB;
+    function setSourceAMB(ITelepathyBroadcaster _broadcaster) external {
+        broadcaster = _broadcaster;
     }
 
     // Relevant for controlling counter
@@ -43,14 +38,14 @@ contract Counter {
     function increment(uint16 chainId) external {
         nonce++;
         require(otherSideCounterMap[chainId] != address(0), "Counter: otherSideCounter not set");
-        sourceAMB.send(otherSideCounterMap[chainId], chainId, 100000, abi.encode(nonce));
+        broadcaster.send(chainId, otherSideCounterMap[chainId], abi.encode(nonce));
         emit Incremented(nonce, chainId);
     }
 
     function incrementViaLog(uint16 chainId) external {
         nonce++;
         require(otherSideCounterMap[chainId] != address(0), "Counter: otherSideCounter not set");
-        sourceAMB.sendViaLog(otherSideCounterMap[chainId], chainId, 100000, abi.encode(nonce));
+        broadcaster.sendViaLog(chainId, otherSideCounterMap[chainId], abi.encode(nonce));
         emit Incremented(nonce, chainId);
     }
 
@@ -65,10 +60,10 @@ contract Counter {
         otherSideCounter = _counter;
     }
 
-    function receiveSuccinct(address sender, bytes memory data) external {
+    function handleTelepathy(uint16, address _senderAddress, bytes memory _data) external {
         require(msg.sender == targetAMB);
-        require(sender == otherSideCounter);
-        (uint256 _nonce) = abi.decode(data, (uint256));
+        require(_senderAddress == otherSideCounter);
+        (uint256 _nonce) = abi.decode(_data, (uint256));
         nonce = _nonce;
         emit Incremented(nonce, uint16(block.chainid));
     }

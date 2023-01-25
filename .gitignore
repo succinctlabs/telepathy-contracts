@@ -3,3 +3,4 @@ abi/
 broadcast/
 cache/
 logs/
+lcov.info

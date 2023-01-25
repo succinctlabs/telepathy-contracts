@@ -2,15 +2,22 @@ pragma solidity 0.8.14;
 
 import "src/lightclient/interfaces/ILightClient.sol";
 
-interface IBroadcaster {
+interface ITelepathyBroadcaster {
     event SentMessage(uint256 indexed nonce, bytes32 indexed msgHash, bytes message);
-    event ShortSentMessage(uint256 indexed nonce, bytes32 indexed msgHash);
 
-    function send(address receiver, uint16 chainId, uint256 gasLimit, bytes calldata data)
+    function send(uint16 _recipientChainId, bytes32 _recipientAddress, bytes calldata _data)
         external
         returns (bytes32);
 
-    function sendViaLog(address receiver, uint16 chainId, uint256 gasLimit, bytes calldata data)
+    function send(uint16 _recipientChainId, address _recipientAddress, bytes calldata _data)
+        external
+        returns (bytes32);
+
+    function sendViaLog(uint16 _recipientChainId, bytes32 _recipientAddress, bytes calldata _data)
+        external
+        returns (bytes32);
+
+    function sendViaLog(uint16 _recipientChainId, address _recipientAddress, bytes calldata _data)
         external
         returns (bytes32);
 }
@@ -23,14 +30,14 @@ enum MessageStatus {
 
 struct Message {
     uint256 nonce;
-    address sender;
-    address receiver;
-    uint16 chainId;
-    uint256 gasLimit;
+    uint16 sourceChainId;
+    address senderAddress;
+    uint16 recipientChainId;
+    bytes32 recipientAddress;
     bytes data;
 }
 
-interface IReciever {
+interface ITelepathyReceiver {
     event ExecutedMessage(
         uint256 indexed nonce, bytes32 indexed msgHash, bytes message, bool status
     );
@@ -51,4 +58,9 @@ interface IReciever {
         bytes memory txIndexRLPEncoded,
         uint256 logIndex
     ) external;
+}
+
+interface ITelepathyHandler {
+    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+        external;
 }
