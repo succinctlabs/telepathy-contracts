@@ -18,9 +18,8 @@ contract UniswapTWAPTest is Test {
     CrossChainTWAPReceiver twapReceiver;
 
     function setUp() public {
-        string memory forkURL =
-            "https://eth-mainnet.g.alchemy.com/v2/V3UkTYUt0iEtxdvWVRNiqEwBsQH4tuMb";
-        vm.createSelectFork(forkURL);
+        string memory MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
+        vm.createSelectFork(MAINNET_RPC_URL);
         broadcaster = new MockTelepathy(SOURCE_CHAIN);
         receiver = new MockTelepathy(DEST_CHAIN);
         broadcaster.addTelepathyReceiver(DEST_CHAIN, receiver);

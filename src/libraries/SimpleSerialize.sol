@@ -86,20 +86,20 @@ library SSZ {
         uint64 txSlot
     ) internal pure returns (bool) {
         uint256 index;
-        if (txSlot == srcSlot) {
+        if (srcSlot == txSlot) {
             index = 8 + 3;
             index = index * 2 ** 9 + 387;
-        } else if (txSlot + SLOTS_PER_HISTORICAL_ROOT <= srcSlot) {
+        } else if (srcSlot - txSlot <= SLOTS_PER_HISTORICAL_ROOT) {
+            index = 8 + 3;
+            index = index * 2 ** 5 + 6;
+            index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
+            index = index * 2 ** 9 + 387;
+        } else if (txSlot < srcSlot) {
             index = 8 + 3;
             index = index * 2 ** 5 + 7;
             index = index * 2 + 0;
             index = index * HISTORICAL_ROOTS_LIMIT + txSlot / SLOTS_PER_HISTORICAL_ROOT;
             index = index * 2 + 1;
-            index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
-            index = index * 2 ** 9 + 387;
-        } else if (txSlot < srcSlot) {
-            index = 8 + 3;
-            index = index * 2 ** 5 + 6;
             index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
             index = index * 2 ** 9 + 387;
         } else {

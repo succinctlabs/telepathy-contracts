@@ -15,6 +15,8 @@ contract SourceAMB is ITelepathyBroadcaster {
     uint256 public nonce = 1;
 
     /// @notice Sends a message to a target chain.
+    /// @notice This method is more expensive than the `sendViaLog` method as it requires adding to contract storage.
+    /// Prefer using `sendViaLog` when interacting with the Telepathy messaging protocol.
     /// @param _recipientChainId The chain id that specifies the target chain.
     /// @param _recipientAddress The contract address that will be called on the target chain.
     /// @param _data The calldata used when calling the contract on the target chain.
@@ -31,6 +33,8 @@ contract SourceAMB is ITelepathyBroadcaster {
     }
 
     /// @notice Sends a message to a target chain.
+    /// @notice This method is more expensive than the `sendViaLog` method as it requires adding to contract storage.
+    /// Prefer using `sendViaLog` when interacting with the Telepathy messaging protocol.
     /// @param _recipientChainId The chain id that specifies the target chain.
     /// @param _recipientAddress The contract address that will be called on the target chain.
     /// @param _data The calldata used when calling the contract on the target chain.
@@ -48,6 +52,8 @@ contract SourceAMB is ITelepathyBroadcaster {
     }
 
     /// @notice Sends a message to a target chain using an event log instead of a storage slot.
+    /// @notice This method is cheaper than the `send` method as it does not require adding to contract storage.
+    /// It is the recommended method for interacting with the Telepathy messaging protocol.
     /// @param _recipientChainId The chain id that specifies the target chain.
     /// @param _recipientAddress The contract address that will be called on the target chain.
     /// @param _data The calldata used when calling the contract on the target chain.
@@ -63,6 +69,8 @@ contract SourceAMB is ITelepathyBroadcaster {
     }
 
     /// @notice Sends a message to a target chain using an event log instead of a storage slot.
+    /// @notice This method is cheaper than the `send` method as it does not require adding to contract storage.
+    /// It is the recommended method for interacting with the Telepathy messaging protocol.
     /// @param _recipientChainId The chain id that specifies the target chain.
     /// @param _recipientAddress The contract address that will be called on the target chain.
     /// @param _data The calldata used when calling the contract on the target chain.

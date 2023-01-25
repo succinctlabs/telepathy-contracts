@@ -4,6 +4,8 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
+import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
+
 import {MessageStatus, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
 import {TargetAMB} from "src/amb/TargetAMB.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
@@ -157,9 +159,8 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testUnimplementedExecuteMessageFromLogFarSlot() public {
+    function testExecuteMessageFromLogFarSlot() public {
         // This test is generated using `cli/src/generateTest.ts`
-        // TODO fix this test by adding the relevant JSONs
         ExecuteMessageFromLogParams memory testParams = parseParams("farSlot");
         getDefaultContractSetup(testParams);
 
@@ -188,17 +189,22 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testUnimplementedExecuteMessageFromLogCloseSlotBoundaryConditions() public {
+    function testExecuteMessageFromLogCloseSlotBoundaryConditions() public {
         // This test is generated using `cli/src/generateTest.ts`
-        // TODO fix this test by adding the relevant JSONs
-        string[] memory diffs = new string[](3);
-        diffs[0] = "8191";
-        diffs[1] = "8192";
-        diffs[2] = "8193";
+        uint256[] memory diffs = new uint[](3);
+        diffs[0] = 8191;
+        diffs[1] = 8192;
+        diffs[2] = 8193;
         for (uint256 i = 0; i < diffs.length; i++) {
             ExecuteMessageFromLogParams memory testParams =
-                parseParams(string.concat("closeSlotDiffEq", diffs[i]));
+                parseParams(string.concat("closeSlotDiffEq", Strings.toString(diffs[i])));
             getDefaultContractSetup(testParams);
+
+            (uint64 sourceSlot, uint64 targetSlot) =
+                abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
+            require(
+                sourceSlot == targetSlot + uint64(diffs[i]), "target slot is not source slot + i"
+            );
 
             // Execute the message and check that it succeeded
             targetAMB.executeMessageFromLog(
@@ -217,10 +223,10 @@ contract TargetAMBTest is Test {
             );
 
             // Check that the simpleHandler processed the message correctly
-            require(simpleHandler.nonce() == 1, "Nonce is not 1");
+            require(simpleHandler.nonce() == i + 1, "Nonce is not i+1");
             bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
             require(
-                simpleHandler.nonceToDataHash(0) == expectedDataHash,
+                simpleHandler.nonceToDataHash(i) == expectedDataHash,
                 "Data hash not set as expected in SimpleHandler"
             );
         }
