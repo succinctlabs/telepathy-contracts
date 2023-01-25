@@ -97,14 +97,14 @@ contract MockTelepathy is ITelepathyBroadcaster {
     /// @dev helper method to execute the message
     function _executeMessage(Message memory message) public returns (bool) {
         bool status;
-        bytes memory recieveCall = abi.encodeWithSelector(
+        bytes memory receiveCall = abi.encodeWithSelector(
             ITelepathyHandler.handleTelepathy.selector,
             message.sourceChainId,
             message.senderAddress,
             message.data
         );
         address recipient = TypeCasts.bytes32ToAddress(message.recipientAddress);
-        (status,) = recipient.call(recieveCall);
+        (status,) = recipient.call(receiveCall);
 
         return status;
     }

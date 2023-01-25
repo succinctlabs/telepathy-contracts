@@ -2,7 +2,7 @@ pragma solidity 0.8.14;
 
 // We must import X as Y so that ILightClient doesn't conflict when we try to import
 // both LightClientMock and TargetAMB in the same test file.
-import {ILightClient as ILightClientMock} from "src/LightClient/interfaces/ILightClient.sol";
+import {ILightClient as ILightClientMock} from "src/lightclient/interfaces/ILightClient.sol";
 
 contract LightClientMock is ILightClientMock {
     uint256 public head;

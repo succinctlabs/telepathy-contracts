@@ -10,16 +10,16 @@ contract Counter is ITelepathyHandler {
     ITelepathyBroadcaster broadcaster;
     mapping(uint16 => address) public otherSideCounterMap;
     address otherSideCounter;
-    address targetAMB;
+    address telepathyReceiver;
 
     event Incremented(uint256 indexed nonce, uint16 indexed chainId);
 
-    constructor(ITelepathyBroadcaster _broadcaster, address _counter, address _targetAMB) {
+    constructor(ITelepathyBroadcaster _broadcaster, address _counter, address _telepathyReceiver) {
         // Only relevant for controlling counter
         broadcaster = _broadcaster;
         // This is only relevant for the recieving counter
         otherSideCounter = _counter;
-        targetAMB = _targetAMB;
+        telepathyReceiver = _telepathyReceiver;
         nonce = 1;
     }
 
@@ -49,19 +49,22 @@ contract Counter is ITelepathyHandler {
         emit Incremented(nonce, chainId);
     }
 
-    // Recieving counter functions
+    // Receiving counter functions
 
-    // Relevant for recieving counter
-    function setTargetAMB(address _targetAMB) external {
-        targetAMB = _targetAMB;
+    /// @notice Set the address of the Telepathy Receiver contract
+    function setTelepathyReceiver(address _telepathyReceiver) external {
+        telepathyReceiver = _telepathyReceiver;
     }
 
     function setOtherSideCounter(address _counter) external {
         otherSideCounter = _counter;
     }
 
+    /// @notice handleTelepathy is called by the Telepathy Receiver when a message is executed
+    /// @dev We do not enforce any checks on the `_srcChainId` since we want to allow the counter
+    /// to receive messages from any chain
     function handleTelepathy(uint16, address _senderAddress, bytes memory _data) external {
-        require(msg.sender == targetAMB);
+        require(msg.sender == telepathyReceiver);
         require(_senderAddress == otherSideCounter);
         (uint256 _nonce) = abi.decode(_data, (uint256));
         nonce = _nonce;

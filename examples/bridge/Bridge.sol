@@ -7,7 +7,7 @@ import {ITelepathyHandler, ITelepathyBroadcaster} from "src/amb/interfaces/ITele
 import "./Tokens.sol";
 
 contract Deposit is Ownable {
-    uint256 public constant FEE = 1000000000000000;
+    uint256 public constant FEE = 0.001 ether;
 
     ITelepathyBroadcaster broadcaster;
     address depositToken;
@@ -26,10 +26,19 @@ contract Deposit is Ownable {
         depositToken = _depositToken;
     }
 
+    /// @notice set the address of the withdrawal contract on destination chains
+    /// @dev Right now the withdrawal contract must be the same across all destination chains
     function setWithdraw(address _foreignWithdraw) public onlyOwner {
         foreignWithdraw = _foreignWithdraw;
     }
 
+    /// @notice used to deposit tokens to the bridge contract, which will send a message to the
+    /// withdrawal contract on the destination chain
+    /// @param recipient the address of the recipient on the destination chain
+    /// @param amount the amount of tokens to deposit
+    /// @param tokenAddress the address of the ERC20 token to deposit. This token address currently
+    /// must match `depositToken` in the constructor but in the future we can support multiple tokens
+    /// @param chainId the chain id of the destination chain
     function deposit(address recipient, uint256 amount, address tokenAddress, uint16 chainId)
         external
         payable
@@ -65,6 +74,7 @@ contract Withdraw is Ownable, ITelepathyHandler {
     address depositAddress;
     address telepathyReceiver;
     uint16 sourceChainId;
+    /// @notice the token that will be transferred to the recipient
     IERC20Ownable public token;
 
     event WithdrawEvent(
@@ -75,6 +85,10 @@ contract Withdraw is Ownable, ITelepathyHandler {
         address withdrawTokenAddress
     );
 
+    /// @notice constructor for the withdraw contract
+    /// @param _depositAddress the address of the deposit contract on the source chain
+    /// @param _telepathyReceiver the address of the telepathy receiver contract on this chain that can call `handleTelepathy`
+    /// @param _sourceChainId the chain id of the source chain where deposits are being made
     constructor(address _depositAddress, address _telepathyReceiver, uint16 _sourceChainId) {
         depositAddress = _depositAddress;
         telepathyReceiver = _telepathyReceiver;
@@ -91,7 +105,7 @@ contract Withdraw is Ownable, ITelepathyHandler {
         require(msg.sender == telepathyReceiver, "Only Telepathy Receiver can call this function");
         require(
             _senderAddress == depositAddress,
-            "Only deposit can trigger a message call to this contract."
+            "Only deposit address can trigger a message call to this contract."
         );
         require(_sourceChainId == sourceChainId, "Invalid source chain id");
         (address recipient, uint256 amount, address tokenAddress) =

@@ -22,11 +22,14 @@ import {
 contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
     using RLPReader for RLPReader.RLPItem;
 
-    /// @notice The SourceAMB SentMessage event signature used in executeMessageFromLog.
+    /// @notice The ITelepathyBroadcaster SentMessage event signature used in `executeMessageFromLog`.
     bytes32 internal constant SENT_MESSAGE_EVENT_SIG =
         keccak256("SentMessage(uint256,bytes32,bytes)");
+
     /// @notice The topic index of the message root in the SourceAMB SentMessage event.
-    uint256 internal constant SENT_MESSAGE_TOPIC_IDX = 2;
+    /// @dev Because topic[0] is the hash of the event signature (`SENT_MESSAGE_EVENT_SIG` above), the
+    /// topic index of msgHash is 2.
+    uint256 internal constant MSG_HASH_TOPIC_IDX = 2;
 
     /// @notice The reference light client contract.
     ILightClient public lightClient;
@@ -110,7 +113,7 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
                     logIndex,
                     broadcaster,
                     SENT_MESSAGE_EVENT_SIG,
-                    SENT_MESSAGE_TOPIC_IDX
+                    MSG_HASH_TOPIC_IDX
                 ).toBytes()
             );
             require(receiptMessageRoot == messageRoot, "Invalid message hash.");
@@ -147,14 +150,14 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
         internal
     {
         bool status;
-        bytes memory recieveCall = abi.encodeWithSelector(
+        bytes memory receiveCall = abi.encodeWithSelector(
             ITelepathyHandler.handleTelepathy.selector,
             message.sourceChainId,
             message.senderAddress,
             message.data
         );
         address recipient = TypeCasts.bytes32ToAddress(message.recipientAddress);
-        (status,) = recipient.call(recieveCall);
+        (status,) = recipient.call(receiveCall);
 
         if (status) {
             messageStatus[messageRoot] = MessageStatus.EXECUTION_SUCCEEDED;
