@@ -4,11 +4,11 @@ import "curve-merkle-oracle/MerklePatriciaProofVerifier.sol";
 import "curve-merkle-oracle/StateProofVerifier.sol";
 import {RLPReader} from "Solidity-RLP/RLPReader.sol";
 
-library MPT {
+library StateProofHelper {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
-    function verifyStorage(bytes32 slotHash, bytes32 storageRoot, bytes[] memory _stateProof)
+    function getStorageValue(bytes32 slotHash, bytes32 storageRoot, bytes[] memory _stateProof)
         internal
         pure
         returns (uint256)
@@ -25,7 +25,7 @@ library MPT {
         return slotValue.value;
     }
 
-    function verifyAccount(bytes[] memory proof, address contractAddress, bytes32 stateRoot)
+    function getStorageRoot(bytes[] memory proof, address contractAddress, bytes32 stateRoot)
         internal
         pure
         returns (bytes32)
@@ -41,13 +41,15 @@ library MPT {
         return account.storageRoot;
     }
 
-    function verifyAMBReceipt(
+    function getEventTopic(
         bytes[] memory proof,
         bytes32 receiptRoot,
         bytes memory key,
         uint256 logIndex,
-        address claimedEmitter
-    ) internal pure returns (bytes32) {
+        address claimedEmitter,
+        bytes32 eventSignature,
+        uint256 topicIndex
+    ) internal pure returns (RLPReader.RLPItem memory) {
         RLPReader.RLPItem[] memory proofAsRLP = new RLPReader.RLPItem[](proof.length);
         for (uint256 i = 0; i < proof.length; i++) {
             proofAsRLP[i] = RLPReader.toRlpItem(proof[i]);
@@ -73,9 +75,9 @@ library MPT {
         RLPReader.RLPItem[] memory topics = relevantLog[1].toList();
         // This is the hash of the event signature, this is hardcoded
         require(
-            bytes32(topics[0].toUintStrict()) == keccak256("SentMessage(uint256,bytes32,bytes)"),
+            bytes32(topics[0].toUintStrict()) == eventSignature,
             "TruslessAMB: different event signature expected"
         );
-        return bytes32(topics[2].toBytes());
+        return topics[topicIndex];
     }
 }

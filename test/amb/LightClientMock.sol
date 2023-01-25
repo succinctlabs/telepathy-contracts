@@ -1,13 +1,14 @@
 pragma solidity 0.8.14;
-pragma experimental ABIEncoderV2;
 
-// TODO add this back when we figure out how to deal with imports
-// import "src/LightClient/interfaces/ILightClient.sol";
+// We must import X as Y so that ILightClient doesn't conflict when we try to import
+// both LightClientMock and TargetAMB in the same test file.
+import {ILightClient as ILightClientMock} from "src/LightClient/interfaces/ILightClient.sol";
 
-contract LightClientMock {
+contract LightClientMock is ILightClientMock {
     uint256 public head;
     mapping(uint256 => bytes32) public headers;
     mapping(uint256 => bytes32) public executionStateRoots;
+
     event HeadUpdate(uint256 indexed slot, bytes32 indexed root);
 
     function setHeader(uint256 slot, bytes32 headerRoot) external {

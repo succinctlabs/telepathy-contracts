@@ -1,10 +1,10 @@
 pragma solidity 0.8.14;
-pragma experimental ABIEncoderV2;
 
-import "./StepVerifier.sol";
-import "./RotateVerifier.sol";
-import "./libraries/SimpleSerialize.sol";
-import "./interfaces/ILightClient.sol";
+import {SSZ} from "src/libraries/SimpleSerialize.sol";
+
+import {ILightClient} from "./interfaces/ILightClient.sol";
+import {StepVerifier} from "./StepVerifier.sol";
+import {RotateVerifier} from "./RotateVerifier.sol";
 
 struct Groth16Proof {
     uint256[2] a;
@@ -102,9 +102,9 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     ///      In the case there is no finalization, we will keep track of the best optimistic update
     ///      and then resolve at the end of the period.
     function rotate(LightClientRotate memory update) external {
-        LightClientStep memory step = update.step;
+        LightClientStep memory stepUpdate = update.step;
         bool finalized = processStep(update.step);
-        uint256 currentPeriod = getSyncCommitteePeriod(step.finalizedSlot);
+        uint256 currentPeriod = getSyncCommitteePeriod(stepUpdate.finalizedSlot);
         uint256 nextPeriod = currentPeriod + 1;
 
         zkLightClientRotate(update);
@@ -113,7 +113,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
             setSyncCommitteePoseidon(nextPeriod, update.syncCommitteePoseidon);
         } else {
             LightClientRotate memory bestUpdate = bestUpdates[currentPeriod];
-            if (step.participation < bestUpdate.step.participation) {
+            if (stepUpdate.participation < bestUpdate.step.participation) {
                 revert("There exists a better update");
             }
             setBestUpdate(currentPeriod, update);

@@ -1,5 +1,4 @@
 pragma solidity 0.8.14;
-pragma experimental ABIEncoderV2;
 
 struct BeaconBlockHeader {
     uint64 slot;
@@ -10,6 +9,9 @@ struct BeaconBlockHeader {
 }
 
 library SSZ {
+    uint256 internal constant HISTORICAL_ROOTS_LIMIT = 16777216;
+    uint256 internal constant SLOTS_PER_HISTORICAL_ROOT = 8192;
+
     function toLittleEndian(uint256 x) internal pure returns (bytes32) {
         bytes32 res;
         for (uint256 i = 0; i < 32; i++) {
@@ -74,5 +76,35 @@ library SSZ {
     {
         return bytes32(uint256(0x07 << 248))
             | (sha256(abi.encode(forkVersion, genesisValidatorsRoot)) >> 32);
+    }
+
+    function verifyReceiptsRoot(
+        bytes32 receiptsRoot,
+        bytes32[] memory receiptsRootProof,
+        bytes32 headerRoot,
+        uint64 srcSlot,
+        uint64 txSlot
+    ) internal pure returns (bool) {
+        uint256 index;
+        if (txSlot == srcSlot) {
+            index = 8 + 3;
+            index = index * 2 ** 9 + 387;
+        } else if (txSlot + SLOTS_PER_HISTORICAL_ROOT <= srcSlot) {
+            index = 8 + 3;
+            index = index * 2 ** 5 + 7;
+            index = index * 2 + 0;
+            index = index * HISTORICAL_ROOTS_LIMIT + txSlot / SLOTS_PER_HISTORICAL_ROOT;
+            index = index * 2 + 1;
+            index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
+            index = index * 2 ** 9 + 387;
+        } else if (txSlot < srcSlot) {
+            index = 8 + 3;
+            index = index * 2 ** 5 + 6;
+            index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
+            index = index * 2 ** 9 + 387;
+        } else {
+            revert("TrustlessAMB: invalid target slot");
+        }
+        return isValidMerkleBranch(receiptsRoot, index, receiptsRootProof, headerRoot);
     }
 }
