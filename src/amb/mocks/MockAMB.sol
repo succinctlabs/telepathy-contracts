@@ -64,7 +64,7 @@ contract MockTelepathy is ITelepathyBroadcaster {
     {
         (Message memory message,, bytes32 messageRoot) =
             _getMessageAndRoot(_recipientChainId, _recipientAddress, _data);
-        sentMessages[sentNonce] = message;
+        sentMessages[++sentNonce] = message;
         return messageRoot;
     }
 
@@ -88,7 +88,7 @@ contract MockTelepathy is ITelepathyBroadcaster {
 
     /// @notice to execute the next message that has been sent
     function executeNextMessage() external returns (bool) {
-        Message memory message = sentMessages[executedNonce];
+        Message memory message = sentMessages[++executedNonce];
         MockTelepathy receiver = telepathyReceivers[message.recipientChainId];
         require(receiver != MockTelepathy(address(0)), "MockAMB: No receiver for chain");
         return receiver._executeMessage(message);
