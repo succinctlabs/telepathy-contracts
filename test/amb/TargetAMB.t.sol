@@ -124,9 +124,11 @@ contract TargetAMBTest is Test {
         // Then set the execution root in the LightClientMock
         // Typically we should use the slot here, but we just use the block number since it doesn't
         // matter in the LightClientMock
+        vm.warp(1675221581 - 60 * 10);
         lightClientMock.setExecutionRoot(
             testParams.executionBlockNumber, testParams.executionStateRoot
         );
+        vm.warp(1675221581);
     }
 
     function testExecuteMessage() public {

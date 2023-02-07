@@ -5,24 +5,24 @@ pragma solidity 0.8.14;
 import {ILightClient as ILightClientMock} from "src/lightclient/interfaces/ILightClient.sol";
 
 contract LightClientMock is ILightClientMock {
+    bool public consistent = true;
     uint256 public head;
     mapping(uint256 => bytes32) public headers;
     mapping(uint256 => bytes32) public executionStateRoots;
+    mapping(uint256 => uint256) public timestamps;
 
     event HeadUpdate(uint256 indexed slot, bytes32 indexed root);
 
     function setHeader(uint256 slot, bytes32 headerRoot) external {
         headers[slot] = headerRoot;
-        // NOTE that the stateRoot emitted here is not the same as the header root
-        // in the real LightClient
+        timestamps[slot] = block.timestamp;
         head = slot;
         emit HeadUpdate(slot, headerRoot);
     }
 
     function setExecutionRoot(uint256 slot, bytes32 executionRoot) external {
-        // NOTE that the root emitted here is not the same as the header root
-        // in the real LightClient
         executionStateRoots[slot] = executionRoot;
+        timestamps[slot] = block.timestamp;
         head = slot;
         emit HeadUpdate(slot, executionRoot);
     }
