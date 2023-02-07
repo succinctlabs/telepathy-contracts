@@ -1,6 +1,6 @@
 pragma solidity 0.8.14;
 
-import {TypeCasts} from "src/libraries/Typecast.sol";
+import {Address, Bytes32} from "src/libraries/Typecast.sol";
 
 import {SourceAMB} from "../SourceAMB.sol";
 import {ITelepathyBroadcaster, Message, ITelepathyHandler} from "../interfaces/ITelepathy.sol";
@@ -39,7 +39,7 @@ contract MockTelepathy is ITelepathyBroadcaster {
         external
         returns (bytes32)
     {
-        return _send(_recipientChainId, TypeCasts.addressToBytes32(_recipientAddress), _data);
+        return _send(_recipientChainId, Bytes32.fromAddress(_recipientAddress), _data);
     }
 
     function sendViaLog(uint16 _recipientChainId, bytes32 _recipientAddress, bytes calldata _data)
@@ -53,7 +53,7 @@ contract MockTelepathy is ITelepathyBroadcaster {
         external
         returns (bytes32)
     {
-        return _send(_recipientChainId, TypeCasts.addressToBytes32(_recipientAddress), _data);
+        return _send(_recipientChainId, Bytes32.fromAddress(_recipientAddress), _data);
     }
 
     /// @dev Helper methods for processing all send methods
@@ -103,7 +103,7 @@ contract MockTelepathy is ITelepathyBroadcaster {
             message.senderAddress,
             message.data
         );
-        address recipient = TypeCasts.bytes32ToAddress(message.recipientAddress);
+        address recipient = Address.fromBytes32(message.recipientAddress);
         (status,) = recipient.call(receiveCall);
 
         return status;
