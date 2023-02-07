@@ -73,7 +73,9 @@ contract TargetAMBTest is Test {
             srcSlot == testParams.sourceSlot, "Decoded source slot does not match provided srcSlot"
         );
 
+        vm.warp(1675221581 - 60 * 10);
         lightClientMock.setHeader(srcSlot, testParams.headerRoot);
+        vm.warp(1675221581);
     }
 
     function testExecuteMessageFromLogCloseSlot() public {

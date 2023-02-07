@@ -1,13 +1,12 @@
 pragma solidity 0.8.14;
 
 import {ReentrancyGuard} from "openzeppelin-contracts/security/ReentrancyGuard.sol";
+import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 import {RLPReader} from "Solidity-RLP/RLPReader.sol";
-
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {StateProofHelper} from "src/libraries/StateProofHelper.sol";
-import {TypeCasts} from "src/libraries/Typecast.sol";
+import {Address} from "src/libraries/Typecast.sol";
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-
 import {
     ITelepathyReceiver,
     Message,
@@ -19,16 +18,19 @@ import {
 /// @title Telepathy Target Arbitrary Message Bridge
 /// @author Succinct Labs
 /// @notice Executes the messages sent from the source chain on the target chain.
-contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
+contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
     using RLPReader for RLPReader.RLPItem;
+
+    /// @notice The minimum delay for using any information from the light client.
+    uint256 public immutable MIN_LIGHT_CLIENT_DELAY = 60 * 5;
 
     /// @notice The ITelepathyBroadcaster SentMessage event signature used in `executeMessageFromLog`.
     bytes32 internal constant SENT_MESSAGE_EVENT_SIG =
         keccak256("SentMessage(uint256,bytes32,bytes)");
 
     /// @notice The topic index of the message root in the SourceAMB SentMessage event.
-    /// @dev Because topic[0] is the hash of the event signature (`SENT_MESSAGE_EVENT_SIG` above), the
-    /// topic index of msgHash is 2.
+    /// @dev Because topic[0] is the hash of the event signature (`SENT_MESSAGE_EVENT_SIG` above),
+    ///      the topic index of msgHash is 2.
     uint256 internal constant MSG_HASH_TOPIC_IDX = 2;
 
     /// @notice The reference light client contract.
@@ -40,9 +42,22 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
     /// @notice Address of the Telepathy broadcaster on the source chain.
     address public broadcaster;
 
+    /// @notice Whether or not the contract is frozen.
+    bool public frozen = false;
+
     constructor(address _lightClient, address _broadcaster) {
         lightClient = ILightClient(_lightClient);
         broadcaster = _broadcaster;
+    }
+
+    modifier lightClientConsistent() {
+        require(lightClient.consistent(), "Light client is inconsistent.");
+        _;
+    }
+
+    modifier notFrozen() {
+        require(!frozen, "Contract is frozen.");
+        _;
     }
 
     /// @notice Executes a message given a storage proof.
@@ -55,10 +70,11 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
         bytes calldata messageBytes,
         bytes[] calldata accountProof,
         bytes[] calldata storageProof
-    ) external nonReentrant {
+    ) external nonReentrant lightClientConsistent notFrozen {
         (Message memory message, bytes32 messageRoot) = _checkPreconditions(messageBytes);
 
         {
+            _requireLightClientDelay(slot);
             bytes32 executionStateRoot = lightClient.executionStateRoots(slot);
             bytes32 storageRoot =
                 StateProofHelper.getStorageRoot(accountProof, broadcaster, executionStateRoot);
@@ -89,10 +105,11 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
         bytes[] calldata receiptProof,
         bytes memory txIndexRLPEncoded,
         uint256 logIndex
-    ) external nonReentrant {
+    ) external nonReentrant lightClientConsistent notFrozen {
         // Verify receiptsRoot against header from light client
         {
             (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
+            _requireLightClientDelay(srcSlot);
             bytes32 headerRoot = lightClient.headers(srcSlot);
             require(headerRoot != bytes32(0), "TrustlessAMB: headerRoot is missing");
             bool isValid =
@@ -122,7 +139,27 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
         _executeMessage(message, messageRoot, messageBytes);
     }
 
-    /// @notice Decodes the message from messageBytes and checks pre-conditions before message execution
+    /// @notice Freezes the contract.
+    /// @dev This is a safety mechanism to prevent the contract from being used after a security
+    ///      vulnerability is detected.
+    function freeze() external onlyOwner {
+        frozen = true;
+    }
+
+    /// @notice Unfreezes the contract.
+    /// @dev This is a safety mechanism to continue usage of the contract after a security
+    ///      vulnerability is patched.
+    function unfreeze() external onlyOwner {
+        frozen = false;
+    }
+
+    /// @notice Checks that the light client delay is adequate
+    function _requireLightClientDelay(uint64 slot) internal view {
+        uint256 elapsedTime = block.timestamp - lightClient.timestamps(slot);
+        require(elapsedTime >= MIN_LIGHT_CLIENT_DELAY, "Must wait longer to use this slot.");
+    }
+
+    /// @notice Decodes the message from messageBytes and checks conditions before message execution
     /// @param messageBytes The message we want to execute provided as bytes.
     function _checkPreconditions(bytes calldata messageBytes)
         internal
@@ -142,7 +179,7 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
 
     /// @notice Executes a message and updates storage with status and emits an event.
     /// @dev Assumes that the message is valid and has not been already executed.
-    /// @dev Assumes that message, messageRoot and messageBytes have already been validated to correctly match.
+    /// @dev Assumes that message, messageRoot and messageBytes have already been validated.
     /// @param message The message we want to execute.
     /// @param messageRoot The message root of the message.
     /// @param messageBytes The message we want to execute provided as bytes for use in the event.
@@ -156,7 +193,7 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard {
             message.senderAddress,
             message.data
         );
-        address recipient = TypeCasts.bytes32ToAddress(message.recipientAddress);
+        address recipient = Address.fromBytes32(message.recipientAddress);
         (status,) = recipient.call(receiveCall);
 
         if (status) {

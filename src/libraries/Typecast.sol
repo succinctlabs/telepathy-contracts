@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity >=0.6.11;
 
-library TypeCasts {
-    // alignment preserving cast
-    function addressToBytes32(address _addr) internal pure returns (bytes32) {
-        return bytes32(uint256(uint160(_addr)));
+library Address {
+    function fromBytes32(bytes32 buffer) internal pure returns (address) {
+        return address(uint160(uint256(buffer)));
     }
+}
 
-    // alignment preserving cast
-    function bytes32ToAddress(bytes32 _buf) internal pure returns (address) {
-        return address(uint160(uint256(_buf)));
+library Bytes32 {
+    function fromAddress(address addr) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(addr)));
     }
 }
