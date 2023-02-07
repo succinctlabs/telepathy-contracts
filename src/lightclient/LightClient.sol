@@ -43,7 +43,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     uint256 internal constant NEXT_SYNC_COMMITTEE_INDEX = 55;
     uint256 internal constant EXECUTION_STATE_ROOT_INDEX = 402;
 
-    /// @notice Whether the light client has had two different headers validate for the same slot.
+    /// @notice Whether the light client has had conflicting variables for the same slot.
     bool public consistent = true;
 
     /// @notice The latest slot the light client has a finalized header for.
@@ -51,6 +51,9 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
 
     /// @notice Maps from a slot to a beacon block header root.
     mapping(uint256 => bytes32) public headers;
+
+    /// @notice Maps from a slot to the timestamp of when the headers mapping was updated with slot as a key
+    mapping(uint256 => uint256) public timestamps;
 
     /// @notice Maps from a slot to the current finalized ethereum1 execution state root.
     mapping(uint256 => bytes32) public executionStateRoots;
@@ -94,6 +97,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         if (finalized) {
             setHead(update.finalizedSlot, update.finalizedHeaderRoot);
             setExecutionStateRoot(update.finalizedSlot, update.executionStateRoot);
+            setTimestamp(update.finalizedSlot, block.timestamp);
         }
     }
 
@@ -239,5 +243,9 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     /// @notice Sets the the best update for a given period.
     function setBestUpdate(uint256 period, LightClientRotate memory update) internal {
         bestUpdates[period] = update;
+    }
+
+    function setTimestamp(uint256 slot, uint256 timestamp) internal {
+        timestamps[slot] = timestamp;
     }
 }
