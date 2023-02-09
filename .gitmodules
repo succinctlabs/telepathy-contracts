@@ -16,3 +16,7 @@
 	path = lib/v3-core
 	url = https://github.com/succinctlabs/v3-core
 	branch = main
+[submodule "lib/optimism-bedrock-contracts"]
+	path = lib/optimism-bedrock-contracts
+	url = https://github.com/succinctlabs/optimism-bedrock-contracts
+	branch = main

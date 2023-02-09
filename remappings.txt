@@ -1,2 +1,3 @@
 openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/
 @uniswap=lib/
+@optimism-bedrock=lib/optimism-bedrock-contracts/

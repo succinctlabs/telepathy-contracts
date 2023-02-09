@@ -4,8 +4,9 @@ import {ReentrancyGuard} from "openzeppelin-contracts/security/ReentrancyGuard.s
 import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 import {RLPReader} from "Solidity-RLP/RLPReader.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
-import {StateProofHelper} from "src/libraries/StateProofHelper.sol";
+import {StorageProof, EventProof} from "src/libraries/MerklePatriciaTree.sol";
 import {Address} from "src/libraries/Typecast.sol";
+
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {
     ITelepathyReceiver,
@@ -77,9 +78,9 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
             _requireLightClientDelay(slot);
             bytes32 executionStateRoot = lightClient.executionStateRoots(slot);
             bytes32 storageRoot =
-                StateProofHelper.getStorageRoot(accountProof, broadcaster, executionStateRoot);
+                StorageProof.getStorageRoot(accountProof, broadcaster, executionStateRoot);
             bytes32 slotKey = keccak256(abi.encode(keccak256(abi.encode(message.nonce, 0))));
-            uint256 slotValue = StateProofHelper.getStorageValue(slotKey, storageRoot, storageProof);
+            uint256 slotValue = StorageProof.getStorageValue(slotKey, storageRoot, storageProof);
 
             if (bytes32(slotValue) != messageRoot) {
                 revert("Invalid message hash.");
@@ -111,10 +112,10 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
             (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
             _requireLightClientDelay(srcSlot);
             bytes32 headerRoot = lightClient.headers(srcSlot);
-            require(headerRoot != bytes32(0), "TrustlessAMB: headerRoot is missing");
+            require(headerRoot != bytes32(0), "Header root is missing");
             bool isValid =
                 SSZ.verifyReceiptsRoot(receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot);
-            require(isValid, "TrustlessAMB: invalid receipts root proof");
+            require(isValid, "Invalid receipts root proof");
         }
 
         (Message memory message, bytes32 messageRoot) = _checkPreconditions(messageBytes);
@@ -123,7 +124,7 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
             // TODO maybe we can save calldata by passing in the txIndex as a uint and rlp encode it
             // to derive txIndexRLPEncoded instead of passing in `bytes memory txIndexRLPEncoded`
             bytes32 receiptMessageRoot = bytes32(
-                StateProofHelper.getEventTopic(
+                EventProof.getEventTopic(
                     receiptProof,
                     receiptsRoot,
                     txIndexRLPEncoded,
@@ -131,7 +132,7 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
                     broadcaster,
                     SENT_MESSAGE_EVENT_SIG,
                     MSG_HASH_TOPIC_IDX
-                ).toBytes()
+                )
             );
             require(receiptMessageRoot == messageRoot, "Invalid message hash.");
         }
