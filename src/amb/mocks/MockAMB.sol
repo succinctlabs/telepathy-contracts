@@ -1,7 +1,6 @@
 pragma solidity 0.8.14;
 
 import {Address, Bytes32} from "src/libraries/Typecast.sol";
-
 import {SourceAMB} from "../SourceAMB.sol";
 import {ITelepathyBroadcaster, Message, ITelepathyHandler} from "../interfaces/ITelepathy.sol";
 
