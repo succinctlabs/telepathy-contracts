@@ -2,25 +2,21 @@ pragma solidity 0.8.14;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
+import {RLPReader} from "@optimism-bedrock/rlp/RLPReader.sol";
+import {RLPWriter} from "@optimism-bedrock/rlp/RLPWriter.sol";
+import {MerkleTrie} from "@optimism-bedrock/trie/MerkleTrie.sol";
 
-import {MerklePatriciaProofVerifier} from "curve-merkle-oracle/MerklePatriciaProofVerifier.sol";
-import {StateProofVerifier} from "curve-merkle-oracle/StateProofVerifier.sol";
-import {RLPReader} from "Solidity-RLP/RLPReader.sol";
+import {StorageProof, EventProof} from "src/libraries/MerklePatriciaTree.sol";
 
-import {StateProofHelper} from "src/libraries/StateProofHelper.sol";
-
-contract StateProofHelperTest is Test {
+contract MerklePatriciaTreeTest is Test {
     using RLPReader for bytes;
     using RLPReader for RLPReader.RLPItem;
-    using RLPReader for RLPReader.Iterator;
 
-    function setUp() public {}
-
-    function testAccountProofOther() public pure {
+    function testAccountProof() public view {
         address contractAddress = 0x594bA7f22a52f58ba64a6093A2FC2e004b23A7BE;
-        bytes32 addressHash = keccak256(abi.encodePacked(contractAddress));
         bytes32 stateRootHash =
             bytes32(0x1e1bd10bda86dc06b5704afd26df271d80071b7fe385e6d9107f10c8a6998898);
+
         bytes[] memory _proof = new bytes[](8);
         _proof[0] =
             hex"f90211a061e4915040960a5caba3ba34c71ee1cd6246025f716dc830b76938510231947ba08d1388b6665a61f8e22048042c4971dfc5fb15616dfe5b3e861d4341dd9ba06ca05cb9358e68d13badc5797470b418418b09a40a473aa222b87406d45b97528651a038f4ee954f6b79b9923d7934b9312c892622829481f1a613528f33ac1ba35ab5a007dc3b73232d1bd092ebdb54e127115fea93f405cf855f3eda83c838d0984feba080799e3ea519a7ccb0003242ea7b6ed3b3b2d8a43cf8150870238c452236e312a0613366cb2ba78e13b3f5af2f3330cf8609b454890332a7116a2c7edf210a1a66a06383dce0b38dfe74744deb322f694725e4c3d9168b80b106c7b58f205c3810b3a03b40a8e9d01bdafa0884f8d8e77eabdb96eb29d400c63a20eeec8e5417fece5fa08dae6ae2dda6ae7a597320e452827cecbdbca83295813f9f0e3277cad5588109a0d1cb0d29d1133687e0c94dc464fa395729f585a976b1904a2b67c690941ab9c0a0e4698914a7fc1008bf2420e71113198b402ce47a6b03afad219d676354d4ea5ba07f64bdc7861fe27a9e93641f6350cad83ff5bd1f2734a7fa39dce768259ffa25a03d6c7959009086f025017ac53bd255c21a37a1518add912fd6e46931d666bef0a0cd49504a1899af46d782b900b004a61ba7e282e96595570f08f988c935b09136a0860509ddb51d1fd215f950d22f29d584b484294c84ec621ddd0702fc61c21de180";
@@ -39,26 +35,11 @@ contract StateProofHelperTest is Test {
         _proof[7] =
             hex"f8669d38e910ed8df3e2c058bed6f4fc4218ba17cb2db5170708067c11995321b846f8440180a08cccc66b89addd7131562996d3b2fff89ce775e940e44a3618cbdf62389549d3a0add804b4a1208bbc99f66d37e5917a1e9c01d95e10ade06ac19d07a535ea42ce";
 
-        RLPReader.RLPItem[] memory accountProof = new RLPReader.RLPItem[](8);
-        for (uint256 i = 0; i < 8; i++) {
-            accountProof[i] = RLPReader.toRlpItem(_proof[i]);
-        }
-
-        StateProofVerifier.Account memory account =
-            StateProofVerifier.extractAccountFromProof(addressHash, stateRootHash, accountProof);
-        require(account.exists, "Account does not exist");
-        require(
-            account.storageRoot
-                == 0x8cccc66b89addd7131562996d3b2fff89ce775e940e44a3618cbdf62389549d3
-        );
-        bytes32 storageRoot = StateProofHelper.getStorageRoot(
-            _proof, address(0x594bA7f22a52f58ba64a6093A2FC2e004b23A7BE), stateRootHash
-        );
+        bytes32 storageRoot = StorageProof.getStorageRoot(_proof, contractAddress, stateRootHash);
         require(storageRoot == 0x8cccc66b89addd7131562996d3b2fff89ce775e940e44a3618cbdf62389549d3);
     }
 
     function testReceiptProof() public view {
-        // This costs 102k gas
         bytes32 receiptsRoot = 0x05911bffdb32343df6d8af53971ade6b8959e1b06ad994715a8080524a2875d2;
         bytes memory key = hex"28";
         bytes[] memory proof = new bytes[](3);
@@ -68,30 +49,29 @@ contract StateProofHelperTest is Test {
             hex"f90211a01ae3959b059ad75342767a69756a715eaa78a197e8e50f05ca72d0a30c124623a0c506f11780d11f404615fd9b8d6469b894c864faee83e65dfe53432cbd8738c2a0edcfb8698c0c16908eddeeec015dc13d411567425ba8cca866029ce76c338ccea0ae070ce274ca2f45e789eb6b3ce73ff75862f1d1a486b89fd40c9af46ec5ecd0a0e25336ce8790d2e819346a186f64c7b6e5149c296d70974fe0e5590506274a0fa038fca8cb5118c4752c08aab2773377599fd3e903ebd095a6a4fd57cb54bb51cca018424f39f11e17dff48ed7a2ce79aa5534d0baf80e4243ed49afc09993d3e6b5a06034cd832ee0f9afa604e52dd36194afcfb490d6e0eec948279f13ca70f3f7a3a01de767efc90eaf623ba1d5e0590cffcdca7a46309d503859f6244e9b32c05cd7a06b1d893b5d8c89e8a4fdc7f78ef58330423581bc22d1475d0cc412b242fc3f4aa02e0fa09c622d4501e090b99bba2d6f3e73e1aba6c9d10c7fefe7d30387d6fee7a0a79b0390f680dd07adc82cec55240eab8da8393c53a291b7049b1b456315a210a01db287df72ab4378d8ad8176457d088f588611eff06b827b3c0d707b9f9228cca05f9c098db814b8531ed8ce9dc05551aa2731b31753af975265ea2eefd7d71c9ca02d960af158338798d676da70e5c93f08ab1364128e31c32b3ad748bd30f37e73a06b767cebaba781d29c0e85ebfe2a9318a44e8408cda2bfef3e299f9b08b6842d80";
         proof[2] =
             hex"f9050c20b9050802f905040184016ebfaeb901004000000000010000000000000100000000000200000000000000000000000000000080000000800000000000000000002000000000000000000000000020000000000000000000000000000c800000020000000000000000000000000000000040000000000000000000000000000200000000000000002000000010800000000000000000000000000000080000000000001080000000000000000000000100020000000004000000000000020000000000000000000000000000000000000000000002000000000001000001000020000000000000000000000000000000000018000000000000004000000000000000200000000000000400000000000000f903f8f89b9445cd94330ac3aea42cc21cf9315b745e27e768bdf863a08c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925a0000000000000000000000000c13410f2d4ebac009f78eaa8c496460263867c05a0000000000000000000000000e8a7f02499402a72532669fdcc8d70674351b23da00000000000000000000000000000000000000000000000000000000000000000f89b9445cd94330ac3aea42cc21cf9315b745e27e768bdf863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa0000000000000000000000000c13410f2d4ebac009f78eaa8c496460263867c05a0000000000000000000000000e8a7f02499402a72532669fdcc8d70674351b23da00000000000000000000000000000000000000000000000000000000000000002f901fd9468787ab0ca5a4a8cc82177b4e4f206765ce39956f863a069fba49bf5354b0f1c560ef32d7525874d05e65452e997b5556a9dedb5d7576fa0000000000000000000000000000000000000000000000000000000000000003aa03945f27c4f49fbcfa635ea64f6996759b49f07c8e1912494bce5ad187f99d53bb9018000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000003a000000000000000000000000e8a7f02499402a72532669fdcc8d70674351b23d0000000000000000000000005ae47c1ee4bef58291574dad5e11aece2f79e98b0000000000000000000000000000000000000000000000000000000000000064000000000000000000000000000000000000000000000000000000000000c35000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000060000000000000000000000000c13410f2d4ebac009f78eaa8c496460263867c05000000000000000000000000000000000000000000000000000000000000000200000000000000000000000045cd94330ac3aea42cc21cf9315b745e27e768bdf8bc94e8a7f02499402a72532669fdcc8d70674351b23df863a04e0b8b96097e818e136165437b47119a1f95ecfae8c068a60bd0a1394b238ef4a0000000000000000000000000c13410f2d4ebac009f78eaa8c496460263867c05a0000000000000000000000000c13410f2d4ebac009f78eaa8c496460263867c05b840000000000000000000000000000000000000000000000000000000000000000200000000000000000000000045cd94330ac3aea42cc21cf9315b745e27e768bd";
-        RLPReader.RLPItem[] memory proofAsRLP = new RLPReader.RLPItem[](proof.length);
-        for (uint256 i = 0; i < proof.length; i++) {
-            proofAsRLP[i] = RLPReader.toRlpItem(proof[i]);
-        }
-        bytes memory value =
-            MerklePatriciaProofVerifier.extractProofValue(receiptsRoot, key, proofAsRLP);
-        RLPReader.RLPItem memory valueAsItem = value.toRlpItem();
-        if (!valueAsItem.isList()) {
-            // TODO: why do we do this ...
-            valueAsItem.memPtr++;
-            valueAsItem.len--;
-        }
-        RLPReader.RLPItem[] memory valueAsList = valueAsItem.toList();
-        RLPReader.RLPItem[] memory logs = valueAsList[3].toList();
         uint256 logIndex = 2;
-        RLPReader.RLPItem[] memory relevantLog = logs[logIndex].toList();
-        console.logAddress(relevantLog[0].toAddress()); // this is the address of the emitting contract
-        RLPReader.RLPItem[] memory topics = relevantLog[1].toList();
-        console.logBytes(topics[0].toBytes()); // hash of the event signature
-        console.logBytes(topics[1].toBytes()); // nonce
-        console.logBytes(topics[2].toBytes()); // messageRoot
-        require(
-            bytes32(topics[0].toUintStrict()) == keccak256("SentMessage(uint256,bytes32,bytes)"),
-            "TruslessAMB: different event signature expected"
+        address claimedEmitter = 0x68787ab0Ca5A4a8CC82177B4E4f206765Ce39956;
+
+        bytes32 nonce = EventProof.getEventTopic(
+            proof,
+            receiptsRoot,
+            key,
+            logIndex,
+            claimedEmitter,
+            keccak256("SentMessage(uint256,bytes32,bytes)"),
+            1
         );
+        require(uint256(nonce) == 58);
+
+        bytes32 messageRoot = EventProof.getEventTopic(
+            proof,
+            receiptsRoot,
+            key,
+            logIndex,
+            claimedEmitter,
+            keccak256("SentMessage(uint256,bytes32,bytes)"),
+            2
+        );
+        require(messageRoot == 0x3945f27c4f49fbcfa635ea64f6996759b49f07c8e1912494bce5ad187f99d53b);
     }
 }
