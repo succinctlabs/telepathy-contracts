@@ -1,18 +1,30 @@
 pragma solidity 0.8.14;
 
+import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import {Bytes32} from "src/libraries/Typecast.sol";
 
 import {ITelepathyBroadcaster, Message} from "./interfaces/ITelepathy.sol";
+import {SourceAMBStorage} from "./SourceAMBStorage.sol";
 
 /// @title Telepathy Source Arbitrary Message Bridge
 /// @author Succinct Labs
-/// @notice This contract is the entrypoint for sending arbitrary messages to other chains.
-contract SourceAMB is ITelepathyBroadcaster {
-    /// @notice Mapping between a nonce and a message root.
-    mapping(uint256 => bytes32) public messages;
+/// @notice This contract is the entrypoint for making a cross-chain call.
+contract SourceAMB is
+    SourceAMBStorage,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    ITelepathyBroadcaster
+{
+    /// @notice Returns current contract version.
+    uint8 public constant VERSION = 1;
 
-    /// @notice Keeps track of the next nonce to be used.
-    uint256 public nonce = 1;
+    /// @notice Initializes the contract and the parent contracts once.
+    function initialize() external initializer {
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+    }
 
     /// @notice Sends a message to a target chain.
     /// @notice This method is more expensive than the `sendViaLog` method as it requires adding to
@@ -92,4 +104,7 @@ contract SourceAMB is ITelepathyBroadcaster {
         messageBytes = abi.encode(message);
         messageRoot = keccak256(messageBytes);
     }
+
+    /// @notice Authorizes an upgrade for the implementation contract.
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
