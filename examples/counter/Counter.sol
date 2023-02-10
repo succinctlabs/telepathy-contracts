@@ -1,8 +1,9 @@
 pragma solidity 0.8.14;
 
-import {ITelepathyHandler, ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
+import {ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
+import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
 
-contract Counter is ITelepathyHandler {
+contract Counter is TelepathyHandler {
     // We put together the sending the recieving counters instead of
     // separating them out for ease of use.
 
@@ -10,16 +11,16 @@ contract Counter is ITelepathyHandler {
     ITelepathyBroadcaster broadcaster;
     mapping(uint16 => address) public otherSideCounterMap;
     address otherSideCounter;
-    address telepathyReceiver;
 
     event Incremented(uint256 indexed nonce, uint16 indexed chainId);
 
-    constructor(ITelepathyBroadcaster _broadcaster, address _counter, address _telepathyReceiver) {
+    constructor(ITelepathyBroadcaster _broadcaster, address _counter, address _telepathyReceiver)
+        TelepathyHandler(_telepathyReceiver)
+    {
         // Only relevant for controlling counter
         broadcaster = _broadcaster;
         // This is only relevant for the recieving counter
         otherSideCounter = _counter;
-        telepathyReceiver = _telepathyReceiver;
         nonce = 1;
     }
 
@@ -51,11 +52,6 @@ contract Counter is ITelepathyHandler {
 
     // Receiving counter functions
 
-    /// @notice Set the address of the Telepathy Receiver contract
-    function setTelepathyReceiver(address _telepathyReceiver) external {
-        telepathyReceiver = _telepathyReceiver;
-    }
-
     function setOtherSideCounter(address _counter) external {
         otherSideCounter = _counter;
     }
@@ -63,8 +59,10 @@ contract Counter is ITelepathyHandler {
     /// @notice handleTelepathy is called by the Telepathy Receiver when a message is executed
     /// @dev We do not enforce any checks on the `_srcChainId` since we want to allow the counter
     /// to receive messages from any chain
-    function handleTelepathy(uint16, address _senderAddress, bytes memory _data) external {
-        require(msg.sender == telepathyReceiver);
+    function handleTelepathy(uint16, address _senderAddress, bytes memory _data)
+        internal
+        override
+    {
         require(_senderAddress == otherSideCounter);
         (uint256 _nonce) = abi.decode(_data, (uint256));
         nonce = _nonce;

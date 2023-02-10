@@ -97,7 +97,7 @@ contract MockTelepathy is ITelepathyBroadcaster {
     function _executeMessage(Message memory message) public returns (bool) {
         bool status;
         bytes memory receiveCall = abi.encodeWithSelector(
-            ITelepathyHandler.handleTelepathy.selector,
+            ITelepathyHandler.rawHandleTelepathy.selector,
             message.sourceChainId,
             message.senderAddress,
             message.data
