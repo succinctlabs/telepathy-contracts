@@ -5,11 +5,10 @@ import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
 import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
-
 import {MessageStatus, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
 import {TargetAMB} from "src/amb/TargetAMB.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
-
+import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {LightClientMock} from "./LightClientMock.sol";
 import {SimpleHandler} from "./TargetAMB.t.sol";
 
@@ -58,7 +57,12 @@ contract TargetAMBTest is Test {
         vm.chainId(testParams.DEST_CHAIN);
 
         // First initialize the TargetAMB using the deployed SourceAMB
-        targetAMB = new TargetAMB(address(lightClientMock), testParams.sourceAMBAddress);
+        TargetAMB targetAMBImplementation = new TargetAMB();
+
+        UUPSProxy proxy = new UUPSProxy(address(targetAMBImplementation), "");
+
+        targetAMB = TargetAMB(address(proxy));
+        targetAMB.initialize(address(lightClientMock), testParams.sourceAMBAddress);
 
         // Then initialize the contract that will be called by the TargetAMB
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();

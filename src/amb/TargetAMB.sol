@@ -1,13 +1,18 @@
 pragma solidity 0.8.14;
 
-import {ReentrancyGuard} from "openzeppelin-contracts/security/ReentrancyGuard.sol";
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from
+    "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {RLPReader} from "Solidity-RLP/RLPReader.sol";
+
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {StorageProof, EventProof} from "src/libraries/MerklePatriciaTree.sol";
 import {Address} from "src/libraries/Typecast.sol";
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
+
+import {TargetAMBStorage} from "./TargetAMBStorage.sol";
 import {
     ITelepathyReceiver,
     Message,
@@ -19,11 +24,20 @@ import {
 /// @title Telepathy Target Arbitrary Message Bridge
 /// @author Succinct Labs
 /// @notice Executes the messages sent from the source chain on the target chain.
-contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
+contract TargetAMB is
+    TargetAMBStorage,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    ReentrancyGuardUpgradeable,
+    ITelepathyReceiver
+{
     using RLPReader for RLPReader.RLPItem;
 
+    /// @notice Returns current contract version.
+    uint8 public constant VERSION = 1;
+
     /// @notice The minimum delay for using any information from the light client.
-    uint256 public immutable MIN_LIGHT_CLIENT_DELAY = 60 * 5;
+    uint256 public constant MIN_LIGHT_CLIENT_DELAY = 60 * 5;
 
     /// @notice The ITelepathyBroadcaster SentMessage event signature used in `executeMessageFromLog`.
     bytes32 internal constant SENT_MESSAGE_EVENT_SIG =
@@ -34,21 +48,14 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
     ///      the topic index of msgHash is 2.
     uint256 internal constant MSG_HASH_TOPIC_IDX = 2;
 
-    /// @notice The reference light client contract.
-    ILightClient public lightClient;
-
-    /// @notice Mapping between a message root and its status.
-    mapping(bytes32 => MessageStatus) public messageStatus;
-
-    /// @notice Address of the Telepathy broadcaster on the source chain.
-    address public broadcaster;
-
-    /// @notice Whether or not the contract is frozen.
-    bool public frozen = false;
-
-    constructor(address _lightClient, address _broadcaster) {
+    /// @notice Initializes the contract and the parent contracts once.
+    function initialize(address _lightClient, address _broadcaster) external initializer {
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         lightClient = ILightClient(_lightClient);
         broadcaster = _broadcaster;
+        frozen = false;
     }
 
     modifier lightClientConsistent() {
@@ -205,4 +212,7 @@ contract TargetAMB is ITelepathyReceiver, ReentrancyGuard, Ownable {
 
         emit ExecutedMessage(message.nonce, messageRoot, messageBytes, status);
     }
+
+    /// @notice Authorizes an upgrade for the implementation contract.
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
