@@ -5,7 +5,8 @@ import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 
-import {ITelepathyBroadcaster, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
+import {ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
+import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
 
 contract CrossChainTWAPBroadcast {
     ITelepathyBroadcaster broadcaster;
@@ -63,23 +64,25 @@ contract CrossChainTWAPBroadcast {
     }
 }
 
-contract CrossChainTWAPReceiver is ITelepathyHandler {
+contract CrossChainTWAPReceiver is TelepathyHandler {
     uint16 srcChainId;
     address sourceAddress;
-    address deliveringAMB;
 
     mapping(bytes32 => uint256) public priceMap;
     mapping(bytes32 => uint256) public timestampMap;
 
-    constructor(uint16 _srcChainId, address _sourceAddress, address _deliveringAMB) {
+    constructor(uint16 _srcChainId, address _sourceAddress, address _telepathyReceiver)
+        TelepathyHandler(_telepathyReceiver)
+    {
         srcChainId = _srcChainId;
         sourceAddress = _sourceAddress;
-        deliveringAMB = _deliveringAMB;
     }
 
-    function handleTelepathy(uint16 _srcChainId, address sender, bytes memory data) external {
+    function handleTelepathy(uint16 _srcChainId, address sender, bytes memory data)
+        internal
+        override
+    {
         require(_srcChainId == srcChainId);
-        require(msg.sender == deliveringAMB);
         require(sender == sourceAddress);
         (address poolAddress, uint32 twapInterval, uint256 timestamp, uint256 priceX96) =
             abi.decode(data, (address, uint32, uint256, uint256));

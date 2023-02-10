@@ -3,7 +3,10 @@ pragma solidity 0.8.14;
 
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
-import {ITelepathyHandler, ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
+
+import {ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
+import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
+
 import "./Tokens.sol";
 
 contract Deposit is Ownable {
@@ -70,9 +73,8 @@ contract Deposit is Ownable {
     }
 }
 
-contract Withdraw is Ownable, ITelepathyHandler {
+contract Withdraw is Ownable, TelepathyHandler {
     address depositAddress;
-    address telepathyReceiver;
     uint16 sourceChainId;
     /// @notice the token that will be transferred to the recipient
     IERC20Ownable public token;
@@ -89,9 +91,10 @@ contract Withdraw is Ownable, ITelepathyHandler {
     /// @param _depositAddress the address of the deposit contract on the source chain
     /// @param _telepathyReceiver the address of the telepathy receiver contract on this chain that can call `handleTelepathy`
     /// @param _sourceChainId the chain id of the source chain where deposits are being made
-    constructor(address _depositAddress, address _telepathyReceiver, uint16 _sourceChainId) {
+    constructor(address _depositAddress, address _telepathyReceiver, uint16 _sourceChainId)
+        TelepathyHandler(_telepathyReceiver)
+    {
         depositAddress = _depositAddress;
-        telepathyReceiver = _telepathyReceiver;
         sourceChainId = _sourceChainId;
         token = new Succincts();
         uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
@@ -99,10 +102,10 @@ contract Withdraw is Ownable, ITelepathyHandler {
         token.mint(address(this), MAX_INT);
     }
 
-    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes calldata _data)
-        public
+    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+        internal
+        override
     {
-        require(msg.sender == telepathyReceiver, "Only Telepathy Receiver can call this function");
         require(
             _senderAddress == depositAddress,
             "Only deposit address can trigger a message call to this contract."
