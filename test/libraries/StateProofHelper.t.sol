@@ -6,13 +6,13 @@ import {RLPReader} from "@optimism-bedrock/rlp/RLPReader.sol";
 import {RLPWriter} from "@optimism-bedrock/rlp/RLPWriter.sol";
 import {MerkleTrie} from "@optimism-bedrock/trie/MerkleTrie.sol";
 
-import {StorageProof, EventProof} from "src/libraries/MerklePatriciaTree.sol";
+import {StorageProof, EventProof} from "src/libraries/StateProofHelper.sol";
 
-contract MerklePatriciaTreeTest is Test {
+contract StateProofHelperTest is Test {
     using RLPReader for bytes;
     using RLPReader for RLPReader.RLPItem;
 
-    function testAccountProof() public view {
+    function testAccountProof() public pure {
         address contractAddress = 0x594bA7f22a52f58ba64a6093A2FC2e004b23A7BE;
         bytes32 stateRootHash =
             bytes32(0x1e1bd10bda86dc06b5704afd26df271d80071b7fe385e6d9107f10c8a6998898);
@@ -39,7 +39,7 @@ contract MerklePatriciaTreeTest is Test {
         require(storageRoot == 0x8cccc66b89addd7131562996d3b2fff89ce775e940e44a3618cbdf62389549d3);
     }
 
-    function testReceiptProof() public view {
+    function testReceiptProof() public pure {
         bytes32 receiptsRoot = 0x05911bffdb32343df6d8af53971ade6b8959e1b06ad994715a8080524a2875d2;
         bytes memory key = hex"28";
         bytes[] memory proof = new bytes[](3);
