@@ -23,10 +23,11 @@ contract SimpleHandler is ITelepathyHandler {
         targetAMB = _targetAMB;
     }
 
-    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+    function rawHandleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
         external
+        override
     {
-        require(msg.sender == targetAMB, "Invalid sender");
+        require(msg.sender == targetAMB, "Only TargetAMB can call this function");
         require(_sourceChainId == sourceChain, "Invalid source chain id");
         require(_senderAddress == sourceAddress, "Invalid source address");
         nonceToDataHash[nonce++] = keccak256(_data);

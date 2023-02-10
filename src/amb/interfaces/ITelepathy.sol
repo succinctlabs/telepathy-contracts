@@ -1,4 +1,4 @@
-pragma solidity 0.8.14;
+pragma solidity ^0.8.0;
 
 import "src/lightclient/interfaces/ILightClient.sol";
 
@@ -61,6 +61,6 @@ interface ITelepathyReceiver {
 }
 
 interface ITelepathyHandler {
-    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+    function rawHandleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
         external;
 }
