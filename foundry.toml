@@ -1,10 +1,9 @@
 [profile.default]
-src = 'src'
+src = 'examples'
 out = 'out'
 libs = ['lib']
 solc_version = "0.8.14"
 verbosity = 3
-src = 'examples'
 fs_permissions = [{ access = "read-write", path = "./"}]
 
 # https://book.getfoundry.sh/reference/config/formatter#line_length
