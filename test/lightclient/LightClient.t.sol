@@ -4,13 +4,13 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
+import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {
     LightClient,
     Groth16Proof,
     LightClientStep,
     LightClientRotate
 } from "src/lightclient/LightClient.sol";
-import {SSZ} from "src/libraries/SimpleSerialize.sol";
 
 contract LightClientTest is Test {
     LightClient lc;
@@ -34,6 +34,7 @@ contract LightClientTest is Test {
             syncCommitteePeriod,
             syncCommitteePoseidon
         );
+
         vm.warp(9999999999999);
     }
 
