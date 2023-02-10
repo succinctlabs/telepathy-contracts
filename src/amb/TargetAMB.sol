@@ -7,7 +7,7 @@ import {ReentrancyGuardUpgradeable} from
 import {RLPReader} from "Solidity-RLP/RLPReader.sol";
 
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
-import {StorageProof, EventProof} from "src/libraries/MerklePatriciaTree.sol";
+import {StorageProof, EventProof} from "src/libraries/StateProofHelper.sol";
 import {Address} from "src/libraries/Typecast.sol";
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
