@@ -62,7 +62,7 @@ contract TargetAMBTest is Test {
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImplementation), "");
 
         targetAMB = TargetAMB(address(proxy));
-        targetAMB.initialize(address(lightClientMock), testParams.sourceAMBAddress);
+        targetAMB.initialize(address(lightClientMock), testParams.sourceAMBAddress, address(this));
 
         // Then initialize the contract that will be called by the TargetAMB
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();

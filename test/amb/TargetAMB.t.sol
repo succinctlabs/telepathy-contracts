@@ -53,6 +53,16 @@ contract TargetAMBTest is Test {
 
     function setUp() public {
         lightClientMock = new LightClientMock();
+        address lightClientAddress = address(lightClientMock);
+        address sourceAMBAddress = 0x42793dF05c085187E20aa99104A4E67e21823880;
+
+        TargetAMB targetAMBImplementation = new TargetAMB();
+        UUPSProxy proxy = new UUPSProxy(address(targetAMBImplementation), "");
+
+        targetAMB = TargetAMB(address(proxy));
+        targetAMB.initialize(lightClientAddress, sourceAMBAddress, address(this));
+
+        vm.chainId(100);
     }
 
     function getDefaultExecuteMessageParams() internal pure returns (ExecuteMessageTest memory) {
@@ -116,7 +126,7 @@ contract TargetAMBTest is Test {
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImplementation), "");
 
         targetAMB = TargetAMB(address(proxy));
-        targetAMB.initialize(address(lightClientMock), testParams.sourceAMBAddress);
+        targetAMB.initialize(address(lightClientMock), testParams.sourceAMBAddress, address(this));
 
         // Then initialize the contract that will be called by the TargetAMB
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();

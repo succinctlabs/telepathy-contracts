@@ -49,7 +49,7 @@ contract SourceAMBUpgradeableTest is Test {
         proxy = new UUPSProxy(address(sourceAMBImplementation), "");
 
         wrappedSourceAMBProxy = SourceAMB(address(proxy));
-        wrappedSourceAMBProxy.initialize();
+        wrappedSourceAMBProxy.initialize(address(this));
 
         setUpTimelock();
     }

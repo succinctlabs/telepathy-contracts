@@ -11,7 +11,6 @@ import {StorageProof, EventProof} from "src/libraries/StateProofHelper.sol";
 import {Address} from "src/libraries/Typecast.sol";
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-
 import {TargetAMBStorage} from "./TargetAMBStorage.sol";
 import {
     ITelepathyReceiver,
@@ -49,10 +48,14 @@ contract TargetAMB is
     uint256 internal constant MSG_HASH_TOPIC_IDX = 2;
 
     /// @notice Initializes the contract and the parent contracts once.
-    function initialize(address _lightClient, address _broadcaster) external initializer {
+    function initialize(address _lightClient, address _broadcaster, address _owner)
+        external
+        initializer
+    {
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        transferOwnership(_owner);
         lightClient = ILightClient(_lightClient);
         broadcaster = _broadcaster;
         frozen = false;
