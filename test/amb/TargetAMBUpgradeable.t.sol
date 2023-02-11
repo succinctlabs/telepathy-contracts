@@ -54,7 +54,7 @@ contract TargetAMBUpgradeableTest is Test {
         proxy = new UUPSProxy(address(sourceAMBImplementation), "");
 
         wrappedTargetAMBProxy = TargetAMB(address(proxy));
-        wrappedTargetAMBProxy.initialize(lightClientAddress, sourceAMBAddress);
+        wrappedTargetAMBProxy.initialize(lightClientAddress, sourceAMBAddress, address(this));
 
         setUpTimelock();
     }

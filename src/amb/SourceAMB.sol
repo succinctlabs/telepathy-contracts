@@ -4,7 +4,6 @@ import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UU
 import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {Bytes32} from "src/libraries/Typecast.sol";
-
 import {ITelepathyBroadcaster, Message} from "./interfaces/ITelepathy.sol";
 import {SourceAMBStorage} from "./SourceAMBStorage.sol";
 
@@ -21,9 +20,10 @@ contract SourceAMB is
     uint8 public constant VERSION = 1;
 
     /// @notice Initializes the contract and the parent contracts once.
-    function initialize() external initializer {
+    function initialize(address owner) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
+        transferOwnership(owner);
     }
 
     /// @notice Sends a message to a target chain.

@@ -15,7 +15,7 @@ contract SourceAMBTest is Test {
         UUPSProxy proxy = new UUPSProxy(address(sourceAMBImplementation), "");
 
         wrappedSourceAMBProxy = SourceAMB(address(proxy));
-        wrappedSourceAMBProxy.initialize();
+        wrappedSourceAMBProxy.initialize(address(this));
     }
 
     function testSend() public {
