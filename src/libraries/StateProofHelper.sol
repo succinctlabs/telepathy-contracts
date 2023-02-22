@@ -47,21 +47,33 @@ library EventProof {
         uint256 topicIndex
     ) internal pure returns (bytes32) {
         bytes memory value = MerkleTrie.get(key, proof, receiptRoot);
-        RLPReader.RLPItem memory valueAsItem = value.toRLPItem();
+        bytes1 txTypeOrFirstByte = value[0];
 
-        // The first byte is a designator for the transaction type, so first we validate the txType.
-        // Reference: https://eips.ethereum.org/EIPS/eip-2718
-        uint256 ptr = RLPReader.MemoryPointer.unwrap(valueAsItem.ptr);
-        bytes memory txType = new bytes(1);
-        assembly {
-            mstore(add(txType, 32), mload(ptr))
+        // Currently, there are three possible transaction types on Ethereum. Receipts either come
+        // in the form "TransactionType | ReceiptPayload" or "ReceiptPayload". The currently
+        // supported set of transaction types are 0x01 and 0x02. In this case, we must truncate
+        // the first byte to access the payload. To detect the other case, we can use the fact
+        // that the first byte of a RLP-encoded list will always be greater than 0xc0.
+        // Reference 1: https://eips.ethereum.org/EIPS/eip-2718
+        // Reference 2: https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp
+        uint256 offset;
+        if (txTypeOrFirstByte == 0x01 || txTypeOrFirstByte == 0x02) {
+            offset = 1;
+        } else if (txTypeOrFirstByte >= 0xc0) {
+            offset = 0;
+        } else {
+            revert("Unsupported transaction type");
         }
-        require(bytes1(txType) == 0x02 || bytes1(txType) == 0x01);
 
-        // Then we truncate the first byte to get the RLP of the receipt.
-        valueAsItem.ptr =
-            RLPReader.MemoryPointer.wrap(RLPReader.MemoryPointer.unwrap(valueAsItem.ptr) + 1);
-        valueAsItem.length--;
+        // Truncate the first byte if eneded and get the RLP decoding of the receipt.
+        uint256 ptr;
+        assembly {
+            ptr := add(value, 32)
+        }
+        RLPReader.RLPItem memory valueAsItem = RLPReader.RLPItem({
+            length: value.length - offset,
+            ptr: RLPReader.MemoryPointer.wrap(ptr + offset)
+        });
 
         // The length of the receipt must be at least four, as the fourth entry contains events
         RLPReader.RLPItem[] memory valueAsList = valueAsItem.readList();
