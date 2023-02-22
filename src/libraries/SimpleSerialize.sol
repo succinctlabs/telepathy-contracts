@@ -1,4 +1,4 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 struct BeaconBlockHeader {
     uint64 slot;
@@ -12,13 +12,17 @@ library SSZ {
     uint256 internal constant HISTORICAL_ROOTS_LIMIT = 16777216;
     uint256 internal constant SLOTS_PER_HISTORICAL_ROOT = 8192;
 
-    function toLittleEndian(uint256 x) internal pure returns (bytes32) {
-        bytes32 res;
-        for (uint256 i = 0; i < 32; i++) {
-            res = (res << 8) | bytes32(x & 0xff);
-            x >>= 8;
-        }
-        return res;
+    function toLittleEndian(uint256 v) internal pure returns (bytes32) {
+        v = ((v & 0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >> 8)
+            | ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
+        v = ((v & 0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >> 16)
+            | ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
+        v = ((v & 0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >> 32)
+            | ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
+        v = ((v & 0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >> 64)
+            | ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
+        v = (v >> 128) | (v << 128);
+        return bytes32(v);
     }
 
     function restoreMerkleRoot(bytes32 leaf, uint256 index, bytes32[] memory branch)
@@ -26,13 +30,17 @@ library SSZ {
         pure
         returns (bytes32)
     {
+        require(2 ** (branch.length + 1) > index);
         bytes32 value = leaf;
-        for (uint256 i = 0; i < branch.length; i++) {
-            if ((index / (2 ** i)) % 2 == 1) {
+        uint256 i = 0;
+        while (index != 1) {
+            if (index % 2 == 1) {
                 value = sha256(bytes.concat(branch[i], value));
             } else {
                 value = sha256(bytes.concat(value, branch[i]));
             }
+            index /= 2;
+            i++;
         }
         return value;
     }

@@ -1,4 +1,4 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import {TimelockController} from "openzeppelin-contracts/governance/TimelockController.sol";
 
@@ -17,9 +17,4 @@ contract Timelock is TimelockController {
         address[] memory executors,
         address admin
     ) TimelockController(minDelay, proposers, executors, admin) {}
-
-    /// @inheritdoc TimelockController
-    function _execute(address target, uint256 value, bytes calldata data) internal override {
-        (bool success,) = target.call{value: value}(data);
-    }
 }

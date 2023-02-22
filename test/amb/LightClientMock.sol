@@ -1,4 +1,4 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 // We must import X as Y so that ILightClient doesn't conflict when we try to import
 // both LightClientMock and TargetAMB in the same test file.

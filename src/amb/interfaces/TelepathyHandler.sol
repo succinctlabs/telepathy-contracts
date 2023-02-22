@@ -13,17 +13,19 @@ abstract contract TelepathyHandler is ITelepathyHandler {
         _telepathyReceiever = telepathyReceiever;
     }
 
-    function rawHandleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathy(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
         external
         override
+        returns (bytes4)
     {
         if (msg.sender != _telepathyReceiever) {
             revert NotFromTelepathyReceiever(msg.sender);
         }
-        handleTelepathy(_sourceChainId, _senderAddress, _data);
+        handleTelepathyImpl(_sourceChainId, _senderAddress, _data);
+        return ITelepathyHandler.handleTelepathy.selector;
     }
 
-    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathyImpl(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
         internal
         virtual;
 }
@@ -37,17 +39,19 @@ abstract contract TelepathyHandlerUpgradeable is ITelepathyHandler, Initializabl
         _telepathyReceiever = telepathyReceiever;
     }
 
-    function rawHandleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathy(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
         external
         override
+        returns (bytes4)
     {
         if (msg.sender != _telepathyReceiever) {
             revert NotFromTelepathyReceiever(msg.sender);
         }
-        handleTelepathy(_sourceChainId, _senderAddress, _data);
+        handleTelepathyImpl(_sourceChainId, _senderAddress, _data);
+        return ITelepathyHandler.handleTelepathy.selector;
     }
 
-    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathyImpl(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
         internal
         virtual;
 }

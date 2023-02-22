@@ -1,4 +1,4 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "forge-std/Vm.sol";
 import "forge-std/console.sol";
@@ -6,11 +6,11 @@ import "forge-std/Test.sol";
 
 import {MockTelepathy} from "src/amb/mocks/MockAMB.sol";
 
-import "./uniswap.sol";
+import "./Uniswap.sol";
 
 contract UniswapTWAPTest is Test {
-    uint16 constant SOURCE_CHAIN = 1;
-    uint16 constant DEST_CHAIN = 100;
+    uint32 constant SOURCE_CHAIN = 1;
+    uint32 constant DEST_CHAIN = 100;
 
     MockTelepathy broadcaster;
     MockTelepathy receiver;
@@ -26,7 +26,7 @@ contract UniswapTWAPTest is Test {
         twapSender = new CrossChainTWAPBroadcast(address(broadcaster));
         twapReceiver =
             new CrossChainTWAPReceiver(SOURCE_CHAIN, address(twapSender), address(receiver));
-        twapSender.setDeliveringContract(uint16(DEST_CHAIN), address(twapReceiver));
+        twapSender.setDeliveringContract(uint32(DEST_CHAIN), address(twapReceiver));
     }
 
     function testUniswapBroadcast() public {

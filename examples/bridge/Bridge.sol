@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
@@ -21,7 +21,7 @@ contract Deposit is Ownable {
         address indexed recipient,
         uint256 amount,
         address tokenAddress,
-        uint16 chainId
+        uint32 chainId
     );
 
     constructor(address _broadcaster, address _depositToken) {
@@ -42,7 +42,7 @@ contract Deposit is Ownable {
     /// @param tokenAddress the address of the ERC20 token to deposit. This token address currently
     /// must match `depositToken` in the constructor but in the future we can support multiple tokens
     /// @param chainId the chain id of the destination chain
-    function deposit(address recipient, uint256 amount, address tokenAddress, uint16 chainId)
+    function deposit(address recipient, uint256 amount, address tokenAddress, uint32 chainId)
         external
         payable
         virtual
@@ -75,7 +75,7 @@ contract Deposit is Ownable {
 
 contract Withdraw is Ownable, TelepathyHandler {
     address depositAddress;
-    uint16 sourceChainId;
+    uint32 sourceChainId;
     /// @notice the token that will be transferred to the recipient
     IERC20Ownable public token;
 
@@ -91,7 +91,7 @@ contract Withdraw is Ownable, TelepathyHandler {
     /// @param _depositAddress the address of the deposit contract on the source chain
     /// @param _telepathyReceiver the address of the telepathy receiver contract on this chain that can call `handleTelepathy`
     /// @param _sourceChainId the chain id of the source chain where deposits are being made
-    constructor(address _depositAddress, address _telepathyReceiver, uint16 _sourceChainId)
+    constructor(address _depositAddress, address _telepathyReceiver, uint32 _sourceChainId)
         TelepathyHandler(_telepathyReceiver)
     {
         depositAddress = _depositAddress;
@@ -102,7 +102,7 @@ contract Withdraw is Ownable, TelepathyHandler {
         token.mint(address(this), MAX_INT);
     }
 
-    function handleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathyImpl(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
         internal
         override
     {
