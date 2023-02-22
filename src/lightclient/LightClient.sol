@@ -94,7 +94,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     function step(LightClientStep memory update) external {
         bool finalized = processStep(update);
 
-        if (getCurrentSlot() < update.finalizedSlot) {
+        if (getCurrentSlot() < update.attestedSlot) {
             revert("Update slot is too far in the future");
         }
 
@@ -109,8 +109,6 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
 
     /// @notice Sets the sync committee for the next sync committeee period.
     /// @dev A commitment to the the next sync committeee is signed by the current sync committee.
-    ///      In the case there is no finalization, we will keep track of the best optimistic update
-    ///      and then resolve at the end of the period.
     function rotate(LightClientRotate memory update) external {
         LightClientStep memory stepUpdate = update.step;
         bool finalized = processStep(update.step);
@@ -126,7 +124,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
 
     /// @notice Verifies that the header has enough signatures for finality.
     function processStep(LightClientStep memory update) internal view returns (bool) {
-        uint256 currentPeriod = getSyncCommitteePeriod(update.finalizedSlot);
+        uint256 currentPeriod = getSyncCommitteePeriod(update.attestedSlot);
 
         if (syncCommitteePoseidons[currentPeriod] == 0) {
             revert("Sync committee for current period is not initialized.");
@@ -144,7 +142,7 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         bytes32 attestedSlotLE = SSZ.toLittleEndian(update.attestedSlot);
         bytes32 finalizedSlotLE = SSZ.toLittleEndian(update.finalizedSlot);
         bytes32 participationLE = SSZ.toLittleEndian(update.participation);
-        uint256 currentPeriod = getSyncCommitteePeriod(update.finalizedSlot);
+        uint256 currentPeriod = getSyncCommitteePeriod(update.attestedSlot);
         bytes32 syncCommitteePoseidon = syncCommitteePoseidons[currentPeriod];
 
         bytes32 h;
