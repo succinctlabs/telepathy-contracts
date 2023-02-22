@@ -4,14 +4,6 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
-[submodule "lib/Solidity-RLP"]
-	path = lib/Solidity-RLP
-	url = https://github.com/succinctlabs/Solidity-RLP
-	branch = master
-[submodule "lib/curve-merkle-oracle"]
-	path = lib/curve-merkle-oracle
-	url = https://github.com/succinctlabs/curve-merkle-oracle
-	branch = main
 [submodule "lib/v3-core"]
 	path = lib/v3-core
 	url = https://github.com/succinctlabs/v3-core

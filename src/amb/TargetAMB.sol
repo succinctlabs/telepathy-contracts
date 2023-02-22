@@ -1,75 +1,41 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
-import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from
     "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {RLPReader} from "Solidity-RLP/RLPReader.sol";
 
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {StorageProof, EventProof} from "src/libraries/StateProofHelper.sol";
 import {Address} from "src/libraries/Typecast.sol";
+import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
 
-import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-import {TargetAMBStorage} from "./TargetAMBStorage.sol";
+import {TelepathyStorage} from "./TelepathyStorage.sol";
 import {
+    ITelepathyHandler,
     ITelepathyReceiver,
     Message,
-    MessageStatus,
-    ITelepathyHandler,
-    ITelepathyBroadcaster
+    MessageStatus
 } from "./interfaces/ITelepathy.sol";
 
-/// @title Telepathy Target Arbitrary Message Bridge
+/// @title Target Arbitrary Message Bridge
 /// @author Succinct Labs
-/// @notice Executes the messages sent from the source chain on the target chain.
-contract TargetAMB is
-    TargetAMBStorage,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    ReentrancyGuardUpgradeable,
-    ITelepathyReceiver
-{
-    using RLPReader for RLPReader.RLPItem;
-
-    /// @notice Returns current contract version.
-    uint8 public constant VERSION = 1;
-
+/// @notice Executes messages sent from the source chain on the target chain.
+contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyReceiver {
     /// @notice The minimum delay for using any information from the light client.
     uint256 public constant MIN_LIGHT_CLIENT_DELAY = 60 * 5;
 
     /// @notice The ITelepathyBroadcaster SentMessage event signature used in `executeMessageFromLog`.
     bytes32 internal constant SENT_MESSAGE_EVENT_SIG =
-        keccak256("SentMessage(uint256,bytes32,bytes)");
+        keccak256("SentMessage(uint64,bytes32,bytes)");
 
     /// @notice The topic index of the message root in the SourceAMB SentMessage event.
     /// @dev Because topic[0] is the hash of the event signature (`SENT_MESSAGE_EVENT_SIG` above),
     ///      the topic index of msgHash is 2.
     uint256 internal constant MSG_HASH_TOPIC_IDX = 2;
 
-    /// @notice Initializes the contract and the parent contracts once.
-    function initialize(address _lightClient, address _broadcaster, address _owner)
-        external
-        initializer
-    {
-        __Ownable_init();
-        __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();
-        transferOwnership(_owner);
-        lightClient = ILightClient(_lightClient);
-        broadcaster = _broadcaster;
-        frozen = false;
-    }
-
-    modifier lightClientConsistent() {
-        require(lightClient.consistent(), "Light client is inconsistent.");
-        _;
-    }
-
-    modifier notFrozen() {
-        require(!frozen, "Contract is frozen.");
-        _;
-    }
+    /// @notice The index of the `messages` mapping in TelepathyStorage.sol.
+    /// @dev We need this when calling `executeMessage` via storage proofs, as it is used in
+    /// getting the slot key.
+    uint256 internal constant MESSAGES_MAPPING_STORAGE_INDEX = 1;
 
     /// @notice Executes a message given a storage proof.
     /// @param slot Specifies which execution state root should be read from the light client.
@@ -81,15 +47,21 @@ contract TargetAMB is
         bytes calldata messageBytes,
         bytes[] calldata accountProof,
         bytes[] calldata storageProof
-    ) external nonReentrant lightClientConsistent notFrozen {
+    ) external nonReentrant {
         (Message memory message, bytes32 messageRoot) = _checkPreconditions(messageBytes);
+        requireLightClientConsistency(message.sourceChainId);
+        requireNotFrozen(message.sourceChainId);
 
         {
-            _requireLightClientDelay(slot);
-            bytes32 executionStateRoot = lightClient.executionStateRoots(slot);
-            bytes32 storageRoot =
-                StorageProof.getStorageRoot(accountProof, broadcaster, executionStateRoot);
-            bytes32 slotKey = keccak256(abi.encode(keccak256(abi.encode(message.nonce, 0))));
+            requireLightClientDelay(slot, message.sourceChainId);
+            bytes32 executionStateRoot =
+                lightClients[message.sourceChainId].executionStateRoots(slot);
+            bytes32 storageRoot = StorageProof.getStorageRoot(
+                accountProof, broadcasters[message.sourceChainId], executionStateRoot
+            );
+            bytes32 slotKey = keccak256(
+                abi.encode(keccak256(abi.encode(message.nonce, MESSAGES_MAPPING_STORAGE_INDEX)))
+            );
             uint256 slotValue = StorageProof.getStorageValue(slotKey, storageRoot, storageProof);
 
             if (bytes32(slotValue) != messageRoot) {
@@ -116,19 +88,21 @@ contract TargetAMB is
         bytes[] calldata receiptProof,
         bytes memory txIndexRLPEncoded,
         uint256 logIndex
-    ) external nonReentrant lightClientConsistent notFrozen {
+    ) external nonReentrant {
         // Verify receiptsRoot against header from light client
+        (Message memory message, bytes32 messageRoot) = _checkPreconditions(messageBytes);
+        requireLightClientConsistency(message.sourceChainId);
+        requireNotFrozen(message.sourceChainId);
+
         {
             (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
-            _requireLightClientDelay(srcSlot);
-            bytes32 headerRoot = lightClient.headers(srcSlot);
-            require(headerRoot != bytes32(0), "Header root is missing");
+            requireLightClientDelay(srcSlot, message.sourceChainId);
+            bytes32 headerRoot = lightClients[message.sourceChainId].headers(srcSlot);
+            require(headerRoot != bytes32(0), "TargetAMB: headerRoot is missing");
             bool isValid =
                 SSZ.verifyReceiptsRoot(receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot);
             require(isValid, "Invalid receipts root proof");
         }
-
-        (Message memory message, bytes32 messageRoot) = _checkPreconditions(messageBytes);
 
         {
             // TODO maybe we can save calldata by passing in the txIndex as a uint and rlp encode it
@@ -139,7 +113,7 @@ contract TargetAMB is
                     receiptsRoot,
                     txIndexRLPEncoded,
                     logIndex,
-                    broadcaster,
+                    broadcasters[message.sourceChainId],
                     SENT_MESSAGE_EVENT_SIG,
                     MSG_HASH_TOPIC_IDX
                 )
@@ -150,23 +124,19 @@ contract TargetAMB is
         _executeMessage(message, messageRoot, messageBytes);
     }
 
-    /// @notice Freezes the contract.
-    /// @dev This is a safety mechanism to prevent the contract from being used after a security
-    ///      vulnerability is detected.
-    function freeze() external onlyOwner {
-        frozen = true;
+    /// @notice Checks that the light client for a given chainId is consistent.
+    function requireLightClientConsistency(uint32 chainId) internal view {
+        require(lightClients[chainId].consistent(), "Light client is inconsistent.");
     }
 
-    /// @notice Unfreezes the contract.
-    /// @dev This is a safety mechanism to continue usage of the contract after a security
-    ///      vulnerability is patched.
-    function unfreeze() external onlyOwner {
-        frozen = false;
+    /// @notice Checks that the chainId is not frozen.
+    function requireNotFrozen(uint32 chainId) internal view {
+        require(!frozen[chainId], "Contract is frozen.");
     }
 
-    /// @notice Checks that the light client delay is adequate
-    function _requireLightClientDelay(uint64 slot) internal view {
-        uint256 elapsedTime = block.timestamp - lightClient.timestamps(slot);
+    /// @notice Checks that the light client delay is adequate.
+    function requireLightClientDelay(uint64 slot, uint32 chainId) internal view {
+        uint256 elapsedTime = block.timestamp - lightClients[chainId].timestamps(slot);
         require(elapsedTime >= MIN_LIGHT_CLIENT_DELAY, "Must wait longer to use this slot.");
     }
 
@@ -177,13 +147,15 @@ contract TargetAMB is
         view
         returns (Message memory, bytes32)
     {
-        Message memory message = abi.decode(messageBytes, (Message));
+        Message memory message = MessageEncoding.decode(messageBytes);
         bytes32 messageRoot = keccak256(messageBytes);
 
         if (messageStatus[messageRoot] != MessageStatus.NOT_EXECUTED) {
             revert("Message already executed.");
         } else if (message.recipientChainId != block.chainid) {
             revert("Wrong chain.");
+        } else if (message.version != version) {
+            revert("Wrong version.");
         }
         return (message, messageRoot);
     }
@@ -198,24 +170,36 @@ contract TargetAMB is
         internal
     {
         bool status;
-        bytes memory receiveCall = abi.encodeWithSelector(
-            ITelepathyHandler.rawHandleTelepathy.selector,
-            message.sourceChainId,
-            message.senderAddress,
-            message.data
-        );
-        address recipient = Address.fromBytes32(message.recipientAddress);
-        (status,) = recipient.call(receiveCall);
+        bytes memory data;
+        {
+            bytes memory receiveCall = abi.encodeWithSelector(
+                ITelepathyHandler.handleTelepathy.selector,
+                message.sourceChainId,
+                message.senderAddress,
+                message.data
+            );
+            address recipient = Address.fromBytes32(message.recipientAddress);
+            (status, data) = recipient.call(receiveCall);
+        }
 
-        if (status) {
+        // Unfortunately, there are some edge cases where a call may have a successful status but
+        // not have actually called the handler. Thus, we enforce that the handler must return
+        // a magic constant that we can check here. To avoid stack underflow / decoding errors, we
+        // only decode the returned bytes if one EVM word was returned by the call.
+        bool implementsHandler = false;
+        if (data.length == 32) {
+            (bytes4 magic) = abi.decode(data, (bytes4));
+            implementsHandler = magic == ITelepathyHandler.handleTelepathy.selector;
+        }
+
+        if (status && implementsHandler) {
             messageStatus[messageRoot] = MessageStatus.EXECUTION_SUCCEEDED;
         } else {
             messageStatus[messageRoot] = MessageStatus.EXECUTION_FAILED;
         }
 
-        emit ExecutedMessage(message.nonce, messageRoot, messageBytes, status);
+        emit ExecutedMessage(
+            message.sourceChainId, message.nonce, messageRoot, messageBytes, status
+            );
     }
-
-    /// @notice Authorizes an upgrade for the implementation contract.
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

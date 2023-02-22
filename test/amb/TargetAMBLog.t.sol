@@ -1,22 +1,23 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
 import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
-import {MessageStatus, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
-import {TargetAMB} from "src/amb/TargetAMB.sol";
+import {MessageStatus, ITelepathyHandler, Message} from "src/amb/interfaces/ITelepathy.sol";
+import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {LightClientMock} from "./LightClientMock.sol";
 import {SimpleHandler} from "./TargetAMB.t.sol";
+import {WrappedInitialize} from "./TargetAMB.t.sol";
 
 // The weird ordering here is because vm.parseJSON requires
 // alphabetaical ordering of the fields in the struct
 struct ExecuteMessageFromLogParams {
-    uint16 DEST_CHAIN;
-    uint16 SOURCE_CHAIN;
+    uint32 DEST_CHAIN;
+    uint32 SOURCE_CHAIN;
     bytes32 headerRoot;
     uint256 logIndex;
     bytes message;
@@ -32,7 +33,7 @@ struct ExecuteMessageFromLogParams {
 
 contract TargetAMBTest is Test {
     LightClientMock lightClientMock;
-    TargetAMB targetAMB;
+    TelepathyRouter targetAMB;
     SimpleHandler simpleHandler;
 
     function setUp() public {
@@ -57,12 +58,19 @@ contract TargetAMBTest is Test {
         vm.chainId(testParams.DEST_CHAIN);
 
         // First initialize the TargetAMB using the deployed SourceAMB
-        TargetAMB targetAMBImplementation = new TargetAMB();
+        TelepathyRouter targetAMBImplementation = new TelepathyRouter();
 
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImplementation), "");
 
-        targetAMB = TargetAMB(address(proxy));
-        targetAMB.initialize(address(lightClientMock), testParams.sourceAMBAddress, address(this));
+        targetAMB = TelepathyRouter(address(proxy));
+        WrappedInitialize.init(
+            address(targetAMB),
+            testParams.SOURCE_CHAIN,
+            address(lightClientMock),
+            testParams.sourceAMBAddress,
+            address(this),
+            address(this)
+        );
 
         // Then initialize the contract that will be called by the TargetAMB
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();

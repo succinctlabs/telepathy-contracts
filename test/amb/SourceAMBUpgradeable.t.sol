@@ -1,13 +1,17 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
+
 import "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "src/libraries/Timelock.sol";
-import "src/amb/SourceAMB.sol";
-import "src/libraries/Proxy.sol";
 import "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+import {Timelock} from "src/libraries/Timelock.sol";
+import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
+import {UUPSProxy} from "src/libraries/Proxy.sol";
+
+import {WrappedInitialize} from "./TargetAMB.t.sol";
 
 contract ContractV2 {
     uint8 public constant VERSION = 2;
@@ -22,22 +26,22 @@ contract ContractV3 is UUPSUpgradeable {
     uint8 public constant VERSION = 3;
     uint8 public value;
 
-    function _authorizeUpgrade(address newImplementation) internal pure override {}
+    function _authorizeUpgrade(address) internal pure override {}
 }
 
 contract ContractV2Upgradeable is UUPSUpgradeable, ContractV2 {
-    function _authorizeUpgrade(address newImplementation) internal pure override {}
+    function _authorizeUpgrade(address) internal pure override {}
 }
 
 contract ContractV2NonUpgradeable is UUPSUpgradeable, ContractV2 {
-    function _authorizeUpgrade(address newImplementation) internal pure override {
+    function _authorizeUpgrade(address) internal pure override {
         revert();
     }
 }
 
 contract SourceAMBUpgradeableTest is Test {
     UUPSProxy proxy;
-    SourceAMB wrappedSourceAMBProxy;
+    TelepathyRouter wrappedSourceAMBProxy;
     Timelock timelock;
 
     address bob = payable(makeAddr("bob"));
@@ -45,13 +49,19 @@ contract SourceAMBUpgradeableTest is Test {
     uint256 MIN_DELAY = 60 * 24 * 24;
 
     function setUp() public {
-        SourceAMB sourceAMBImplementation = new SourceAMB();
+        TelepathyRouter sourceAMBImplementation = new TelepathyRouter();
         proxy = new UUPSProxy(address(sourceAMBImplementation), "");
-
-        wrappedSourceAMBProxy = SourceAMB(address(proxy));
-        wrappedSourceAMBProxy.initialize(address(this));
-
         setUpTimelock();
+
+        wrappedSourceAMBProxy = TelepathyRouter(address(proxy));
+        WrappedInitialize.init(
+            address(wrappedSourceAMBProxy),
+            1,
+            makeAddr("lightclient"),
+            makeAddr("sourceAMB"),
+            address(timelock),
+            address(this)
+        );
     }
 
     function setUpTimelock() public {
@@ -71,24 +81,29 @@ contract SourceAMBUpgradeableTest is Test {
     }
 
     function testCanInitialize() public {
-        assertFalse(wrappedSourceAMBProxy.owner() == address(0));
+        assertFalse(wrappedSourceAMBProxy.version() == 0);
     }
 
     function testCannotUpgradeWithoutUUPS() public {
+        vm.startPrank(address(timelock));
         ContractV2 testContractV2 = new ContractV2();
         vm.expectRevert(bytes("ERC1967Upgrade: new implementation is not UUPS"));
         wrappedSourceAMBProxy.upgradeTo(address(testContractV2));
+        vm.stopPrank();
     }
 
     function testCanUpgradeUUPS() public {
+        vm.startPrank(address(timelock));
         ContractV2NonUpgradeable testContractV2 = new ContractV2NonUpgradeable();
         wrappedSourceAMBProxy.upgradeTo(address(testContractV2));
 
         ContractV2NonUpgradeable wrappedProxyV2 = ContractV2NonUpgradeable(address(proxy));
         assertEq(wrappedProxyV2.VERSION(), 2);
+        vm.stopPrank();
     }
 
     function testCanPersistStorageAfterUpgrade() public {
+        vm.startPrank(address(timelock));
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
         wrappedSourceAMBProxy.upgradeTo(address(testContractV2));
         ContractV2Upgradeable wrappedProxyV2 = ContractV2Upgradeable(address(proxy));
@@ -101,10 +116,12 @@ contract SourceAMBUpgradeableTest is Test {
         ContractV3 wrappedProxyV3 = ContractV3(address(proxy));
         assertEq(wrappedProxyV3.VERSION(), 3);
         assertEq(wrappedProxyV3.value(), 111);
+        vm.stopPrank();
     }
 
     function testCannotUpgradeAnymore() public {
         // Upgrade to a new implementation that disables upgrade function.
+        vm.startPrank(address(timelock));
         ContractV2NonUpgradeable testContractV2 = new ContractV2NonUpgradeable();
         ContractV3 fakeContract = new ContractV3();
         wrappedSourceAMBProxy.upgradeTo(address(testContractV2));
@@ -113,10 +130,10 @@ contract SourceAMBUpgradeableTest is Test {
 
         vm.expectRevert();
         wrappedProxyV2.upgradeTo(address(fakeContract));
+        vm.stopPrank();
     }
 
     function testUpgradeUsingTimelock() public {
-        wrappedSourceAMBProxy.transferOwnership(address(timelock));
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
 
         vm.startPrank(bob);
@@ -149,11 +166,9 @@ contract SourceAMBUpgradeableTest is Test {
     }
 
     function testCannotCallUpgradeAsNonOwner() public {
-        wrappedSourceAMBProxy.transferOwnership(address(timelock));
-
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
 
-        vm.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.expectRevert(bytes("TelepathyRouter: only timelock can call this function"));
         wrappedSourceAMBProxy.upgradeTo(address(testContractV2));
     }
 }

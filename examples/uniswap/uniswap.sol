@@ -1,4 +1,4 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
@@ -10,10 +10,10 @@ import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
 
 contract CrossChainTWAPBroadcast {
     ITelepathyBroadcaster broadcaster;
-    mapping(uint16 => address) public deliveringContracts;
+    mapping(uint32 => address) public deliveringContracts;
 
     event Broadcast(
-        uint16 indexed chainId,
+        uint32 indexed chainId,
         address poolAddress,
         uint32 twapInterval,
         uint256 timestamp,
@@ -24,7 +24,7 @@ contract CrossChainTWAPBroadcast {
         broadcaster = ITelepathyBroadcaster(_broadcaster);
     }
 
-    function setDeliveringContract(uint16 chainId, address _contract) external {
+    function setDeliveringContract(uint32 chainId, address _contract) external {
         deliveringContracts[chainId] = _contract;
     }
 
@@ -50,7 +50,7 @@ contract CrossChainTWAPBroadcast {
         return FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
     }
 
-    function broadcastPrice(uint16 chainId, address poolAddress, uint32 twapInterval)
+    function broadcastPrice(uint32 chainId, address poolAddress, uint32 twapInterval)
         external
         returns (uint256 priceX96)
     {
@@ -65,20 +65,20 @@ contract CrossChainTWAPBroadcast {
 }
 
 contract CrossChainTWAPReceiver is TelepathyHandler {
-    uint16 srcChainId;
+    uint32 srcChainId;
     address sourceAddress;
 
     mapping(bytes32 => uint256) public priceMap;
     mapping(bytes32 => uint256) public timestampMap;
 
-    constructor(uint16 _srcChainId, address _sourceAddress, address _telepathyReceiver)
+    constructor(uint32 _srcChainId, address _sourceAddress, address _telepathyReceiver)
         TelepathyHandler(_telepathyReceiver)
     {
         srcChainId = _srcChainId;
         sourceAddress = _sourceAddress;
     }
 
-    function handleTelepathy(uint16 _srcChainId, address sender, bytes memory data)
+    function handleTelepathyImpl(uint32 _srcChainId, address sender, bytes memory data)
         internal
         override
     {

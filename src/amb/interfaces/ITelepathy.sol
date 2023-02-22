@@ -1,27 +1,5 @@
 pragma solidity ^0.8.0;
 
-import "src/lightclient/interfaces/ILightClient.sol";
-
-interface ITelepathyBroadcaster {
-    event SentMessage(uint256 indexed nonce, bytes32 indexed msgHash, bytes message);
-
-    function send(uint16 _recipientChainId, bytes32 _recipientAddress, bytes calldata _data)
-        external
-        returns (bytes32);
-
-    function send(uint16 _recipientChainId, address _recipientAddress, bytes calldata _data)
-        external
-        returns (bytes32);
-
-    function sendViaLog(uint16 _recipientChainId, bytes32 _recipientAddress, bytes calldata _data)
-        external
-        returns (bytes32);
-
-    function sendViaLog(uint16 _recipientChainId, address _recipientAddress, bytes calldata _data)
-        external
-        returns (bytes32);
-}
-
 enum MessageStatus {
     NOT_EXECUTED,
     EXECUTION_FAILED,
@@ -29,17 +7,42 @@ enum MessageStatus {
 }
 
 struct Message {
-    uint256 nonce;
-    uint16 sourceChainId;
+    uint8 version;
+    uint64 nonce;
+    uint32 sourceChainId;
     address senderAddress;
-    uint16 recipientChainId;
+    uint32 recipientChainId;
     bytes32 recipientAddress;
     bytes data;
 }
 
+interface ITelepathyBroadcaster {
+    event SentMessage(uint64 indexed nonce, bytes32 indexed msgHash, bytes message);
+
+    function send(uint32 recipientChainId, bytes32 recipientAddress, bytes calldata data)
+        external
+        returns (bytes32);
+
+    function send(uint32 recipientChainId, address recipientAddress, bytes calldata data)
+        external
+        returns (bytes32);
+
+    function sendViaStorage(uint32 recipientChainId, bytes32 recipientAddress, bytes calldata data)
+        external
+        returns (bytes32);
+
+    function sendViaStorage(uint32 recipientChainId, address recipientAddress, bytes calldata data)
+        external
+        returns (bytes32);
+}
+
 interface ITelepathyReceiver {
     event ExecutedMessage(
-        uint256 indexed nonce, bytes32 indexed msgHash, bytes message, bool status
+        uint32 indexed sourceChainId,
+        uint64 indexed nonce,
+        bytes32 indexed msgHash,
+        bytes message,
+        bool status
     );
 
     function executeMessage(
@@ -61,6 +64,7 @@ interface ITelepathyReceiver {
 }
 
 interface ITelepathyHandler {
-    function rawHandleTelepathy(uint16 _sourceChainId, address _senderAddress, bytes memory _data)
-        external;
+    function handleTelepathy(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
+        external
+        returns (bytes4);
 }

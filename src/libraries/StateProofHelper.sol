@@ -1,4 +1,4 @@
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import {RLPReader} from "@optimism-bedrock/rlp/RLPReader.sol";
 import {RLPWriter} from "@optimism-bedrock/rlp/RLPWriter.sol";

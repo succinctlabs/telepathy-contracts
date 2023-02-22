@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.16;
 
 import "forge-std/console.sol";
 import "ds-test/test.sol";
@@ -14,8 +14,8 @@ import "./Bridge.sol";
 import "./Tokens.sol";
 
 contract BridgeTest is Test {
-    uint16 constant SOURCE_CHAIN = 1;
-    uint16 constant DEST_CHAIN = 2;
+    uint32 constant SOURCE_CHAIN = 1;
+    uint32 constant DEST_CHAIN = 2;
 
     MockTelepathy broadcaster;
     MockTelepathy receiver;
