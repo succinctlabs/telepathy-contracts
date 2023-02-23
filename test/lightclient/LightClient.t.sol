@@ -39,11 +39,11 @@ contract LightClientTest is Test, LightClientFixture {
         vm.warp(9999999999999);
     }
 
-    function testSetup() public view {
+    function test_SetUp() public view {
         require(fixtures.length > 0, "no fixtures found");
     }
 
-    function testStep() public {
+    function test_Step() public {
         for (uint256 i = 0; i < fixtures.length; i++) {
             Fixture memory fixture = fixtures[i];
 
@@ -54,7 +54,7 @@ contract LightClientTest is Test, LightClientFixture {
         }
     }
 
-    function testRotate() public {
+    function test_Rotate() public {
         for (uint256 i = 0; i < fixtures.length; i++) {
             Fixture memory fixture = fixtures[i];
 
@@ -66,7 +66,7 @@ contract LightClientTest is Test, LightClientFixture {
         }
     }
 
-    function testRawStepProof() public {
+    function test_RawStepProof() public {
         for (uint256 i = 0; i < fixtures.length; i++) {
             Fixture memory fixture = fixtures[i];
 
@@ -84,7 +84,7 @@ contract LightClientTest is Test, LightClientFixture {
         }
     }
 
-    function testRawRotateProof() public {
+    function test_RawRotateProof() public {
         for (uint256 i = 0; i < fixtures.length; i++) {
             Fixture memory fixture = fixtures[i];
 
@@ -102,18 +102,198 @@ contract LightClientTest is Test, LightClientFixture {
 
             uint256[65] memory inputs;
             uint256 syncCommitteeSSZNumeric = uint256(rotate.syncCommitteeSSZ);
-            for (uint256 i = 0; i < 32; i++) {
-                inputs[32 - 1 - i] = syncCommitteeSSZNumeric % 2 ** 8;
+            for (uint256 j = 0; j < 32; j++) {
+                inputs[32 - 1 - j] = syncCommitteeSSZNumeric % 2 ** 8;
                 syncCommitteeSSZNumeric = syncCommitteeSSZNumeric / 2 ** 8;
             }
             uint256 finalizedHeaderRootNumeric = uint256(fixture.step.finalizedHeaderRoot);
-            for (uint256 i = 0; i < 32; i++) {
-                inputs[64 - i] = finalizedHeaderRootNumeric % 2 ** 8;
+            for (uint256 j = 0; j < 32; j++) {
+                inputs[64 - j] = finalizedHeaderRootNumeric % 2 ** 8;
                 finalizedHeaderRootNumeric = finalizedHeaderRootNumeric / 2 ** 8;
             }
             inputs[32] = uint256(SSZ.toLittleEndian(uint256(rotate.syncCommitteePoseidon)));
 
             require(lc.verifyProofRotate(a, b, c, inputs) == true);
         }
+    }
+
+    function test_RevertStep_WhenBadA() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.a[0] = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenBadB() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.b[0][0] = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenBadC() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.c[0] = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenBadAttestedSlot() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.attestedSlot = 0;
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenBadFinalizedSlot() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.finalizedSlot = 0;
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenBadParticipation() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.participation = Strings.toString(FINALITY_THRESHOLD - 1);
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenBadFinalizedHeaderRoot() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.finalizedHeaderRoot = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenBadExecutionStateRoot() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.step.executionStateRoot = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenSlotBelowPeriodBoundary() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.initial.syncCommitteePeriod++;
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenSlotAbovePeriodBoundary() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.initial.syncCommitteePeriod--;
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertRotate_WhenBadA() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.rotate.a[0] = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        vm.expectRevert();
+        lc.rotate(rotate);
+    }
+
+    function test_RevertRotate_WhenBadB() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.rotate.b[0][0] = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        vm.expectRevert();
+        lc.rotate(rotate);
+    }
+
+    function test_RevertRotate_WhenBadC() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.rotate.c[0] = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        vm.expectRevert();
+        lc.rotate(rotate);
+    }
+
+    function test_RevertRotate_WhenBadSyncCommitteeSSZ() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.rotate.syncCommitteeSSZ = 0;
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        vm.expectRevert();
+        lc.rotate(rotate);
+    }
+
+    function test_RevertRotate_WhenBadSyncCommitteePoseidon() public {
+        Fixture memory fixture = fixtures[0];
+
+        fixture.rotate.syncCommitteePoseidon = "0";
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        vm.expectRevert();
+        lc.rotate(rotate);
     }
 }
