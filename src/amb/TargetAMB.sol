@@ -37,6 +37,12 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
     /// getting the slot key.
     uint256 internal constant MESSAGES_MAPPING_STORAGE_INDEX = 1;
 
+    /// @notice Gets the length of the sourceChainIds array.
+    /// @return The length of the sourceChainIds array.
+    function sourceChainIdsLength() external view returns (uint256) {
+        return sourceChainIds.length;
+    }
+
     /// @notice Executes a message given a storage proof.
     /// @param slot Specifies which execution state root should be read from the light client.
     /// @param messageBytes The message we want to execute provided as bytes.

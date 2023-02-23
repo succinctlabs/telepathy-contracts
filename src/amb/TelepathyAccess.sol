@@ -7,6 +7,29 @@ import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {TelepathyStorage} from "./TelepathyStorage.sol";
 
 contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
+    /// @notice Emitted when the sendingEnabled flag is changed.
+    event SendingEnabled(bool enabled);
+
+    /// @notice Emitted when freezeAll is called.
+    event FreezeAll();
+
+    /// @notice Emitted when freeze is called.
+    event Freeze(uint32 indexed chainId);
+
+    /// @notice Emitted when unfreezeAll is called.
+    event UnfreezeAll();
+
+    /// @notice Emitted when unfreeze is called.
+    event Unfreeze(uint32 indexed chainId);
+
+    /// @notice Emitted when setLightClientAndBroadcaster is called.
+    event SetLightClientAndBroadcaster(
+        uint32 indexed chainId, address lightClient, address broadcaster
+    );
+
+    /// @notice Emitted when a new source chain is added.
+    event SourceChainAdded(uint32 indexed chainId);
+
     /// @notice A random constant used to identify addresses with the permission of a 'guardian'.
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
 
@@ -40,6 +63,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
     /// @notice Allows the owner to control whether sending is enabled or not.
     function setSendingEnabled(bool enabled) external onlyGuardian {
         sendingEnabled = enabled;
+        emit SendingEnabled(enabled);
     }
 
     /// @notice Freezes messages from all chains.
@@ -49,6 +73,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
         for (uint32 i = 0; i < sourceChainIds.length; i++) {
             frozen[sourceChainIds[i]] = true;
         }
+        emit FreezeAll();
     }
 
     /// @notice Freezes messages from the specified chain.
@@ -56,6 +81,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
     ///      vulnerability is detected.
     function freeze(uint32 chainId) external onlyGuardian {
         frozen[chainId] = true;
+        emit Freeze(chainId);
     }
 
     /// @notice Unfreezes messages from the specified chain.
@@ -63,6 +89,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
     ///      vulnerability is patched.
     function unfreeze(uint32 chainId) external onlyGuardian {
         frozen[chainId] = false;
+        emit Unfreeze(chainId);
     }
 
     /// @notice Unfreezes messages from all chains.
@@ -72,6 +99,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
         for (uint32 i = 0; i < sourceChainIds.length; i++) {
             frozen[sourceChainIds[i]] = false;
         }
+        emit UnfreezeAll();
     }
 
     /// @notice Sets the light client contract and broadcaster for a given chainId.
@@ -91,8 +119,10 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
         }
         if (!chainIdExists) {
             sourceChainIds.push(chainId);
+            emit SourceChainAdded(chainId);
         }
         lightClients[chainId] = ILightClient(lightclient);
         broadcasters[chainId] = broadcaster;
+        emit SetLightClientAndBroadcaster(chainId, lightclient, broadcaster);
     }
 }
