@@ -49,15 +49,6 @@ contract LightClientFixture is CommonBase {
         bytes32 syncCommitteeSSZ;
     }
 
-    function parseFixture(string memory filename) internal view returns (Fixture memory) {
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/test/lightclient/fixtures/", filename, ".json");
-        string memory file = vm.readFile(path);
-        bytes memory parsed = vm.parseJson(file);
-        Fixture memory params = abi.decode(parsed, (Fixture));
-        return params;
-    }
-
     function newLightClient(Initial memory initial, uint32 sourceChainId, uint16 finalityThreshold)
         public
         returns (LightClient)
