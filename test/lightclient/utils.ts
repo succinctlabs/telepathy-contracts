@@ -12,7 +12,7 @@ import { ConfigManager } from '@succinctlabs/telepathy-sdk/config';
 import { toHexString } from '@chainsafe/ssz';
 
 async function main() {
-    const config = new ConfigManager('../../../toml/goerli.toml', '../../../.env');
+    const config = new ConfigManager('../../../toml/goerli.toml', false);
     const client = new ConsensusClient(config.consensusRpc(config.sourceChain()));
     const update = await client.getTelepathyUpdate('finalized');
     const syncCommitteePoseidon = await poseidonSyncCommittee(update.currentSyncCommittee.pubkeys);
