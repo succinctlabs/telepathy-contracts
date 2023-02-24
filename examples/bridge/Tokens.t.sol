@@ -6,7 +6,7 @@ import "ds-test/test.sol";
 import "forge-std/Vm.sol";
 import "forge-std/Test.sol";
 
-import "src/amb/mocks/MockAMB.sol";
+import "src/amb/mocks/MockTelepathy.sol";
 
 import "./Tokens.sol";
 

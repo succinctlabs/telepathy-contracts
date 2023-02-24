@@ -8,7 +8,7 @@ import "forge-std/Test.sol";
 
 import "openzeppelin-contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
 
-import "src/amb/mocks/MockAMB.sol";
+import "src/amb/mocks/MockTelepathy.sol";
 
 import "./Bridge.sol";
 import "./Tokens.sol";
