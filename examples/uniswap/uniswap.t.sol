@@ -4,7 +4,7 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
-import {MockTelepathy} from "src/amb/mocks/MockAMB.sol";
+import {MockTelepathy} from "src/amb/mocks/MockTelepathy.sol";
 
 import "./Uniswap.sol";
 

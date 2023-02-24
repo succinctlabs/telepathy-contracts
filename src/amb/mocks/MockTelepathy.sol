@@ -3,8 +3,10 @@ pragma solidity 0.8.16;
 import {Address, Bytes32} from "src/libraries/Typecast.sol";
 import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
 
-import {SourceAMB} from "../SourceAMB.sol";
-import {ITelepathyBroadcaster, Message, ITelepathyHandler} from "../interfaces/ITelepathy.sol";
+import {SourceAMB} from "src/amb/SourceAMB.sol";
+import {
+    ITelepathyBroadcaster, Message, ITelepathyHandler
+} from "src/amb/interfaces/ITelepathy.sol";
 
 /// @title Telepathy Mock AMB for testing
 /// @author Succinct Labs
