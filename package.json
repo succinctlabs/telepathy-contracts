@@ -6,39 +6,10 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
-        "lint": "eslint . --ext .ts",
-        "typecheck": "yarn tsc --noEmit",
-        "test": "NODE_OPTIONS=--max_old_space_size=56000 mocha -r tsx test/test*.ts"
-    },
-    "devDependencies": {
-        "@chainsafe/bls": "^7.1.1",
-        "@chainsafe/lodestar-config": "^0.39.0",
-        "@chainsafe/lodestar-types": "^0.34.4",
-        "@lodestar/api": "^0.40.0",
-        "@lodestar/light-client": "^0.40.0",
-        "@lodestar/types": "^0.40.0",
-        "@noble/bls12-381": "^1.2.0",
-        "@types/node": "^18.0.4",
-        "@typescript-eslint/eslint-plugin": "^5.45.0",
-        "@typescript-eslint/parser": "^5.45.0",
-        "axios": "^0.27.2",
-        "eslint": "^8.29.0",
-        "operator": "1.0.0",
-        "tsx": ">=3.7.0",
-        "typechain": "^8.1.1",
-        "typescript": ">=4.5.0"
-    },
-    "dependencies": {
-        "@chainsafe/blst": "^0.2.4",
-        "@succinctlabs/telepathy-sdk": "workspace:^",
-        "@types/chai": "^4.3.1",
-        "@types/expect": "^24.3.0",
-        "circom_tester": "https://github.com/succinctlabs/circom_tester.git",
-        "circomlib": "^2.0.5",
-        "circomlibjs": "^0.1.7",
-        "cli-spinners": "^2.7.0",
-        "ora": "^6.1.2",
-        "snarkjs": "^0.5.0",
-        "ts-node": "^10.9.1"
+        "lint": "forge fmt --check src test script examples",
+        "test": "forge test",
+        "turbo:build": "forge build --extra-output-files abi --out abi",
+        "turbo:lint": "forge fmt --check src test script examples",
+        "turbo:test": "forge test"
     }
 }
