@@ -19,35 +19,8 @@ contract StateProofFixture is CommonBase {
         string key;
         uint256 logIndex;
         bytes32 messageRoot;
-        uint256 nonce;
         string[] proof;
         bytes32 receiptsRoot;
-    }
-
-    function parseStorageFixture(string memory filename)
-        internal
-        view
-        returns (StorageProofFixture memory)
-    {
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/test/libraries/fixtures/", filename, ".json");
-        string memory file = vm.readFile(path);
-        bytes memory parsed = vm.parseJson(file);
-        StorageProofFixture memory params = abi.decode(parsed, (StorageProofFixture));
-        return params;
-    }
-
-    function parseEventFixture(string memory filename)
-        internal
-        view
-        returns (EventProofFixture memory)
-    {
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/test/libraries/fixtures/", filename, ".json");
-        string memory file = vm.readFile(path);
-        bytes memory parsed = vm.parseJson(file);
-        EventProofFixture memory params = abi.decode(parsed, (EventProofFixture));
-        return params;
     }
 
     function buildStorageProof(StorageProofFixture memory fixture)
