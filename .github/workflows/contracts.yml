@@ -1,17 +1,18 @@
 name: Contracts
 on:
   pull_request:
-    types:
-      - 'closed'
-      - 'opened'
-      - 'synchronize'
+    paths:
+      - '**'
+      - '.github/workflows/contracts.yml'
+  push:
+    branches:
+      - master
     paths:
       - '**'
       - '.github/workflows/contracts.yml'
 
 jobs:
   lint-and-test:
-    if: github.event.action != 'closed' || github.event.pull_request.merged == true
     environment: testing
     runs-on: ubuntu-latest
     steps:
