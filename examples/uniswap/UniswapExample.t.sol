@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 
 import {MockTelepathy} from "src/amb/mocks/MockTelepathy.sol";
 
-import "./Uniswap.sol";
+import "./UniswapExample.sol";
 
 contract UniswapTWAPTest is Test {
     uint32 constant SOURCE_CHAIN = 1;
