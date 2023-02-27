@@ -23,6 +23,11 @@ contract TelepathyRouter is SourceAMB, TargetAMB, TelepathyAccess, UUPSUpgradeab
     /// @notice Returns current contract version.
     uint8 public constant VERSION = 1;
 
+    /// @notice Prevents the implementation contract from being initialized outside of the upgradeable proxy.
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice Initializes the contract and the parent contracts once.
     function initialize(
         uint32[] memory _sourceChainIds,
