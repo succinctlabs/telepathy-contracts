@@ -21,16 +21,15 @@ contract LightClientTest is Test, LightClientFixture {
     function setUp() public {
         // read all fixtures from entire directory
         string memory root = vm.projectRoot();
-        for (uint256 i = 0; i < FIXTURE_SLOT_END - FIXTURE_SLOT_START; i++) {
-            uint256 slot = FIXTURE_SLOT_START + i;
+        for (uint256 i = FIXTURE_SLOT_START; i <= FIXTURE_SLOT_END; i++) {
+            uint256 slot = i;
 
             string memory filename = string.concat("slot", Strings.toString(slot));
             string memory path =
                 string.concat(root, "/test/lightclient/fixtures/", filename, ".json");
             try vm.readFile(path) returns (string memory file) {
                 bytes memory parsed = vm.parseJson(file);
-                Fixture memory params = abi.decode(parsed, (Fixture));
-                fixtures.push(params);
+                fixtures.push(abi.decode(parsed, (Fixture)));
             } catch {
                 continue;
             }
