@@ -206,6 +206,6 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
 
         emit ExecutedMessage(
             message.sourceChainId, message.nonce, messageRoot, messageBytes, status
-            );
+        );
     }
 }

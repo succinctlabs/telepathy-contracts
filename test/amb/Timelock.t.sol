@@ -86,7 +86,7 @@ contract TimelockTest is Test {
             parameters.data,
             parameters.predecessor,
             parameters.delay
-            );
+        );
 
         vm.prank(bob);
         timelock.schedule(
