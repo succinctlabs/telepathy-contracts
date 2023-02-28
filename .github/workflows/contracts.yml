@@ -35,9 +35,17 @@ jobs:
         working-directory: .
         run: forge build --sizes
 
+      - name: Run Solhint
+        working-directory: .
+        run: npx solhint 'src/**/*.sol' 'test/**/*.sol' 'examples/**/*.sol' 'script/**/*.sol' --config .solhint.json
+
       # - name: Check gas snapshots
       #   working-directory: .
       #   run: forge snapshot --check
+
+      - name: Check test coverage
+        working-directory: .
+        run: MAINNET_RPC_URL=${{ secrets.MAINNET_RPC_URL }} forge coverage
 
       - name: Run tests
         working-directory: .
