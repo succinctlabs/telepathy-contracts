@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-pragma solidity >=0.6.11;
+pragma solidity 0.8.16;
 
 library Address {
     function fromBytes32(bytes32 buffer) internal pure returns (address) {
