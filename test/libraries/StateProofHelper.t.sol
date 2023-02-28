@@ -87,4 +87,132 @@ contract StateProofHelperTest is Test, StateProofFixture {
             require(messageRoot == fixture.messageRoot);
         }
     }
+
+    function test_RevertStorageProof_WhenBadContractAddress() public {
+        StorageProofFixture memory fixture = storageProofFixtures[0];
+
+        fixture.contractAddress = address(0x0);
+
+        bytes[] memory proof = buildStorageProof(fixture);
+
+        vm.expectRevert();
+        StorageProof.getStorageRoot(proof, fixture.contractAddress, fixture.stateRootHash);
+    }
+
+    function test_ReverStorageProof_WhenBadProof() public {
+        StorageProofFixture memory fixture = storageProofFixtures[0];
+
+        fixture.proof[0] = "";
+
+        bytes[] memory proof = buildStorageProof(fixture);
+
+        vm.expectRevert();
+        StorageProof.getStorageRoot(proof, fixture.contractAddress, fixture.stateRootHash);
+    }
+
+    function test_RevertStorageProof_WhenBadStateRootHash() public {
+        StorageProofFixture memory fixture = storageProofFixtures[0];
+
+        fixture.stateRootHash = bytes32(0x0);
+
+        bytes[] memory proof = buildStorageProof(fixture);
+
+        vm.expectRevert();
+        StorageProof.getStorageRoot(proof, fixture.contractAddress, fixture.stateRootHash);
+    }
+
+    function test_RevertEventProof_WhenBadClaimedEmitter() public {
+        EventProofFixture memory fixture = eventProofFixtures[0];
+
+        fixture.claimedEmitter = address(0x0);
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        vm.expectRevert();
+        EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+    }
+
+    function test_RevertEventProof_WhenBadKey() public {
+        EventProofFixture memory fixture = eventProofFixtures[0];
+
+        fixture.key = "";
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        vm.expectRevert();
+        EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+    }
+
+    function test_RevertEventProof_WhenBadLogIndex() public {
+        EventProofFixture memory fixture = eventProofFixtures[0];
+
+        fixture.logIndex = UINT256_MAX; // 0 is a valid log index, so we use the max int
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        vm.expectRevert();
+        EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+    }
+
+    function test_RevertEventProof_WhenBadProof() public {
+        EventProofFixture memory fixture = eventProofFixtures[0];
+
+        fixture.proof[0] = "";
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        vm.expectRevert();
+        EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+    }
+
+    function test_RevertEventProof_WhenBadReceiptsRoot() public {
+        EventProofFixture memory fixture = eventProofFixtures[0];
+
+        fixture.receiptsRoot = bytes32(0x0);
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        vm.expectRevert();
+        EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+    }
 }
