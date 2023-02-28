@@ -1,0 +1,5 @@
+{
+    "filter_paths": "lib|script|test|Mock*",
+    "compile_force_framework": "foundry",
+    "exclude_informational": true
+}
