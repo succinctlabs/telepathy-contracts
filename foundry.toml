@@ -13,3 +13,11 @@ tab_width = 4
 func_attrs_with_params_multiline = true
 ignore = ["lib/**"]
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
+
+[profile.misc]
+src = 'misc'
+out = 'out'
+libs = ['lib']
+solc_version = "0.8.16"
+verbosity = 3
+fs_permissions = [{ access = "read-write", path = "./"}]
