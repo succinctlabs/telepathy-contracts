@@ -55,7 +55,7 @@ contract TimelockTest is Test {
         );
     }
 
-    function testCanPropose() public {
+    function test_Propose() public {
         Simple sample = new Simple();
 
         Parameters memory parameters = Parameters(

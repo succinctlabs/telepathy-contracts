@@ -166,7 +166,7 @@ contract TargetAMBTest is Test {
         vm.warp(1675221581);
     }
 
-    function testExecuteMessage() public {
+    function test_ExecuteMessage() public {
         // This test is generated using `cli/src/generateTest.ts`
         ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
         getDefaultContractSetup(testParams);
@@ -193,7 +193,59 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageOnlyOnce() public {
+    function test_ExecuteMessage_WrongSenderAddressFails() public {
+        ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
+        testParams.sourceMessageSender = address(0x1234); // Set the source sender address to something random
+        getDefaultContractSetup(testParams);
+
+        // Finally, execute the message and check that it failed
+        targetAMB.executeMessage(
+            testParams.executionBlockNumber,
+            testParams.message,
+            testParams.accountProof,
+            testParams.storageProof
+        );
+        bytes32 messageRoot = keccak256(testParams.message);
+        require(
+            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
+            "Message status is not success"
+        );
+
+        require(
+            simpleHandler.nonce() == 0,
+            "simpleHandler should have nonce 0 since execution should have failed"
+        );
+    }
+
+    function test_ExecuteMessage_WrongTargetAMBFails() public {
+        ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
+        getDefaultContractSetup(testParams);
+
+        address randomTargetAMB = address(0x1234);
+        simpleHandler.setParams(
+            simpleHandler.sourceChain(), simpleHandler.sourceAddress(), randomTargetAMB
+        );
+
+        // Finally, execute the message and check that it failed
+        targetAMB.executeMessage(
+            testParams.executionBlockNumber,
+            testParams.message,
+            testParams.accountProof,
+            testParams.storageProof
+        );
+        bytes32 messageRoot = keccak256(testParams.message);
+        require(
+            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
+            "Message status is not success"
+        );
+
+        require(
+            simpleHandler.nonce() == 0,
+            "simpleHandler should have nonce 0 since execution should have failed"
+        );
+    }
+
+    function test_RevertExecuteMessage_WhenDuplicate() public {
         // Tests that a message can only be executed once.
         ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
         getDefaultContractSetup(testParams);
@@ -219,7 +271,7 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageWrongSourceAMBAddressFails() public {
+    function test_RevertExecuteMessage_WhenWrongSourceAMBAddress() public {
         ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
         testParams.sourceAMBAddress = address(0x1234); // Set the sourceAMBAddress to something incorrect
         getDefaultContractSetup(testParams);
@@ -234,7 +286,7 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageInvalidRecipientFails() public {
+    function test_RevertExecuteMessage_WhenInvalidRecipient() public {
         // Test what happens when the recipient address doesn't implement the ITelepathyHandler
         ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
         getDefaultContractSetup(testParams);
@@ -257,47 +309,7 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecutionMessageInvalidProofFails(bytes[] memory randomProof) public {
-        // We fuzz test what happens when we provide invalid proofs.
-        // We fuzz test what happens when we provide invalid messages.
-        ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
-        getDefaultContractSetup(testParams);
-
-        vm.expectRevert();
-        // Finally, execute the message and check that it failed
-        targetAMB.executeMessage(
-            testParams.executionBlockNumber,
-            testParams.message,
-            randomProof,
-            testParams.storageProof
-        );
-
-        vm.expectRevert();
-        // Finally, execute the message and check that it failed
-        targetAMB.executeMessage(
-            testParams.executionBlockNumber,
-            testParams.message,
-            testParams.accountProof,
-            randomProof
-        );
-    }
-
-    function testExecuteMessageInvalidMessageFails(bytes memory message) public {
-        // We fuzz test what happens when we provide invalid messages.
-        ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
-        getDefaultContractSetup(testParams);
-
-        vm.expectRevert();
-        // Finally, execute the message and check that it failed
-        targetAMB.executeMessage(
-            testParams.executionBlockNumber,
-            message,
-            testParams.accountProof,
-            testParams.storageProof
-        );
-    }
-
-    function testExecuteMessageWrongSrcChainFails() public {
+    function test_RevertExecuteMessage_WrongSrcChain() public {
         ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
 
         testParams.SOURCE_CHAIN = 6; // Set the source chain to something other than 5
@@ -313,55 +325,43 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageWrongSenderAddressFails() public {
+    function testFuzz_RevertExecutionMessage_InvalidProof(bytes[] memory _randomProof) public {
+        // We fuzz test what happens when we provide invalid proofs.
+        // We fuzz test what happens when we provide invalid messages.
         ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
-        testParams.sourceMessageSender = address(0x1234); // Set the source sender address to something random
         getDefaultContractSetup(testParams);
 
+        vm.expectRevert();
+        // Finally, execute the message and check that it failed
+        targetAMB.executeMessage(
+            testParams.executionBlockNumber,
+            testParams.message,
+            _randomProof,
+            testParams.storageProof
+        );
+
+        vm.expectRevert();
         // Finally, execute the message and check that it failed
         targetAMB.executeMessage(
             testParams.executionBlockNumber,
             testParams.message,
             testParams.accountProof,
-            testParams.storageProof
-        );
-        bytes32 messageRoot = keccak256(testParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not success"
-        );
-
-        require(
-            simpleHandler.nonce() == 0,
-            "simpleHandler should have nonce 0 since execution should have failed"
+            _randomProof
         );
     }
 
-    function testExecuteMessageWrongTargetAMBFails() public {
+    function testFuzz_RevertExecuteMessage_InvalidMessage(bytes memory _message) public {
+        // We fuzz test what happens when we provide invalid messages.
         ExecuteMessageTest memory testParams = getDefaultExecuteMessageParams();
         getDefaultContractSetup(testParams);
 
-        address randomTargetAMB = address(0x1234);
-        simpleHandler.setParams(
-            simpleHandler.sourceChain(), simpleHandler.sourceAddress(), randomTargetAMB
-        );
-
+        vm.expectRevert();
         // Finally, execute the message and check that it failed
         targetAMB.executeMessage(
             testParams.executionBlockNumber,
-            testParams.message,
+            _message,
             testParams.accountProof,
             testParams.storageProof
-        );
-        bytes32 messageRoot = keccak256(testParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not success"
-        );
-
-        require(
-            simpleHandler.nonce() == 0,
-            "simpleHandler should have nonce 0 since execution should have failed"
         );
     }
 }
