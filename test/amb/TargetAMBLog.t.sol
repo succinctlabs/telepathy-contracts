@@ -90,7 +90,7 @@ contract TargetAMBTest is Test {
         vm.warp(1675221581);
     }
 
-    function testExecuteMessageFromLogCloseSlot() public {
+    function test_ExecuteMessageFromLog_WhenCloseSlot() public {
         // This test is generated using `cli/src/generateTest.ts`
         ExecuteMessageFromLogParams memory testParams = parseParams("closeSlot");
         getDefaultContractSetup(testParams);
@@ -120,7 +120,7 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageFromLogCloseSlotFail(bytes memory randomBytes) public {
+    function test_ExecuteMessageFromLog_WhenCloseSlotFail(bytes memory randomBytes) public {
         // TODO add way more fuzz tests messing with various fields
 
         // This test is generated using `cli/src/generateTest.ts`
@@ -140,7 +140,7 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageFromLogSameSlot() public {
+    function test_ExecuteMessageFromLog_WhenSameSlot() public {
         // This test is generated using `cli/src/generateTest.ts`
         ExecuteMessageFromLogParams memory testParams = parseParams("sameSlot");
         getDefaultContractSetup(testParams);
@@ -173,7 +173,7 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageFromLogFarSlot() public {
+    function test_ExecuteMessageFromLog_WhenFarSlot() public {
         // This test is generated using `cli/src/generateTest.ts`
         ExecuteMessageFromLogParams memory testParams = parseParams("farSlot");
         getDefaultContractSetup(testParams);
@@ -203,7 +203,7 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function testExecuteMessageFromLogCloseSlotBoundaryConditions() public {
+    function test_ExecuteMessageFromLog_WhenCloseSlotBoundaryConditions() public {
         // This test is generated using `cli/src/generateTest.ts`
         uint256[] memory diffs = new uint[](3);
         diffs[0] = 8191;

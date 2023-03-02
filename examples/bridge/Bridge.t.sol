@@ -34,18 +34,18 @@ contract BridgeTest is Test {
         deposit.setWithdraw(address(withdraw));
     }
 
-    function _deposit(uint256 amount) internal {
-        depositToken.approve(address(deposit), amount);
+    function _deposit(uint256 _amount) internal {
+        depositToken.approve(address(deposit), _amount);
         address recipient = makeAddr("recipient");
-        deposit.deposit{value: deposit.FEE()}(recipient, amount, address(depositToken), DEST_CHAIN);
+        deposit.deposit{value: deposit.FEE()}(recipient, _amount, address(depositToken), DEST_CHAIN);
     }
 
-    function testDeposit() public {
+    function test_Deposit() public {
         _deposit(5);
         require(depositToken.balanceOf(address(deposit)) == 5);
     }
 
-    function testDepositAndWithdraw() public {
+    function test_DepositAndWithdraw() public {
         _deposit(5);
         require(depositToken.balanceOf(address(deposit)) == 5);
         require(withdraw.token().balanceOf(makeAddr("recipient")) == 0);
@@ -53,7 +53,7 @@ contract BridgeTest is Test {
         require(withdraw.token().balanceOf(makeAddr("recipient")) == 5);
     }
 
-    function testDepositRequiresFee() public {
+    function test_DepositRequiresFee() public {
         // expect a revert here
         depositToken.approve(address(deposit), 5);
         address recipient = makeAddr("recipient");
@@ -61,7 +61,7 @@ contract BridgeTest is Test {
         deposit.deposit(recipient, 5, address(depositToken), 2);
     }
 
-    function testClaimFees() public {
+    function test_ClaimFees() public {
         _deposit(5);
         // We must transfer the deposit contract to an EOA to claim fees since
         // by default it owned by the BridgeTest contract, which is not payable
@@ -72,13 +72,13 @@ contract BridgeTest is Test {
         assertEq(eoa.balance, deposit.FEE());
     }
 
-    function testClaimFeesToAddress() public {
+    function test_ClaimFeesToAddress() public {
         _deposit(5);
         deposit.claimFees(makeAddr("anotherEOA"));
         assertEq(makeAddr("anotherEOA").balance, deposit.FEE());
     }
 
-    function testOnlyOwnerClaimFees() public {
+    function test_OnlyOwnerClaimFees() public {
         vm.prank(makeAddr("anotherEOA"));
         vm.expectRevert("Ownable: caller is not the owner");
         deposit.claimFees();

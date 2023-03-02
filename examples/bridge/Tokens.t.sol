@@ -16,7 +16,7 @@ contract TokenTest is Test {
     function setUp() public {}
 
     // Test that we can mint an infinite amount of tokens
-    function testInfiniteMintSuccincts() public {
+    function test_Mint_WhenConsecutive() public {
         InfiniteMintSuccincts mytoken = new InfiniteMintSuccincts(0, address(this));
         uint256 balance = mytoken.balanceOf(address(this));
         assertEq(balance, 0);

@@ -29,7 +29,7 @@ contract UniswapTWAPTest is Test {
         twapSender.setDeliveringContract(uint32(DEST_CHAIN), address(twapReceiver));
     }
 
-    function testUniswapBroadcast() public {
+    function test_UniswapBroadcast() public {
         uint256 timestamp = 1641070800;
         vm.warp(timestamp);
         // ETH/USDC 0.3% pool on Eth mainnet

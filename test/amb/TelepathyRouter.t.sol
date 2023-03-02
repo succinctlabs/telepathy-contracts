@@ -11,7 +11,7 @@ import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract TelepathyRouterTest is Test {
-    function testInitializeImplementation() public {
+    function test_InitializeImplementation() public {
         TelepathyRouter router = new TelepathyRouter();
 
         uint32[] memory sourceChainIds = new uint32[](1);
@@ -27,7 +27,7 @@ contract TelepathyRouterTest is Test {
         );
     }
 
-    function testInitializeProxy() public {
+    function test_InitializeProxy() public {
         TelepathyRouter implementation = new TelepathyRouter();
         UUPSProxy proxy = new UUPSProxy(address(implementation), "");
 
@@ -84,18 +84,11 @@ contract TelepathyRouterUpgradeableTest is Test {
         );
     }
 
-    function testCanInitialize() public {
+    function test_Initialize() public {
         assertFalse(wrappedRouterProxy.version() == 0);
     }
 
-    function testCannotUpgradeWithoutUUPS() public {
-        vm.startPrank(address(timelock));
-        ContractV2 testContractV2 = new ContractV2();
-        vm.expectRevert(bytes("ERC1967Upgrade: new implementation is not UUPS"));
-        wrappedRouterProxy.upgradeTo(address(testContractV2));
-    }
-
-    function testCanUpgradeUUPS() public {
+    function test_Upgrade() public {
         vm.startPrank(address(timelock));
         ContractV2NonUpgradeable testContractV2 = new ContractV2NonUpgradeable();
         wrappedRouterProxy.upgradeTo(address(testContractV2));
@@ -105,7 +98,7 @@ contract TelepathyRouterUpgradeableTest is Test {
     }
 
     // Storage values set in V2 should be preserved after upgrade to V3.
-    function testCanPersistStorageAfterUpgrade() public {
+    function test_Upgrade_WhenPersistedToStorageAfterUpgrade() public {
         vm.startPrank(address(timelock));
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
         wrappedRouterProxy.upgradeTo(address(testContractV2));
@@ -127,7 +120,7 @@ contract TelepathyRouterUpgradeableTest is Test {
     }
 
     // Storage values written in V3 should not overwrite slots persisted in V2.
-    function testCanWriteToStorageAfterUpgrade() public {
+    function test_Upgrade_WhenWritingToStorageAfterUpgrade() public {
         vm.startPrank(address(timelock));
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
         wrappedRouterProxy.upgradeTo(address(testContractV2));
@@ -150,20 +143,7 @@ contract TelepathyRouterUpgradeableTest is Test {
         assertEq(wrappedProxyV3.bar(), 333);
     }
 
-    // Upgrade to a new non-upgradable implementation that disables upgrade function.
-    function testCannotUpgradeAnymore() public {
-        vm.startPrank(address(timelock));
-        ContractV2NonUpgradeable testContractV2 = new ContractV2NonUpgradeable();
-        ContractV3 fakeContract = new ContractV3();
-        wrappedRouterProxy.upgradeTo(address(testContractV2));
-
-        ContractV2NonUpgradeable wrappedProxyV2 = ContractV2NonUpgradeable(address(proxy));
-
-        vm.expectRevert();
-        wrappedProxyV2.upgradeTo(address(fakeContract));
-    }
-
-    function testUpgradeUsingTimelock() public {
+    function test_Upgrade_WhenTimelock() public {
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
 
         vm.startPrank(bob);
@@ -189,7 +169,27 @@ contract TelepathyRouterUpgradeableTest is Test {
         assertEq(wrappedRouterProxy.VERSION(), 2);
     }
 
-    function testCannotCallUpgradeAsNonOwner() public {
+    function test_RevertUpgrade_WhenNotUUPS() public {
+        vm.startPrank(address(timelock));
+        ContractV2 testContractV2 = new ContractV2();
+        vm.expectRevert(bytes("ERC1967Upgrade: new implementation is not UUPS"));
+        wrappedRouterProxy.upgradeTo(address(testContractV2));
+    }
+
+    // Upgrade to a new non-upgradable implementation that disables upgrade function.
+    function test_RevertUpgrade_WhenUpgradeable() public {
+        vm.startPrank(address(timelock));
+        ContractV2NonUpgradeable testContractV2 = new ContractV2NonUpgradeable();
+        ContractV3 fakeContract = new ContractV3();
+        wrappedRouterProxy.upgradeTo(address(testContractV2));
+
+        ContractV2NonUpgradeable wrappedProxyV2 = ContractV2NonUpgradeable(address(proxy));
+
+        vm.expectRevert();
+        wrappedProxyV2.upgradeTo(address(fakeContract));
+    }
+
+    function test_RevertUpgrade_WhenNonOwner() public {
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
 
         vm.expectRevert(bytes("TelepathyRouter: only timelock can call this function"));

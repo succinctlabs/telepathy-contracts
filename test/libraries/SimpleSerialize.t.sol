@@ -8,7 +8,7 @@ import {SSZ} from "src/libraries/SimpleSerialize.sol";
 contract SSZTest is Test {
     function setUp() public {}
 
-    function testFinalityProofEthereum() public pure {
+    function test_FinalityProof_WhenEthereum() public pure {
         uint256 index = 105;
         bytes32[] memory branch = new bytes32[](6);
         branch[0] = bytes32(0xe424020000000000000000000000000000000000000000000000000000000000);
@@ -22,7 +22,7 @@ contract SSZTest is Test {
         require(SSZ.isValidMerkleBranch(leaf, index, branch, root) == true);
     }
 
-    function testFinalityProofGnosis() public pure {
+    function test_FinalityProof_WhenGnosis() public pure {
         uint256 index = 105;
         bytes32[] memory branch = new bytes32[](6);
         branch[0] = bytes32(0x4304060000000000000000000000000000000000000000000000000000000000);
@@ -36,7 +36,7 @@ contract SSZTest is Test {
         require(SSZ.isValidMerkleBranch(leaf, index, branch, root) == true);
     }
 
-    function testReceiptRootProofCloseSlots() public pure {
+    function test_ReceiptRootProof_WhenCloseSlots() public pure {
         // This tests the receipt root proof against a beacon state root.
         // This tests the case where txSlot and srcSlot are within SLOTS_PER_HISTORICAL_ROOT
         // of each other.
@@ -106,11 +106,11 @@ contract SSZTest is Test {
         require(isValid, "Invalid state root");
     }
 
-    function testReceiptRootProofSameSlots() public pure {
+    function test_ReceiptRootProof_WhenSameSlots() public pure {
         // TODO
     }
 
-    function testReceiptRootProofFarSlots() public pure {
+    function test_ReceiptRootProof_WhenFarSlots() public pure {
         // TODO
     }
 }
