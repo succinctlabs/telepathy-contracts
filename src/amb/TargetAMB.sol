@@ -60,11 +60,25 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
 
         {
             requireLightClientDelay(slot, message.sourceChainId);
-            bytes32 executionStateRoot =
-                lightClients[message.sourceChainId].executionStateRoots(slot);
-            bytes32 storageRoot = StorageProof.getStorageRoot(
-                accountProof, broadcasters[message.sourceChainId], executionStateRoot
+
+            bytes32 storageRoot;
+            bytes32 cacheKey = keccak256(
+                abi.encodePacked(message.sourceChainId, slot, broadcasters[message.sourceChainId])
             );
+
+            // If the cache is empty for the cacheKey, then we get the
+            // storageRoot using the provided accountProof.
+            if (storageRootCache[cacheKey] == 0) {
+                bytes32 executionStateRoot =
+                    lightClients[message.sourceChainId].executionStateRoots(slot);
+                storageRoot = StorageProof.getStorageRoot(
+                    accountProof, broadcasters[message.sourceChainId], executionStateRoot
+                );
+                storageRootCache[cacheKey] = storageRoot;
+            } else {
+                storageRoot = storageRootCache[cacheKey];
+            }
+
             bytes32 slotKey = keccak256(
                 abi.encode(keccak256(abi.encode(message.nonce, MESSAGES_MAPPING_STORAGE_INDEX)))
             );
