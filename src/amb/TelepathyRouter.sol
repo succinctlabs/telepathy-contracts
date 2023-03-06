@@ -10,7 +10,7 @@ import {
     Message,
     MessageStatus,
     ITelepathyHandler,
-    ITelepathyBroadcaster
+    ITelepathyRouter
 } from "./interfaces/ITelepathy.sol";
 import {TargetAMB} from "./TargetAMB.sol";
 import {SourceAMB} from "./SourceAMB.sol";

@@ -12,18 +12,18 @@ contract UniswapTWAPTest is Test {
     uint32 constant SOURCE_CHAIN = 1;
     uint32 constant DEST_CHAIN = 100;
 
-    MockTelepathy broadcaster;
+    MockTelepathy router;
     MockTelepathy receiver;
-    CrossChainTWAPBroadcast twapSender;
+    CrossChainTWAPRoute twapSender;
     CrossChainTWAPReceiver twapReceiver;
 
     function setUp() public {
         string memory MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
         vm.createSelectFork(MAINNET_RPC_URL);
-        broadcaster = new MockTelepathy(SOURCE_CHAIN);
+        router = new MockTelepathy(SOURCE_CHAIN);
         receiver = new MockTelepathy(DEST_CHAIN);
-        broadcaster.addTelepathyReceiver(DEST_CHAIN, receiver);
-        twapSender = new CrossChainTWAPBroadcast(address(broadcaster));
+        router.addTelepathyReceiver(DEST_CHAIN, receiver);
+        twapSender = new CrossChainTWAPRoute(address(router));
         twapReceiver =
             new CrossChainTWAPReceiver(SOURCE_CHAIN, address(twapSender), address(receiver));
         twapSender.setDeliveringContract(uint32(DEST_CHAIN), address(twapReceiver));
@@ -35,8 +35,8 @@ contract UniswapTWAPTest is Test {
         // ETH/USDC 0.3% pool on Eth mainnet
         address poolAddress = 0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8;
         uint32 twapInterval = 60; // 60 seconds
-        uint256 price = twapSender.broadcastPrice(DEST_CHAIN, poolAddress, twapInterval);
-        broadcaster.executeNextMessage();
+        uint256 price = twapSender.routePrice(DEST_CHAIN, poolAddress, twapInterval);
+        router.executeNextMessage();
         (uint256 price_, uint256 timestamp_) =
             twapReceiver.getLatestPrice(poolAddress, twapInterval);
         require(price_ == price);
