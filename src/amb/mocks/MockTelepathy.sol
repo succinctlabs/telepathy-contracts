@@ -4,14 +4,12 @@ import {Address, Bytes32} from "src/libraries/Typecast.sol";
 import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
 
 import {SourceAMB} from "src/amb/SourceAMB.sol";
-import {
-    ITelepathyBroadcaster, Message, ITelepathyHandler
-} from "src/amb/interfaces/ITelepathy.sol";
+import {ITelepathyRouter, Message, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
 
 /// @title Telepathy Mock AMB for testing
 /// @author Succinct Labs
 /// @notice This contract is used for testing.
-contract MockTelepathy is ITelepathyBroadcaster {
+contract MockTelepathy is ITelepathyRouter {
     // All stuff related to sending
     uint32 chainId;
     uint64 sentNonce;

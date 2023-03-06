@@ -5,14 +5,14 @@ import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/Owna
 
 import {Bytes32} from "src/libraries/Typecast.sol";
 import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
-import {ITelepathyBroadcaster, Message} from "./interfaces/ITelepathy.sol";
+import {ITelepathyRouter, Message} from "./interfaces/ITelepathy.sol";
 import {TelepathyAccess} from "./TelepathyAccess.sol";
 import {TelepathyStorage} from "./TelepathyStorage.sol";
 
 /// @title Source Arbitrary Message Bridge
 /// @author Succinct Labs
 /// @notice This contract is the entrypoint for sending messages to other chains.
-contract SourceAMB is TelepathyStorage, ITelepathyBroadcaster {
+contract SourceAMB is TelepathyStorage, ITelepathyRouter {
     /// @notice Modifier to require that sending is enabled.
     modifier isSendingEnabled() {
         require(sendingEnabled, "Sending is disabled");

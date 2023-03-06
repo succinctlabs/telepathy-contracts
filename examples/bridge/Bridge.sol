@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-import {ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
+import {ITelepathyRouter} from "src/amb/interfaces/ITelepathy.sol";
 import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
 
 import "./Tokens.sol";
@@ -12,7 +12,7 @@ import "./Tokens.sol";
 contract Deposit is Ownable {
     uint256 public constant FEE = 0.001 ether;
 
-    ITelepathyBroadcaster broadcaster;
+    ITelepathyRouter router;
     address depositToken;
     address foreignWithdraw;
 
@@ -24,8 +24,8 @@ contract Deposit is Ownable {
         uint32 chainId
     );
 
-    constructor(address _broadcaster, address _depositToken) {
-        broadcaster = ITelepathyBroadcaster(_broadcaster);
+    constructor(address _router, address _depositToken) {
+        router = ITelepathyRouter(_router);
         depositToken = _depositToken;
     }
 
@@ -56,7 +56,7 @@ contract Deposit is Ownable {
         require(foreignWithdraw != address(0), "Unset foreign withdraw contract address");
         IERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);
         bytes memory msgData = abi.encode(recipient, amount, tokenAddress);
-        broadcaster.send(chainId, foreignWithdraw, msgData);
+        router.send(chainId, foreignWithdraw, msgData);
         emit DepositEvent(msg.sender, recipient, amount, tokenAddress, chainId);
     }
 

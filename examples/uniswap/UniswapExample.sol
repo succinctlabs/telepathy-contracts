@@ -5,14 +5,14 @@ import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 
-import {ITelepathyBroadcaster} from "src/amb/interfaces/ITelepathy.sol";
+import {ITelepathyRouter} from "src/amb/interfaces/ITelepathy.sol";
 import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
 
-contract CrossChainTWAPBroadcast {
-    ITelepathyBroadcaster broadcaster;
+contract CrossChainTWAPRoute {
+    ITelepathyRouter router;
     mapping(uint32 => address) public deliveringContracts;
 
-    event Broadcast(
+    event Route(
         uint32 indexed chainId,
         address poolAddress,
         uint32 twapInterval,
@@ -20,8 +20,8 @@ contract CrossChainTWAPBroadcast {
         uint256 price
     );
 
-    constructor(address _broadcaster) {
-        broadcaster = ITelepathyBroadcaster(_broadcaster);
+    constructor(address _router) {
+        router = ITelepathyRouter(_router);
     }
 
     function setDeliveringContract(uint32 chainId, address _contract) external {
@@ -41,7 +41,6 @@ contract CrossChainTWAPBroadcast {
         (int56[] memory tickCumulatives,) = IUniswapV3Pool(poolAddress).observe(secondsAgos);
         // uint32 numerator;
         int24 tick;
-        // unchecked { uint32 numerator = ; }
         unchecked {
             tick =
                 int24(int32(uint32(uint56(tickCumulatives[1] - tickCumulatives[0]) / twapInterval)));
@@ -50,17 +49,15 @@ contract CrossChainTWAPBroadcast {
         return FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
     }
 
-    function broadcastPrice(uint32 chainId, address poolAddress, uint32 twapInterval)
+    function routePrice(uint32 chainId, address poolAddress, uint32 twapInterval)
         external
         returns (uint256 priceX96)
     {
-        require(
-            deliveringContracts[chainId] != address(0), "TWAP Broadcast: otherSideContract not set"
-        );
+        require(deliveringContracts[chainId] != address(0), "TWAP Route: otherSideContract not set");
         priceX96 = getPrice(poolAddress, twapInterval);
         bytes memory data = abi.encode(poolAddress, twapInterval, block.timestamp, priceX96);
-        broadcaster.send(chainId, deliveringContracts[chainId], data);
-        emit Broadcast(chainId, poolAddress, twapInterval, block.timestamp, priceX96);
+        router.send(chainId, deliveringContracts[chainId], data);
+        emit Route(chainId, poolAddress, twapInterval, block.timestamp, priceX96);
     }
 }
 

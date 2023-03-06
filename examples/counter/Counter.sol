@@ -1,6 +1,6 @@
 pragma solidity 0.8.16;
 
-import {ITelepathyBroadcaster, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
+import {ITelepathyRouter, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
 
 contract Counter is ITelepathyHandler {
     uint256 public counter = 0;

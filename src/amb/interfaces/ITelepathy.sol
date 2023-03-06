@@ -16,7 +16,7 @@ struct Message {
     bytes data;
 }
 
-interface ITelepathyBroadcaster {
+interface ITelepathyRouter {
     event SentMessage(uint64 indexed nonce, bytes32 indexed msgHash, bytes message);
 
     function send(uint32 recipientChainId, bytes32 recipientAddress, bytes calldata data)
