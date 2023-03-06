@@ -180,9 +180,9 @@ contract TargetAMBTest is Test {
         // Then set the execution root in the LightClientMock
         // Typically we should use the slot here, but we just use the block number since it doesn't
         // matter in the LightClientMock
-        vm.warp(1675221581 - 60 * 10);
+        vm.warp(messageParams.blockNumber - targetAMBImplementation.MIN_LIGHT_CLIENT_DELAY());
         lightClientMock.setExecutionRoot(messageParams.blockNumber, messageParams.stateRoot);
-        vm.warp(1675221581);
+        vm.warp(messageParams.blockNumber);
     }
 
     function test_ExecuteMessage() public {
@@ -335,6 +335,23 @@ contract TargetAMBTest is Test {
 
         vm.expectRevert();
         // Finally, execute the message and check that it failed
+        targetAMB.executeMessage(
+            messageParams.blockNumber,
+            messageParams.message,
+            messageParams.accountProof,
+            messageParams.storageProof
+        );
+    }
+
+    function test_RevertExecuteMessage_WhenLightClientDelayNotPassed() public {
+        ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
+        getDefaultContractSetup(messageParams);
+
+        vm.warp(messageParams.blockNumber - targetAMB.MIN_LIGHT_CLIENT_DELAY() + 1);
+        lightClientMock.setExecutionRoot(messageParams.blockNumber, messageParams.stateRoot);
+        vm.warp(messageParams.blockNumber);
+
+        vm.expectRevert();
         targetAMB.executeMessage(
             messageParams.blockNumber,
             messageParams.message,
