@@ -98,10 +98,14 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
             revert("Update slot is too far in the future");
         }
 
+        if (update.finalizedSlot < head) {
+            revert("Update slot less than current head");
+        }
+
         if (finalized) {
-            setHead(update.finalizedSlot, update.finalizedHeaderRoot);
-            setExecutionStateRoot(update.finalizedSlot, update.executionStateRoot);
-            setTimestamp(update.finalizedSlot, block.timestamp);
+            setSlotRoots(
+                update.finalizedSlot, update.finalizedHeaderRoot, update.executionStateRoot
+            );
         } else {
             revert("Not enough participants");
         }
@@ -190,23 +194,30 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
     }
 
     /// @notice Sets the current slot for the chain the light client is reflecting.
-    function setHead(uint256 slot, bytes32 root) internal {
-        if (headers[slot] != bytes32(0) && headers[slot] != root) {
-            consistent = false;
+    /// @dev Checks if roots exists for the slot already. If there is, check for a conflict between
+    ///      the given roots and the existing roots. If there is an existing header but no
+    ///      conflict, do nothing. This avoids timestamp renewal DoS attacks.
+    function setSlotRoots(uint256 slot, bytes32 finalizedHeaderRoot, bytes32 executionStateRoot)
+        internal
+    {
+        if (headers[slot] != bytes32(0)) {
+            if (headers[slot] != finalizedHeaderRoot) {
+                consistent = false;
+            }
             return;
         }
-        head = slot;
-        headers[slot] = root;
-        emit HeadUpdate(slot, root);
-    }
+        if (executionStateRoots[slot] != bytes32(0)) {
+            if (executionStateRoots[slot] != executionStateRoot) {
+                consistent = false;
+            }
+            return;
+        }
 
-    /// @notice Sets the execution state root for a given slot.
-    function setExecutionStateRoot(uint256 slot, bytes32 root) internal {
-        if (executionStateRoots[slot] != bytes32(0) && executionStateRoots[slot] != root) {
-            consistent = false;
-            return;
-        }
-        executionStateRoots[slot] = root;
+        head = slot;
+        headers[slot] = finalizedHeaderRoot;
+        executionStateRoots[slot] = executionStateRoot;
+        timestamps[slot] = block.timestamp;
+        emit HeadUpdate(slot, finalizedHeaderRoot);
     }
 
     /// @notice Sets the sync committee poseidon for a given period.
@@ -220,9 +231,5 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         }
         syncCommitteePoseidons[period] = poseidon;
         emit SyncCommitteeUpdate(period, poseidon);
-    }
-
-    function setTimestamp(uint256 slot, uint256 timestamp) internal {
-        timestamps[slot] = timestamp;
     }
 }
