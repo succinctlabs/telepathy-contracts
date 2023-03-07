@@ -53,6 +53,21 @@ contract LightClientTest is Test, LightClientFixture {
         }
     }
 
+    function test_StepTimestamp_WhenDuplicateUpdate() public {
+        Fixture memory fixture = fixtures[0];
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        uint256 currentTimestamp = block.timestamp;
+        lc.step(step);
+        assertTrue(lc.timestamps(step.finalizedSlot) == currentTimestamp);
+
+        vm.warp(12345678900);
+        lc.step(step);
+        assertTrue(lc.timestamps(step.finalizedSlot) == currentTimestamp);
+    }
+
     function test_Rotate() public {
         for (uint256 i = 0; i < fixtures.length; i++) {
             Fixture memory fixture = fixtures[i];
@@ -231,6 +246,20 @@ contract LightClientTest is Test, LightClientFixture {
 
         LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
         LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        vm.expectRevert();
+        lc.step(step);
+    }
+
+    function test_RevertStep_WhenFinalizedSlotIsOlder() public {
+        Fixture memory fixture = fixtures[0];
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        lc.step(step);
+
+        step.finalizedSlot = step.finalizedSlot - 1;
 
         vm.expectRevert();
         lc.step(step);
