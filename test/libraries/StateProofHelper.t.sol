@@ -88,6 +88,78 @@ contract StateProofHelperTest is Test, StateProofFixture {
         }
     }
 
+    // For testing https://eips.ethereum.org/EIPS/eip-2718, which allows for multiple
+    // transaction types:
+    //  0x?? - LegacyTransaction with RLP byte in range 0xc0 ≤ x ≤ 0xfe
+    //  0x01 - Transaction with EIP-2930 Access Lists (https://eips.ethereum.org/EIPS/eip-2930)
+    //  0x02 - Transaction with EIP-1559 Fee Market Change (https://eips.ethereum.org/EIPS/eip-1559)
+
+    // Generate fixture for different types by manipulating `TX_TYPE` in the generate proof fixture
+    // script.
+
+    function test_EventProof_WhenType0Tx() public {
+        string memory filename = string.concat("eventProof-type0");
+        string memory path =
+            string.concat(vm.projectRoot(), "/test/libraries/fixtures/", filename, ".json");
+        bytes memory parsed = vm.parseJson(vm.readFile(path));
+        EventProofFixture memory fixture = abi.decode(parsed, (EventProofFixture));
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        bytes32 messageRoot = EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+        require(messageRoot == fixture.messageRoot);
+    }
+
+    function test_EventProof_WhenType1Tx() public {
+        string memory filename = string.concat("eventProof-type1");
+        string memory path =
+            string.concat(vm.projectRoot(), "/test/libraries/fixtures/", filename, ".json");
+        bytes memory parsed = vm.parseJson(vm.readFile(path));
+        EventProofFixture memory fixture = abi.decode(parsed, (EventProofFixture));
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        bytes32 messageRoot = EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+        require(messageRoot == fixture.messageRoot);
+    }
+
+    function test_EventProof_WhenType2Tx() public {
+        string memory filename = string.concat("eventProof-type2");
+        string memory path =
+            string.concat(vm.projectRoot(), "/test/libraries/fixtures/", filename, ".json");
+        bytes memory parsed = vm.parseJson(vm.readFile(path));
+        EventProofFixture memory fixture = abi.decode(parsed, (EventProofFixture));
+
+        bytes[] memory proof = buildEventProof(fixture);
+
+        bytes32 messageRoot = EventProof.getEventTopic(
+            proof,
+            fixture.receiptsRoot,
+            vm.parseBytes(fixture.key),
+            fixture.logIndex,
+            fixture.claimedEmitter,
+            keccak256("SentMessage(uint64,bytes32,bytes)"),
+            2
+        );
+        require(messageRoot == fixture.messageRoot);
+    }
+
     function test_RevertStorageProof_WhenBadContractAddress() public {
         StorageProofFixture memory fixture = storageProofFixtures[0];
 
