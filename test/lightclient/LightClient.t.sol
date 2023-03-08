@@ -80,6 +80,60 @@ contract LightClientTest is Test, LightClientFixture {
         }
     }
 
+    // Particularly important as an early slot (within in the first 2 epochs of a period) will have
+    // the the attested slot and finalized slot land in different Sync Committee periods.
+    function test_Rotate_WhenSyncCommitteePeriodEarlySlot() public {
+        string memory path = string.concat(
+            vm.projectRoot(), "/test/lightclient/fixtures/periodBoundaryEarlySlot.json"
+        );
+        bytes memory parsed = vm.parseJson(vm.readFile(path));
+        Fixture memory fixture = abi.decode(parsed, (Fixture));
+
+        uint256 attestedSlotPeriod = fixture.step.attestedSlot / fixture.initial.slotsPerPeriod;
+        uint256 finalizedSlotPeriod = fixture.step.finalizedSlot / fixture.initial.slotsPerPeriod;
+
+        // ensure that there is a different period between the attested slot and finalized slot
+        assertTrue(finalizedSlotPeriod < attestedSlotPeriod);
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        lc.rotate(rotate);
+
+        assertEq(lc.syncCommitteePoseidons(finalizedSlotPeriod), 0);
+        assertEq(lc.syncCommitteePoseidons(attestedSlotPeriod), rotate.syncCommitteePoseidon);
+
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        lc.step(step);
+    }
+
+    function test_Rotate_WhenSyncCommitteePeriodLateSlot() public {
+        string memory path = string.concat(
+            vm.projectRoot(), "/test/lightclient/fixtures/periodBoundaryLateSlot.json"
+        );
+        bytes memory parsed = vm.parseJson(vm.readFile(path));
+        Fixture memory fixture = abi.decode(parsed, (Fixture));
+
+        uint256 attestedSlotPeriod = fixture.step.attestedSlot / fixture.initial.slotsPerPeriod;
+        uint256 finalizedSlotPeriod = fixture.step.finalizedSlot / fixture.initial.slotsPerPeriod;
+
+        // ensure that the attested slot is the last slot of the period
+        assertEq((fixture.step.attestedSlot + 1) % fixture.initial.slotsPerPeriod, 0);
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        lc.rotate(rotate);
+
+        assertEq(lc.syncCommitteePoseidons(finalizedSlotPeriod), rotate.syncCommitteePoseidon);
+        assertEq(lc.syncCommitteePoseidons(attestedSlotPeriod), rotate.syncCommitteePoseidon);
+
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        lc.step(step);
+    }
+
     function test_RawStepProof() public {
         for (uint256 i = 0; i < fixtures.length; i++) {
             Fixture memory fixture = fixtures[i];
