@@ -71,6 +71,7 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
             if (storageRootCache[cacheKey] == 0) {
                 bytes32 executionStateRoot =
                     lightClients[message.sourceChainId].executionStateRoots(slot);
+                require(executionStateRoot != 0, "Execution State Root is not set");
                 storageRoot = StorageProof.getStorageRoot(
                     accountProof, broadcasters[message.sourceChainId], executionStateRoot
                 );
@@ -118,7 +119,7 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
             (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
             requireLightClientDelay(srcSlot, message.sourceChainId);
             bytes32 headerRoot = lightClients[message.sourceChainId].headers(srcSlot);
-            require(headerRoot != bytes32(0), "TargetAMB: headerRoot is missing");
+            require(headerRoot != bytes32(0), "HeaderRoot is missing");
             bool isValid =
                 SSZ.verifyReceiptsRoot(receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot);
             require(isValid, "Invalid receipts root proof");
@@ -179,6 +180,11 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
             revert("Wrong chain.");
         } else if (message.version != version) {
             revert("Wrong version.");
+        } else if (
+            address(lightClients[message.sourceChainId]) == address(0)
+                || broadcasters[message.sourceChainId] == address(0)
+        ) {
+            revert("Light client or broadcaster for source chain is not set");
         }
         return (message, messageRoot);
     }

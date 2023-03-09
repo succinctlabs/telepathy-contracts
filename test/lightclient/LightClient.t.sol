@@ -13,8 +13,8 @@ contract LightClientTest is Test, LightClientFixture {
     uint32 constant SOURCE_CHAIN_ID = 1;
     uint16 constant FINALITY_THRESHOLD = 350;
 
-    uint256 constant FIXTURE_SLOT_START = 5043198;
-    uint256 constant FIXTURE_SLOT_END = 5053982;
+    uint256 constant FIXTURE_SLOT_START = 5149118;
+    uint256 constant FIXTURE_SLOT_END = 5149247;
 
     Fixture[] fixtures;
 

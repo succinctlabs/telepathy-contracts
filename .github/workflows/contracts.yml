@@ -58,7 +58,7 @@ jobs:
 
       - name: Run tests
         working-directory: .
-        run: MAINNET_RPC_URL=${{ secrets.MAINNET_RPC_URL }} forge test --no-match-test testUnimplemented
+        run: MAINNET_RPC_URL=${{ secrets.MAINNET_RPC_URL }} forge test
         env:
           # Only fuzz intensely if we're running this action on a push to main or for a PR going into main:
           FOUNDRY_PROFILE: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && 'intense' }}
