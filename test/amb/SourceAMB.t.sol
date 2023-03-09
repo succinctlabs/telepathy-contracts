@@ -166,6 +166,8 @@ contract SourceAMBTest is Test {
     }
 
     function testFuzz_Send_RecipientChainId(uint32 _chainId) public {
+        vm.assume(_chainId != block.chainid);
+
         vm.startPrank(bob);
         bytes memory expectedMessage = MessageEncoding.encode(
             wrappedSourceAMBProxy.VERSION(),

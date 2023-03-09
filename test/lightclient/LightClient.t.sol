@@ -306,17 +306,17 @@ contract LightClientTest is Test, LightClientFixture {
     }
 
     function test_RevertStep_WhenFinalizedSlotIsOlder() public {
-        Fixture memory fixture = fixtures[0];
+        Fixture memory newerFixture = fixtures[2];
+        Fixture memory olderFixture = fixtures[1];
 
-        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
-        LightClientStep memory step = convertToLightClientStep(fixture.step);
+        LightClient lc = newLightClient(newerFixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientStep memory newerStep = convertToLightClientStep(newerFixture.step);
+        LightClientStep memory olderStep = convertToLightClientStep(olderFixture.step);
 
-        lc.step(step);
+        lc.step(newerStep);
 
-        step.finalizedSlot = step.finalizedSlot - 1;
-
-        vm.expectRevert();
-        lc.step(step);
+        vm.expectRevert("Update slot less than current head");
+        lc.step(olderStep);
     }
 
     function test_RevertRotate_WhenBadA() public {

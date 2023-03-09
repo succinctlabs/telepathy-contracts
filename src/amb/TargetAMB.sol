@@ -146,6 +146,7 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
 
     /// @notice Checks that the light client for a given chainId is consistent.
     function requireLightClientConsistency(uint32 chainId) internal view {
+        require(address(lightClients[chainId]) != address(0), "Light client is not set.");
         require(lightClients[chainId].consistent(), "Light client is inconsistent.");
     }
 
@@ -156,6 +157,8 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
 
     /// @notice Checks that the light client delay is adequate.
     function requireLightClientDelay(uint64 slot, uint32 chainId) internal view {
+        require(address(lightClients[chainId]) != address(0), "Light client is not set.");
+        require(lightClients[chainId].timestamps(slot) != 0, "Timestamp is not set for slot.");
         uint256 elapsedTime = block.timestamp - lightClients[chainId].timestamps(slot);
         require(elapsedTime >= MIN_LIGHT_CLIENT_DELAY, "Must wait longer to use this slot.");
     }
