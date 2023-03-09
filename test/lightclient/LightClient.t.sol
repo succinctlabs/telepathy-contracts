@@ -14,7 +14,7 @@ contract LightClientTest is Test, LightClientFixture {
     uint16 constant FINALITY_THRESHOLD = 350;
 
     uint256 constant FIXTURE_SLOT_START = 5149118;
-    uint256 constant FIXTURE_SLOT_END = 5149247;
+    uint256 constant FIXTURE_SLOT_END = 5153726;
 
     Fixture[] fixtures;
 
