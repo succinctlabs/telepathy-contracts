@@ -110,10 +110,14 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
         external
         onlyTimelock
     {
-        require(chainId != 0, "chainId cannot be zero");
-        require(lightclient != address(0), "lightclient cannot be zero address");
-        require(broadcaster != address(0), "broadcaster cannot be zero address");
-        if (address(lightClients[chainId]) != address(0)) {
+        bool chainIdExists = false;
+        for (uint256 i = 0; i < sourceChainIds.length; i++) {
+            if (sourceChainIds[i] == chainId) {
+                chainIdExists = true;
+                break;
+            }
+        }
+        if (!chainIdExists) {
             sourceChainIds.push(chainId);
             emit SourceChainAdded(chainId);
         }
