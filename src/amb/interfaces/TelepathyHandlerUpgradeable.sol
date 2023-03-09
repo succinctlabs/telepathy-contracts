@@ -12,7 +12,7 @@ abstract contract TelepathyHandlerUpgradeable is ITelepathyHandler, Initializabl
         _telepathyReceiever = telepathyReceiever;
     }
 
-    function handleTelepathy(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathy(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
         external
         override
         returns (bytes4)
@@ -20,11 +20,11 @@ abstract contract TelepathyHandlerUpgradeable is ITelepathyHandler, Initializabl
         if (msg.sender != _telepathyReceiever) {
             revert NotFromTelepathyReceiever(msg.sender);
         }
-        handleTelepathyImpl(_sourceChainId, _senderAddress, _data);
+        handleTelepathyImpl(_sourceChainId, _sourceAddress, _data);
         return ITelepathyHandler.handleTelepathy.selector;
     }
 
-    function handleTelepathyImpl(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathyImpl(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
         internal
         virtual;
 }

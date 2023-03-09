@@ -51,14 +51,14 @@ contract SimpleHandler is ITelepathyHandler {
         targetAMB = _targetAMB;
     }
 
-    function handleTelepathy(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathy(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
         external
         override
         returns (bytes4)
     {
         require(msg.sender == targetAMB, "Only Telepathy can call this function");
         require(_sourceChainId == sourceChain, "Invalid source chain id");
-        require(_senderAddress == sourceAddress, "Invalid source address");
+        require(_sourceAddress == sourceAddress, "Invalid source address");
         nonceToDataHash[nonce++] = keccak256(_data);
         return ITelepathyHandler.handleTelepathy.selector;
     }
@@ -212,9 +212,9 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function test_ExecuteMessage_WrongSenderAddressFails() public {
+    function test_ExecuteMessage_WrongSourceAddressFails() public {
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
-        messageParams.sourceMessageSender = address(0x1234); // Set the source sender address to something random
+        messageParams.sourceMessageSender = address(0x1234); // Set the source address to something random
         getDefaultContractSetup(messageParams);
 
         // Finally, execute the message and check that it failed
@@ -305,8 +305,8 @@ contract TargetAMBTest is Test {
         );
     }
 
-    function test_RevertExecuteMessage_WhenInvalidRecipient() public {
-        // Test what happens when the recipient address doesn't implement the ITelepathyHandler
+    function test_RevertExecuteMessage_WhenInvalidDestination() public {
+        // Test what happens when the destination address doesn't implement the ITelepathyHandler
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
         getDefaultContractSetup(messageParams);
 

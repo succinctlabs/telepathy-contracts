@@ -78,9 +78,9 @@ library MessageEncoding {
             message.version,
             message.nonce,
             message.sourceChainId,
-            message.senderAddress,
-            message.recipientChainId,
-            message.recipientAddress,
+            message.sourceAddress,
+            message.destinationChainId,
+            message.destinationAddress,
             message.data
         );
     }
@@ -89,13 +89,19 @@ library MessageEncoding {
         uint8 version,
         uint64 nonce,
         uint32 sourceChainId,
-        address senderAddress,
-        uint32 recipientChainId,
-        bytes32 recipientAddress,
+        address sourceAddress,
+        uint32 destinationChainId,
+        bytes32 destinationAddress,
         bytes memory data
     ) internal pure returns (bytes memory) {
         return abi.encodePacked(
-            version, nonce, sourceChainId, senderAddress, recipientChainId, recipientAddress, data
+            version,
+            nonce,
+            sourceChainId,
+            sourceAddress,
+            destinationChainId,
+            destinationAddress,
+            data
         );
     }
 
@@ -103,9 +109,9 @@ library MessageEncoding {
         uint8 version;
         uint64 nonce; // 64 / 8 = 8
         uint32 sourceChainId; // 32 / 8 = 4
-        address senderAddress; // 20 bytes
-        uint32 recipientChainId; // 4 bytes
-        bytes32 recipientAddress; // 32
+        address sourceAddress; // 20 bytes
+        uint32 destinationChainId; // 4 bytes
+        bytes32 destinationAddress; // 32
         // 8 + 4 + 20 + 4 + 32 = 68
         assembly {
             version := mload(add(data, 1))
@@ -114,18 +120,18 @@ library MessageEncoding {
 
             sourceChainId := mload(add(data, 13))
 
-            senderAddress := mload(add(data, 33))
+            sourceAddress := mload(add(data, 33))
 
-            recipientChainId := mload(add(data, 37))
+            destinationChainId := mload(add(data, 37))
 
-            recipientAddress := mload(add(data, 69))
+            destinationAddress := mload(add(data, 69))
         }
         message.version = version;
         message.nonce = nonce;
         message.sourceChainId = sourceChainId;
-        message.senderAddress = senderAddress;
-        message.recipientChainId = recipientChainId;
-        message.recipientAddress = recipientAddress;
+        message.sourceAddress = sourceAddress;
+        message.destinationChainId = destinationChainId;
+        message.destinationAddress = destinationAddress;
         message.data = BytesLib.slice(data, 69, data.length - 69);
     }
 }

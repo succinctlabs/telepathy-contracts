@@ -13,10 +13,10 @@ import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
 contract SourceAMBTest is Test {
     event SentMessage(uint64 indexed nonce, bytes32 indexed msgHash, bytes message);
 
-    uint32 constant DEFAULT_RECIPIENT_CHAIN_ID = 100;
-    address constant DEFAULT_RECIPIENT_ADDR = 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990;
-    bytes32 constant DEFAULT_RECIPIENT_ADDR_BYTES32 = bytes32("0x690B9A9E9aa1C9dB991C7721a92d35");
-    bytes constant DEFAULT_RECIPIENT_DATA = hex"deadbeef";
+    uint32 constant DEFAULT_DESTINATION_CHAIN_ID = 100;
+    address constant DEFAULT_DESTINATION_ADDR = 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990;
+    bytes32 constant DEFAULT_DESTINATION_ADDR_BYTES32 = bytes32("0x690B9A9E9aa1C9dB991C7721a92d35");
+    bytes constant DEFAULT_DESTINATION_DATA = hex"deadbeef";
 
     TelepathyRouter wrappedSourceAMBProxy;
 
@@ -37,16 +37,16 @@ contract SourceAMBTest is Test {
         );
     }
 
-    function test_Send_WhenAddressRecipient() public {
+    function test_Send_WhenAddressDestination() public {
         vm.startPrank(bob);
         bytes memory expectedMessage = MessageEncoding.encode(
             wrappedSourceAMBProxy.VERSION(),
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             bob,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            Bytes32.fromAddress(DEFAULT_RECIPIENT_ADDR),
-            DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDR),
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -56,21 +56,21 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot = wrappedSourceAMBProxy.send(
-            DEFAULT_RECIPIENT_CHAIN_ID, DEFAULT_RECIPIENT_ADDR, DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageRoot, expectedMessageRoot);
     }
 
-    function test_Send_WhenBytes32Recipient() public {
+    function test_Send_WhenBytes32Destination() public {
         vm.startPrank(bob);
         bytes memory expectedMessage = MessageEncoding.encode(
             wrappedSourceAMBProxy.VERSION(),
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             bob,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            DEFAULT_RECIPIENT_ADDR_BYTES32,
-            DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID,
+            DEFAULT_DESTINATION_ADDR_BYTES32,
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -80,21 +80,21 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot = wrappedSourceAMBProxy.send(
-            DEFAULT_RECIPIENT_CHAIN_ID, DEFAULT_RECIPIENT_ADDR_BYTES32, DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR_BYTES32, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageRoot, expectedMessageRoot);
     }
 
-    function test_SendViaStorage_WhenAddressRecipient() public {
+    function test_SendViaStorage_WhenAddressDestination() public {
         vm.startPrank(bob);
         bytes memory expectedMessage = MessageEncoding.encode(
             wrappedSourceAMBProxy.VERSION(),
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             bob,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            Bytes32.fromAddress(DEFAULT_RECIPIENT_ADDR),
-            DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDR),
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -104,7 +104,7 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot = wrappedSourceAMBProxy.sendViaStorage(
-            DEFAULT_RECIPIENT_CHAIN_ID, DEFAULT_RECIPIENT_ADDR, DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageRoot, expectedMessageRoot);
         assertEq(
@@ -113,16 +113,16 @@ contract SourceAMBTest is Test {
         );
     }
 
-    function test_SendViaStorage_WhenBytes32Recipient() public {
+    function test_SendViaStorage_WhenBytes32Destination() public {
         vm.startPrank(bob);
         bytes memory expectedMessage = MessageEncoding.encode(
             wrappedSourceAMBProxy.VERSION(),
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             bob,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            DEFAULT_RECIPIENT_ADDR_BYTES32,
-            DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID,
+            DEFAULT_DESTINATION_ADDR_BYTES32,
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -132,7 +132,7 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot = wrappedSourceAMBProxy.sendViaStorage(
-            DEFAULT_RECIPIENT_CHAIN_ID, DEFAULT_RECIPIENT_ADDR_BYTES32, DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR_BYTES32, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageRoot, expectedMessageRoot);
         assertEq(
@@ -148,9 +148,9 @@ contract SourceAMBTest is Test {
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             sender,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            Bytes32.fromAddress(DEFAULT_RECIPIENT_ADDR),
-            DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDR),
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -160,12 +160,12 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot = wrappedSourceAMBProxy.send(
-            DEFAULT_RECIPIENT_CHAIN_ID, DEFAULT_RECIPIENT_ADDR, DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageRoot, expectedMessageRoot);
     }
 
-    function testFuzz_Send_RecipientChainId(uint32 _chainId) public {
+    function testFuzz_Send_DestinationChainId(uint32 _chainId) public {
         vm.assume(_chainId != block.chainid);
 
         vm.startPrank(bob);
@@ -175,8 +175,8 @@ contract SourceAMBTest is Test {
             uint32(block.chainid),
             bob,
             _chainId,
-            Bytes32.fromAddress(DEFAULT_RECIPIENT_ADDR),
-            DEFAULT_RECIPIENT_DATA
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDR),
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -186,20 +186,20 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot =
-            wrappedSourceAMBProxy.send(_chainId, DEFAULT_RECIPIENT_ADDR, DEFAULT_RECIPIENT_DATA);
+            wrappedSourceAMBProxy.send(_chainId, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA);
         assertEq(messageRoot, expectedMessageRoot);
     }
 
-    function testFuzz_Send_RecipientAddress(address _recipientAddress) public {
+    function testFuzz_Send_DestinationAddress(address _destinationAddress) public {
         vm.startPrank(bob);
         bytes memory expectedMessage = MessageEncoding.encode(
             wrappedSourceAMBProxy.VERSION(),
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             bob,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            Bytes32.fromAddress(_recipientAddress),
-            DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID,
+            Bytes32.fromAddress(_destinationAddress),
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -209,21 +209,21 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot = wrappedSourceAMBProxy.send(
-            DEFAULT_RECIPIENT_CHAIN_ID, _recipientAddress, DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID, _destinationAddress, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageRoot, expectedMessageRoot);
     }
 
-    function testFuzz_Send_RecipientBytes32(bytes32 _recipientAddress) public {
+    function testFuzz_Send_DestinationBytes32(bytes32 _destinationAddress) public {
         vm.startPrank(bob);
         bytes memory expectedMessage = MessageEncoding.encode(
             wrappedSourceAMBProxy.VERSION(),
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             bob,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            _recipientAddress,
-            DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID,
+            _destinationAddress,
+            DEFAULT_DESTINATION_DATA
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
 
@@ -233,7 +233,7 @@ contract SourceAMBTest is Test {
         );
 
         bytes32 messageRoot = wrappedSourceAMBProxy.send(
-            DEFAULT_RECIPIENT_CHAIN_ID, _recipientAddress, DEFAULT_RECIPIENT_DATA
+            DEFAULT_DESTINATION_CHAIN_ID, _destinationAddress, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageRoot, expectedMessageRoot);
     }
@@ -245,8 +245,8 @@ contract SourceAMBTest is Test {
             SourceAMB(wrappedSourceAMBProxy).nonce(),
             uint32(block.chainid),
             bob,
-            DEFAULT_RECIPIENT_CHAIN_ID,
-            Bytes32.fromAddress(DEFAULT_RECIPIENT_ADDR),
+            DEFAULT_DESTINATION_CHAIN_ID,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDR),
             _data
         );
         bytes32 expectedMessageRoot = keccak256(expectedMessage);
@@ -256,8 +256,9 @@ contract SourceAMBTest is Test {
             SourceAMB(wrappedSourceAMBProxy).nonce(), expectedMessageRoot, expectedMessage
         );
 
-        bytes32 messageRoot =
-            wrappedSourceAMBProxy.send(DEFAULT_RECIPIENT_CHAIN_ID, DEFAULT_RECIPIENT_ADDR, _data);
+        bytes32 messageRoot = wrappedSourceAMBProxy.send(
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, _data
+        );
         assertEq(messageRoot, expectedMessageRoot);
     }
 }

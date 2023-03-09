@@ -18,7 +18,7 @@ import {
 
 /// @title Target Arbitrary Message Bridge
 /// @author Succinct Labs
-/// @notice Executes messages sent from the source chain on the target chain.
+/// @notice Executes messages sent from the source chain on the destination chain.
 contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyReceiver {
     /// @notice The minimum delay for using any information from the light client.
     uint256 public constant MIN_LIGHT_CLIENT_DELAY = 2 minutes;
@@ -176,7 +176,7 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
 
         if (messageStatus[messageRoot] != MessageStatus.NOT_EXECUTED) {
             revert("Message already executed.");
-        } else if (message.recipientChainId != block.chainid) {
+        } else if (message.destinationChainId != block.chainid) {
             revert("Wrong chain.");
         } else if (message.version != version) {
             revert("Wrong version.");
@@ -204,11 +204,11 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
             bytes memory receiveCall = abi.encodeWithSelector(
                 ITelepathyHandler.handleTelepathy.selector,
                 message.sourceChainId,
-                message.senderAddress,
+                message.sourceAddress,
                 message.data
             );
-            address recipient = Address.fromBytes32(message.recipientAddress);
-            (status, data) = recipient.call(receiveCall);
+            address destination = Address.fromBytes32(message.destinationAddress);
+            (status, data) = destination.call(receiveCall);
         }
 
         // Unfortunately, there are some edge cases where a call may have a successful status but

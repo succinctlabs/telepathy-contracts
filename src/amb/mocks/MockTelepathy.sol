@@ -29,60 +29,60 @@ contract MockTelepathy is ITelepathyRouter {
 
     /// @notice SourceAMB methods
 
-    function send(uint32 _recipientChainId, bytes32 _recipientAddress, bytes calldata _data)
+    function send(uint32 _destinationChainId, bytes32 _destinationAddress, bytes calldata _data)
         external
         returns (bytes32)
     {
-        return _send(_recipientChainId, _recipientAddress, _data);
+        return _send(_destinationChainId, _destinationAddress, _data);
     }
 
-    function send(uint32 _recipientChainId, address _recipientAddress, bytes calldata _data)
+    function send(uint32 _destinationChainId, address _destinationAddress, bytes calldata _data)
         external
         returns (bytes32)
     {
-        return _send(_recipientChainId, Bytes32.fromAddress(_recipientAddress), _data);
+        return _send(_destinationChainId, Bytes32.fromAddress(_destinationAddress), _data);
     }
 
     function sendViaStorage(
-        uint32 _recipientChainId,
-        bytes32 _recipientAddress,
+        uint32 _destinationChainId,
+        bytes32 _destinationAddress,
         bytes calldata _data
     ) external returns (bytes32) {
-        return _send(_recipientChainId, _recipientAddress, _data);
+        return _send(_destinationChainId, _destinationAddress, _data);
     }
 
     function sendViaStorage(
-        uint32 _recipientChainId,
-        address _recipientAddress,
+        uint32 _destinationChainId,
+        address _destinationAddress,
         bytes calldata _data
     ) external returns (bytes32) {
-        return _send(_recipientChainId, Bytes32.fromAddress(_recipientAddress), _data);
+        return _send(_destinationChainId, Bytes32.fromAddress(_destinationAddress), _data);
     }
 
     /// @dev Helper methods for processing all send methods
 
-    function _send(uint32 _recipientChainId, bytes32 _recipientAddress, bytes calldata _data)
+    function _send(uint32 _destinationChainId, bytes32 _destinationAddress, bytes calldata _data)
         public
         returns (bytes32)
     {
         (Message memory message,, bytes32 messageRoot) =
-            _getMessageAndRoot(_recipientChainId, _recipientAddress, _data);
+            _getMessageAndRoot(_destinationChainId, _destinationAddress, _data);
         sentMessages[++sentNonce] = message;
         return messageRoot;
     }
 
     function _getMessageAndRoot(
-        uint32 _recipientChainId,
-        bytes32 _recipientAddress,
+        uint32 _destinationChainId,
+        bytes32 _destinationAddress,
         bytes calldata _data
     ) public view returns (Message memory, bytes memory, bytes32) {
         Message memory message = Message({
             version: 1,
             nonce: sentNonce,
             sourceChainId: chainId,
-            senderAddress: msg.sender,
-            recipientAddress: _recipientAddress,
-            recipientChainId: _recipientChainId,
+            sourceAddress: msg.sender,
+            destinationAddress: _destinationAddress,
+            destinationChainId: _destinationChainId,
             data: _data
         });
         bytes memory messageBytes = MessageEncoding.encode(message);
@@ -93,7 +93,7 @@ contract MockTelepathy is ITelepathyRouter {
     /// @notice to execute the next message that has been sent
     function executeNextMessage() external returns (bool) {
         Message memory message = sentMessages[++executedNonce];
-        MockTelepathy receiver = telepathyReceivers[message.recipientChainId];
+        MockTelepathy receiver = telepathyReceivers[message.destinationChainId];
         require(receiver != MockTelepathy(address(0)), "MockAMB: No receiver for chain");
         return receiver._executeMessage(message);
     }
@@ -106,11 +106,11 @@ contract MockTelepathy is ITelepathyRouter {
             bytes memory receiveCall = abi.encodeWithSelector(
                 ITelepathyHandler.handleTelepathy.selector,
                 message.sourceChainId,
-                message.senderAddress,
+                message.sourceAddress,
                 message.data
             );
-            address recipient = Address.fromBytes32(message.recipientAddress);
-            (status, data) = recipient.call(receiveCall);
+            address destination = Address.fromBytes32(message.destinationAddress);
+            (status, data) = destination.call(receiveCall);
         }
 
         // Unfortunately, there are some edge cases where a call may have a successful status but
