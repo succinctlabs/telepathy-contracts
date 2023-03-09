@@ -29,6 +29,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         isSendingEnabled
         returns (bytes32)
     {
+        require(recipientChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(recipientChainId, recipientAddress, data);
         emit SentMessage(nonce++, messageRoot, message);
@@ -40,6 +41,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         isSendingEnabled
         returns (bytes32)
     {
+        require(recipientChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(recipientChainId, Bytes32.fromAddress(recipientAddress), data);
         emit SentMessage(nonce++, messageRoot, message);
@@ -58,6 +60,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         isSendingEnabled
         returns (bytes32)
     {
+        require(recipientChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(recipientChainId, recipientAddress, data);
         messages[nonce] = messageRoot;
@@ -70,6 +73,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         isSendingEnabled
         returns (bytes32)
     {
+        require(recipientChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(recipientChainId, Bytes32.fromAddress(recipientAddress), data);
         messages[nonce] = messageRoot;
