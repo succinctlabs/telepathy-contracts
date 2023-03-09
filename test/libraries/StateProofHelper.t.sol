@@ -97,7 +97,7 @@ contract StateProofHelperTest is Test, StateProofFixture {
     // Generate fixture for different types by manipulating `TX_TYPE` in the generate proof fixture
     // script.
 
-    function test_EventProof_WhenType0Tx() public {
+    function test_EventProof_WhenType0Tx() public view {
         string memory filename = string.concat("eventProof-type0");
         string memory path =
             string.concat(vm.projectRoot(), "/test/libraries/fixtures/", filename, ".json");
@@ -118,7 +118,7 @@ contract StateProofHelperTest is Test, StateProofFixture {
         require(messageRoot == fixture.messageRoot);
     }
 
-    function test_EventProof_WhenType1Tx() public {
+    function test_EventProof_WhenType1Tx() public view {
         string memory filename = string.concat("eventProof-type1");
         string memory path =
             string.concat(vm.projectRoot(), "/test/libraries/fixtures/", filename, ".json");
@@ -139,7 +139,7 @@ contract StateProofHelperTest is Test, StateProofFixture {
         require(messageRoot == fixture.messageRoot);
     }
 
-    function test_EventProof_WhenType2Tx() public {
+    function test_EventProof_WhenType2Tx() public view {
         string memory filename = string.concat("eventProof-type2");
         string memory path =
             string.concat(vm.projectRoot(), "/test/libraries/fixtures/", filename, ".json");
