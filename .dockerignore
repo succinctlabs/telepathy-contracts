@@ -1,4 +1,4 @@
-cache
-abi
-artifacts
-*.log
+cache/
+abi/
+out/
+.turbo/
