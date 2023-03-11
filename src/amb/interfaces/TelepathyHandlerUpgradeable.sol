@@ -4,12 +4,12 @@ import {ITelepathyHandler} from "./ITelepathy.sol";
 import "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 
 abstract contract TelepathyHandlerUpgradeable is ITelepathyHandler, Initializable {
-    error NotFromTelepathyReceiever(address sender);
+    error NotFromTelepathyRouter(address sender);
 
-    address private _telepathyReceiever;
+    address private _telepathyRouter;
 
-    function __TelepathyHandler_init(address telepathyReceiever) public onlyInitializing {
-        _telepathyReceiever = telepathyReceiever;
+    function __TelepathyHandler_init(address telepathyRouter) public onlyInitializing {
+        _telepathyRouter = telepathyRouter;
     }
 
     function handleTelepathy(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
@@ -17,8 +17,8 @@ abstract contract TelepathyHandlerUpgradeable is ITelepathyHandler, Initializabl
         override
         returns (bytes4)
     {
-        if (msg.sender != _telepathyReceiever) {
-            revert NotFromTelepathyReceiever(msg.sender);
+        if (msg.sender != _telepathyRouter) {
+            revert NotFromTelepathyRouter(msg.sender);
         }
         handleTelepathyImpl(_sourceChainId, _sourceAddress, _data);
         return ITelepathyHandler.handleTelepathy.selector;
