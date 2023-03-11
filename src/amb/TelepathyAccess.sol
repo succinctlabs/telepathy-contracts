@@ -4,7 +4,7 @@ import {AccessControlUpgradeable} from
     "openzeppelin-contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-import {TelepathyStorage} from "./TelepathyStorage.sol";
+import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";
 
 contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
     /// @notice Emitted when the sendingEnabled flag is changed.

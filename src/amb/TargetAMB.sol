@@ -8,13 +8,13 @@ import {StorageProof, EventProof} from "src/libraries/StateProofHelper.sol";
 import {Address} from "src/libraries/Typecast.sol";
 import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
 
-import {TelepathyStorage} from "./TelepathyStorage.sol";
+import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";
 import {
     ITelepathyHandler,
     ITelepathyReceiver,
     Message,
     MessageStatus
-} from "./interfaces/ITelepathy.sol";
+} from "src/amb/interfaces/ITelepathy.sol";
 
 /// @title Target Arbitrary Message Bridge
 /// @author Succinct Labs

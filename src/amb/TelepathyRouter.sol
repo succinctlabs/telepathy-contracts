@@ -4,17 +4,17 @@ import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UU
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 
-import {TelepathyStorage} from "./TelepathyStorage.sol";
+import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";
 import {
     ITelepathyReceiver,
     Message,
     MessageStatus,
     ITelepathyHandler,
     ITelepathyRouter
-} from "./interfaces/ITelepathy.sol";
-import {TargetAMB} from "./TargetAMB.sol";
-import {SourceAMB} from "./SourceAMB.sol";
-import {TelepathyAccess} from "./TelepathyAccess.sol";
+} from "src/amb/interfaces/ITelepathy.sol";
+import {TargetAMB} from "src/amb/TargetAMB.sol";
+import {SourceAMB} from "src/amb/SourceAMB.sol";
+import {TelepathyAccess} from "src/amb/TelepathyAccess.sol";
 
 /// @title Telepathy Router
 /// @author Succinct Labs

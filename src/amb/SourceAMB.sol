@@ -5,9 +5,9 @@ import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/Owna
 
 import {Bytes32} from "src/libraries/Typecast.sol";
 import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
-import {ITelepathyRouter, Message} from "./interfaces/ITelepathy.sol";
-import {TelepathyAccess} from "./TelepathyAccess.sol";
-import {TelepathyStorage} from "./TelepathyStorage.sol";
+import {ITelepathyRouter, Message} from "src/amb/interfaces/ITelepathy.sol";
+import {TelepathyAccess} from "src/amb/TelepathyAccess.sol";
+import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";
 
 /// @title Source Arbitrary Message Bridge
 /// @author Succinct Labs

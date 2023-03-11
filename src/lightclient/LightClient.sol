@@ -2,9 +2,9 @@ pragma solidity 0.8.16;
 
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 
-import {ILightClient} from "./interfaces/ILightClient.sol";
-import {StepVerifier} from "./StepVerifier.sol";
-import {RotateVerifier} from "./RotateVerifier.sol";
+import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
+import {StepVerifier} from "src/lightclient/StepVerifier.sol";
+import {RotateVerifier} from "src/lightclient/RotateVerifier.sol";
 
 struct Groth16Proof {
     uint256[2] a;

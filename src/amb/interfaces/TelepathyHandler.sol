@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-import {ITelepathyHandler} from "./ITelepathy.sol";
+import {ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
 
 abstract contract TelepathyHandler is ITelepathyHandler {
     error NotFromTelepathyRouter(address sender);

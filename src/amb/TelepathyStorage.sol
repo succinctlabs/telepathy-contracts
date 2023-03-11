@@ -1,7 +1,7 @@
 pragma solidity 0.8.16;
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-import {MessageStatus} from "./interfaces/ITelepathy.sol";
+import {MessageStatus} from "src/amb/interfaces/ITelepathy.sol";
 
 contract TelepathyStorage {
     /*//////////////////////////////////////////////////////////////

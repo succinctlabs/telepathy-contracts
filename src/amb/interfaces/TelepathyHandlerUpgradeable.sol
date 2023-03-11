@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 
-import {ITelepathyHandler} from "./ITelepathy.sol";
-import "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 
 abstract contract TelepathyHandlerUpgradeable is ITelepathyHandler, Initializable {
     error NotFromTelepathyRouter(address sender);
