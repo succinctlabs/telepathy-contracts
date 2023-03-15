@@ -81,9 +81,7 @@ contract TargetAMBTest is Test {
         );
 
         (uint64 srcSlot,) = abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
-        require(
-            srcSlot == testParams.sourceSlot, "Decoded source slot does not match provided srcSlot"
-        );
+        assertEq(srcSlot, testParams.sourceSlot);
 
         vm.warp(1675221581 - 60 * 10);
         lightClientMock.setHeader(srcSlot, testParams.headerRoot);
@@ -106,18 +104,12 @@ contract TargetAMBTest is Test {
             testParams.logIndex
         );
         bytes32 messageRoot = keccak256(testParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
         // Check that the simpleHandler processed the message correctly
-        require(simpleHandler.nonce() == 1, "Nonce is not 1");
+        assertEq(simpleHandler.nonce(), 1);
         bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
-        require(
-            simpleHandler.nonceToDataHash(0) == expectedDataHash,
-            "Data hash not set as expected in SimpleHandler"
-        );
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
     }
 
     function test_ExecuteMessageFromLog_WhenCloseSlotFail(bytes memory randomBytes) public {
@@ -146,7 +138,7 @@ contract TargetAMBTest is Test {
         getDefaultContractSetup(testParams);
 
         (uint64 srcSlot, uint64 txSlot) = abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
-        require(txSlot == srcSlot, "src slot and target slot are not the same");
+        assertEq(txSlot, srcSlot);
 
         // Execute the message and check that it succeeded
         targetAMB.executeMessageFromLog(
@@ -159,16 +151,14 @@ contract TargetAMBTest is Test {
             testParams.logIndex
         );
         bytes32 messageRoot = keccak256(testParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
         // Check that the simpleHandler processed the message correctly
-        require(simpleHandler.nonce() == 1, "Nonce is not 1");
+        assertEq(simpleHandler.nonce(), 1, "Nonce is not 1");
         bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
-        require(
-            simpleHandler.nonceToDataHash(0) == expectedDataHash,
+        assertEq(
+            simpleHandler.nonceToDataHash(0),
+            expectedDataHash,
             "Data hash not set as expected in SimpleHandler"
         );
     }
@@ -189,18 +179,12 @@ contract TargetAMBTest is Test {
             testParams.logIndex
         );
         bytes32 messageRoot = keccak256(testParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
         // Check that the simpleHandler processed the message correctly
-        require(simpleHandler.nonce() == 1, "Nonce is not 1");
+        assertEq(simpleHandler.nonce(), 1);
         bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
-        require(
-            simpleHandler.nonceToDataHash(0) == expectedDataHash,
-            "Data hash not set as expected in SimpleHandler"
-        );
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
     }
 
     function test_ExecuteMessageFromLog_WhenCloseSlotBoundaryConditions() public {
@@ -216,9 +200,7 @@ contract TargetAMBTest is Test {
 
             (uint64 sourceSlot, uint64 targetSlot) =
                 abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
-            require(
-                sourceSlot == targetSlot + uint64(diffs[i]), "target slot is not source slot + i"
-            );
+            assertEq(sourceSlot, targetSlot + uint64(diffs[i]));
 
             // Execute the message and check that it succeeded
             targetAMB.executeMessageFromLog(
@@ -231,18 +213,12 @@ contract TargetAMBTest is Test {
                 testParams.logIndex
             );
             bytes32 messageRoot = keccak256(testParams.message);
-            require(
-                targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-                "Message status is not success"
-            );
+            assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
             // Check that the simpleHandler processed the message correctly
-            require(simpleHandler.nonce() == i + 1, "Nonce is not i+1");
+            assertEq(simpleHandler.nonce(), i + 1);
             bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
-            require(
-                simpleHandler.nonceToDataHash(i) == expectedDataHash,
-                "Data hash not set as expected in SimpleHandler"
-            );
+            assertEq(simpleHandler.nonceToDataHash(i), expectedDataHash);
         }
     }
 }

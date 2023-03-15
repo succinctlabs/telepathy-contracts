@@ -21,7 +21,7 @@ contract MessageEncodingTest is Test {
             && a.destinationAddress == b.destinationAddress && keccak256(a.data) == keccak256(b.data);
     }
 
-    function test_MessageEncoding() public pure {
+    function test_MessageEncoding() public {
         Message memory original = Message({
             version: DEFAULT_VERSION,
             nonce: DEFAULT_NONCE,
@@ -33,10 +33,10 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 
-    function testFuzz_MessageEncoding_Version(uint8 version) public pure {
+    function testFuzz_MessageEncoding_Version(uint8 version) public {
         Message memory original = Message({
             version: version,
             nonce: DEFAULT_NONCE,
@@ -48,10 +48,10 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 
-    function testFuzz_MessageEncoding_Nonce(uint64 nonce) public pure {
+    function testFuzz_MessageEncoding_Nonce(uint64 nonce) public {
         Message memory original = Message({
             version: DEFAULT_VERSION,
             nonce: nonce,
@@ -63,10 +63,10 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 
-    function testFuzz_MessageEncoding_SourceChainId(uint32 sourceChainId) public pure {
+    function testFuzz_MessageEncoding_SourceChainId(uint32 sourceChainId) public {
         Message memory original = Message({
             version: DEFAULT_VERSION,
             nonce: DEFAULT_NONCE,
@@ -78,10 +78,10 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 
-    function testFuzz_MessageEncoding_SourceAddress(address sourceAddress) public pure {
+    function testFuzz_MessageEncoding_SourceAddress(address sourceAddress) public {
         Message memory original = Message({
             version: DEFAULT_VERSION,
             nonce: DEFAULT_NONCE,
@@ -93,10 +93,10 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 
-    function testFuzz_MessageEncoding_DestinationChainId(uint32 destinationChainId) public pure {
+    function testFuzz_MessageEncoding_DestinationChainId(uint32 destinationChainId) public {
         Message memory original = Message({
             version: DEFAULT_VERSION,
             nonce: DEFAULT_NONCE,
@@ -108,10 +108,10 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 
-    function testFuzz_MessageEncoding_DestinationAddress(bytes32 destinationAddress) public pure {
+    function testFuzz_MessageEncoding_DestinationAddress(bytes32 destinationAddress) public {
         Message memory original = Message({
             version: DEFAULT_VERSION,
             nonce: DEFAULT_NONCE,
@@ -123,10 +123,10 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 
-    function testFuzz_MessageEncoding_Data(bytes memory data) public pure {
+    function testFuzz_MessageEncoding_Data(bytes memory data) public {
         Message memory original = Message({
             version: DEFAULT_VERSION,
             nonce: DEFAULT_NONCE,
@@ -138,6 +138,6 @@ contract MessageEncodingTest is Test {
         });
         bytes memory msgBytes = MessageEncoding.encode(original);
         Message memory decoded = MessageEncoding.decode(msgBytes);
-        require(equals(decoded, original));
+        assertTrue(equals(decoded, original));
     }
 }

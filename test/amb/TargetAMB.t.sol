@@ -198,18 +198,12 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
         // Check that the simpleHandler processed the message correctly
-        require(simpleHandler.nonce() == 1, "Nonce is not 1");
+        assertEq(simpleHandler.nonce(), 1);
         bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
-        require(
-            simpleHandler.nonceToDataHash(0) == expectedDataHash,
-            "Data hash not set as expected in SimpleHandler"
-        );
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
     }
 
     function test_ExecuteMessage_WrongSourceAddressFails() public {
@@ -225,15 +219,9 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED);
 
-        require(
-            simpleHandler.nonce() == 0,
-            "simpleHandler should have nonce 0 since execution should have failed"
-        );
+        assertEq(simpleHandler.nonce(), 0);
     }
 
     function test_RevertExecuteMessage_WhenDuplicate() public {
@@ -248,10 +236,7 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
         vm.expectRevert("Message already executed.");
         targetAMB.executeMessage(
@@ -294,15 +279,9 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED);
 
-        require(
-            simpleHandler.nonce() == 0,
-            "simpleHandler should have nonce 0 since execution should have failed"
-        );
+        assertEq(simpleHandler.nonce(), 0);
     }
 
     function test_RevertExecuteMessage_WhenInvalidDestination() public {
@@ -322,10 +301,7 @@ contract TargetAMBTest is Test {
         );
         // The message execution should fail
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not failed"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED);
     }
 
     function test_RevertExecuteMessage_WrongSrcChain() public {

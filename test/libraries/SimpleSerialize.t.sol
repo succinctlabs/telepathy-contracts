@@ -8,7 +8,7 @@ import {SSZ} from "src/libraries/SimpleSerialize.sol";
 contract SSZTest is Test {
     function setUp() public {}
 
-    function test_FinalityProof_WhenEthereum() public pure {
+    function test_FinalityProof_WhenEthereum() public {
         uint256 index = 105;
         bytes32[] memory branch = new bytes32[](6);
         branch[0] = bytes32(0xe424020000000000000000000000000000000000000000000000000000000000);
@@ -19,10 +19,10 @@ contract SSZTest is Test {
         branch[5] = bytes32(0x88475251bcec25245a44bddd92b2c36db6c9c48bc6d91b5d0da78af3229ff783);
         bytes32 root = bytes32(0xe81a65c5c0f2a36e40b6872fcfdd62dbb67d47f3d49a6b978c0d4440341e723f);
         bytes32 leaf = bytes32(0xd85d3181f1178b07e89691aa2bfcd4d88837f011fcda3326b4ce9a68ec6d9e44);
-        require(SSZ.isValidMerkleBranch(leaf, index, branch, root) == true);
+        assertTrue(SSZ.isValidMerkleBranch(leaf, index, branch, root));
     }
 
-    function test_FinalityProof_WhenGnosis() public pure {
+    function test_FinalityProof_WhenGnosis() public {
         uint256 index = 105;
         bytes32[] memory branch = new bytes32[](6);
         branch[0] = bytes32(0x4304060000000000000000000000000000000000000000000000000000000000);
@@ -33,10 +33,10 @@ contract SSZTest is Test {
         branch[5] = bytes32(0xcbc5ef1e4f078df1b83d9ffea0f1f112382da4bfb871e07fef353cd236b94489);
         bytes32 root = bytes32(0x93d340d3b741c02e7605b7356ba861c74ec371572d3a5a5b23bf0b6dd6823d35);
         bytes32 leaf = bytes32(0x27f156361ae4aa32fb323cb48e5bc47f84af8e25f659bb44ef8d34cb7cec349d);
-        require(SSZ.isValidMerkleBranch(leaf, index, branch, root) == true);
+        assertTrue(SSZ.isValidMerkleBranch(leaf, index, branch, root));
     }
 
-    function test_ReceiptRootProof_WhenCloseSlots() public pure {
+    function test_ReceiptRootProof_WhenCloseSlots() public {
         // This tests the receipt root proof against a beacon state root.
         // This tests the case where txSlot and srcSlot are within SLOTS_PER_HISTORICAL_ROOT
         // of each other.
@@ -103,7 +103,7 @@ contract SSZTest is Test {
         bool isValid = SSZ.isValidMerkleBranch(
             receiptsRoot, concatGindex, targetSlotStateRootBranch, srcSlotStateRoot
         );
-        require(isValid, "Invalid state root");
+        assertTrue(isValid);
     }
 
     function test_ReceiptRootProof_WhenSameSlots() public pure {
