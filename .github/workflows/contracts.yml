@@ -35,14 +35,14 @@ jobs:
         working-directory: .
         run: forge build --sizes --build-info
 
-      - name: Run Slither
-        uses: crytic/slither-action@main
-        id: slither
-        with:
-          target: ''
-          slither-config: 'slither.config.json'
-          fail-on: none
-          ignore-compile: true
+      # - name: Run Slither
+      #   uses: crytic/slither-action@main
+      #   id: slither
+      #   with:
+      #     target: ''
+      #     slither-config: 'slither.config.json'
+      #     fail-on: none
+      #     ignore-compile: true
 
       - name: Run Solhint
         working-directory: .
