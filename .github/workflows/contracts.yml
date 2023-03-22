@@ -35,6 +35,7 @@ jobs:
         working-directory: .
         run: forge build --sizes --build-info
 
+      # TODO most likely stuck on unchecked external calls @ src/oracle/TelepathyOracle.sol:94
       # - name: Run Slither
       #   uses: crytic/slither-action@main
       #   id: slither
