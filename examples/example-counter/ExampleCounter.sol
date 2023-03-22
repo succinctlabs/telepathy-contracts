@@ -22,6 +22,8 @@ contract SourceCounter {
 contract TargetCounter is TelepathyHandler {
     uint256 public counter = 0;
 
+    event Incremented(uint32 sourceChainId, address sender, uint256 amount);
+
     constructor(address _router) TelepathyHandler(_router) {}
 
     // Handle messages being sent and decoding
@@ -33,5 +35,6 @@ contract TargetCounter is TelepathyHandler {
         unchecked {
             counter = counter + amount;
         }
+        emit Incremented(sourceChainId, sender, amount);
     }
 }

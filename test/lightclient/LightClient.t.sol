@@ -13,8 +13,8 @@ contract LightClientTest is Test, LightClientFixture {
     uint32 constant SOURCE_CHAIN_ID = 1;
     uint16 constant FINALITY_THRESHOLD = 350;
 
-    uint256 constant FIXTURE_SLOT_START = 5149118;
-    uint256 constant FIXTURE_SLOT_END = 5149247;
+    uint256 constant FIXTURE_SLOT_START = 6000991;
+    uint256 constant FIXTURE_SLOT_END = 6001088;
 
     Fixture[] fixtures;
 
@@ -38,8 +38,8 @@ contract LightClientTest is Test, LightClientFixture {
         vm.warp(9999999999999);
     }
 
-    function test_SetUp() public view {
-        require(fixtures.length > 0, "no fixtures found");
+    function test_SetUp() public {
+        assertTrue(fixtures.length > 0);
     }
 
     function test_Step() public {
@@ -61,11 +61,11 @@ contract LightClientTest is Test, LightClientFixture {
 
         uint256 currentTimestamp = block.timestamp;
         lc.step(step);
-        assertTrue(lc.timestamps(step.finalizedSlot) == currentTimestamp);
+        assertEq(lc.timestamps(step.finalizedSlot), currentTimestamp);
 
         vm.warp(12345678900);
         lc.step(step);
-        assertTrue(lc.timestamps(step.finalizedSlot) == currentTimestamp);
+        assertEq(lc.timestamps(step.finalizedSlot), currentTimestamp);
     }
 
     function test_Rotate() public {
@@ -148,7 +148,7 @@ contract LightClientTest is Test, LightClientFixture {
             uint256[2] memory c = [strToUint(fixture.step.c[0]), strToUint(fixture.step.c[1])];
             uint256[1] memory inputs = [strToUint(fixture.step.inputs[0])];
 
-            require(lc.verifyProofStep(a, b, c, inputs) == true);
+            assertTrue(lc.verifyProofStep(a, b, c, inputs));
         }
     }
 
@@ -181,7 +181,7 @@ contract LightClientTest is Test, LightClientFixture {
             }
             inputs[32] = uint256(SSZ.toLittleEndian(uint256(rotate.syncCommitteePoseidon)));
 
-            require(lc.verifyProofRotate(a, b, c, inputs) == true);
+            assertTrue(lc.verifyProofRotate(a, b, c, inputs));
         }
     }
 

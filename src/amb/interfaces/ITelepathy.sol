@@ -10,30 +10,34 @@ struct Message {
     uint8 version;
     uint64 nonce;
     uint32 sourceChainId;
-    address senderAddress;
-    uint32 recipientChainId;
-    bytes32 recipientAddress;
+    address sourceAddress;
+    uint32 destinationChainId;
+    bytes32 destinationAddress;
     bytes data;
 }
 
 interface ITelepathyRouter {
     event SentMessage(uint64 indexed nonce, bytes32 indexed msgHash, bytes message);
 
-    function send(uint32 recipientChainId, bytes32 recipientAddress, bytes calldata data)
+    function send(uint32 destinationChainId, bytes32 destinationAddress, bytes calldata data)
         external
         returns (bytes32);
 
-    function send(uint32 recipientChainId, address recipientAddress, bytes calldata data)
+    function send(uint32 destinationChainId, address destinationAddress, bytes calldata data)
         external
         returns (bytes32);
 
-    function sendViaStorage(uint32 recipientChainId, bytes32 recipientAddress, bytes calldata data)
-        external
-        returns (bytes32);
+    function sendViaStorage(
+        uint32 destinationChainId,
+        bytes32 destinationAddress,
+        bytes calldata data
+    ) external returns (bytes32);
 
-    function sendViaStorage(uint32 recipientChainId, address recipientAddress, bytes calldata data)
-        external
-        returns (bytes32);
+    function sendViaStorage(
+        uint32 destinationChainId,
+        address destinationAddress,
+        bytes calldata data
+    ) external returns (bytes32);
 }
 
 interface ITelepathyReceiver {
@@ -64,7 +68,7 @@ interface ITelepathyReceiver {
 }
 
 interface ITelepathyHandler {
-    function handleTelepathy(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathy(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
         external
         returns (bytes4);
 }

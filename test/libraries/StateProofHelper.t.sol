@@ -52,12 +52,12 @@ contract StateProofHelperTest is Test, StateProofFixture {
         }
     }
 
-    function test_SetUp() public view {
-        require(storageProofFixtures.length > 0, "no storageProof fixtures found");
-        require(eventProofFixtures.length > 0, "no eventProof fixtures found");
+    function test_SetUp() public {
+        assertTrue(storageProofFixtures.length > 0);
+        assertTrue(eventProofFixtures.length > 0);
     }
 
-    function test_StorageProof() public view {
+    function test_StorageProof() public {
         for (uint256 i = 0; i < storageProofFixtures.length; i++) {
             StorageProofFixture memory fixture = storageProofFixtures[i];
 
@@ -65,11 +65,11 @@ contract StateProofHelperTest is Test, StateProofFixture {
 
             bytes32 storageRoot =
                 StorageProof.getStorageRoot(proof, fixture.contractAddress, fixture.stateRootHash);
-            require(storageRoot == fixture.storageRoot);
+            assertEq(storageRoot, fixture.storageRoot);
         }
     }
 
-    function test_EventProof() public view {
+    function test_EventProof() public {
         for (uint256 i = 0; i < eventProofFixtures.length; i++) {
             EventProofFixture memory fixture = eventProofFixtures[i];
 
@@ -84,7 +84,7 @@ contract StateProofHelperTest is Test, StateProofFixture {
                 keccak256("SentMessage(uint64,bytes32,bytes)"),
                 2
             );
-            require(messageRoot == fixture.messageRoot);
+            assertEq(messageRoot, fixture.messageRoot);
         }
     }
 
@@ -115,7 +115,7 @@ contract StateProofHelperTest is Test, StateProofFixture {
             keccak256("SentMessage(uint64,bytes32,bytes)"),
             2
         );
-        require(messageRoot == fixture.messageRoot);
+        assertEq(messageRoot, fixture.messageRoot);
     }
 
     function test_EventProof_WhenType1Tx() public {
@@ -136,7 +136,7 @@ contract StateProofHelperTest is Test, StateProofFixture {
             keccak256("SentMessage(uint64,bytes32,bytes)"),
             2
         );
-        require(messageRoot == fixture.messageRoot);
+        assertEq(messageRoot, fixture.messageRoot);
     }
 
     function test_EventProof_WhenType2Tx() public {
@@ -157,7 +157,7 @@ contract StateProofHelperTest is Test, StateProofFixture {
             keccak256("SentMessage(uint64,bytes32,bytes)"),
             2
         );
-        require(messageRoot == fixture.messageRoot);
+        assertEq(messageRoot, fixture.messageRoot);
     }
 
     function test_RevertStorageProof_WhenBadContractAddress() public {

@@ -51,14 +51,14 @@ contract SimpleHandler is ITelepathyHandler {
         targetAMB = _targetAMB;
     }
 
-    function handleTelepathy(uint32 _sourceChainId, address _senderAddress, bytes memory _data)
+    function handleTelepathy(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
         external
         override
         returns (bytes4)
     {
         require(msg.sender == targetAMB, "Only Telepathy can call this function");
         require(_sourceChainId == sourceChain, "Invalid source chain id");
-        require(_senderAddress == sourceAddress, "Invalid source address");
+        require(_sourceAddress == sourceAddress, "Invalid source address");
         nonceToDataHash[nonce++] = keccak256(_data);
         return ITelepathyHandler.handleTelepathy.selector;
     }
@@ -198,23 +198,17 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
         // Check that the simpleHandler processed the message correctly
-        require(simpleHandler.nonce() == 1, "Nonce is not 1");
+        assertEq(simpleHandler.nonce(), 1);
         bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
-        require(
-            simpleHandler.nonceToDataHash(0) == expectedDataHash,
-            "Data hash not set as expected in SimpleHandler"
-        );
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
     }
 
-    function test_ExecuteMessage_WrongSenderAddressFails() public {
+    function test_ExecuteMessage_WrongSourceAddressFails() public {
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
-        messageParams.sourceMessageSender = address(0x1234); // Set the source sender address to something random
+        messageParams.sourceMessageSender = address(0x1234); // Set the source address to something random
         getDefaultContractSetup(messageParams);
 
         // Finally, execute the message and check that it failed
@@ -225,15 +219,9 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED);
 
-        require(
-            simpleHandler.nonce() == 0,
-            "simpleHandler should have nonce 0 since execution should have failed"
-        );
+        assertEq(simpleHandler.nonce(), 0);
     }
 
     function test_RevertExecuteMessage_WhenDuplicate() public {
@@ -248,10 +236,7 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
 
         vm.expectRevert("Message already executed.");
         targetAMB.executeMessage(
@@ -294,19 +279,13 @@ contract TargetAMBTest is Test {
             messageParams.storageProof
         );
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not success"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED);
 
-        require(
-            simpleHandler.nonce() == 0,
-            "simpleHandler should have nonce 0 since execution should have failed"
-        );
+        assertEq(simpleHandler.nonce(), 0);
     }
 
-    function test_RevertExecuteMessage_WhenInvalidRecipient() public {
-        // Test what happens when the recipient address doesn't implement the ITelepathyHandler
+    function test_RevertExecuteMessage_WhenInvalidDestination() public {
+        // Test what happens when the destination address doesn't implement the ITelepathyHandler
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
         getDefaultContractSetup(messageParams);
 
@@ -322,10 +301,7 @@ contract TargetAMBTest is Test {
         );
         // The message execution should fail
         bytes32 messageRoot = keccak256(messageParams.message);
-        require(
-            targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED,
-            "Message status is not failed"
-        );
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_FAILED);
     }
 
     function test_RevertExecuteMessage_WrongSrcChain() public {

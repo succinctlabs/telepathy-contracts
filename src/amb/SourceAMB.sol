@@ -5,9 +5,9 @@ import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/Owna
 
 import {Bytes32} from "src/libraries/Typecast.sol";
 import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
-import {ITelepathyRouter, Message} from "./interfaces/ITelepathy.sol";
-import {TelepathyAccess} from "./TelepathyAccess.sol";
-import {TelepathyStorage} from "./TelepathyStorage.sol";
+import {ITelepathyRouter, Message} from "src/amb/interfaces/ITelepathy.sol";
+import {TelepathyAccess} from "src/amb/TelepathyAccess.sol";
+import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";
 
 /// @title Source Arbitrary Message Bridge
 /// @author Succinct Labs
@@ -19,77 +19,77 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         _;
     }
 
-    /// @notice Sends a message to a target chain.
-    /// @param recipientChainId The chain id that specifies the target chain.
-    /// @param recipientAddress The contract address that will be called on the target chain.
+    /// @notice Sends a message to a destination chain.
+    /// @param destinationChainId The chain id that specifies the destination chain.
+    /// @param destinationAddress The contract address that will be called on the destination chain.
     /// @param data The data passed to the contract on the other chain
     /// @return bytes32 A unique identifier for a message.
-    function send(uint32 recipientChainId, bytes32 recipientAddress, bytes calldata data)
+    function send(uint32 destinationChainId, bytes32 destinationAddress, bytes calldata data)
         external
         isSendingEnabled
         returns (bytes32)
     {
-        require(recipientChainId != block.chainid, "Cannot send to same chain");
+        require(destinationChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
-            _getMessageAndRoot(recipientChainId, recipientAddress, data);
+            _getMessageAndRoot(destinationChainId, destinationAddress, data);
         emit SentMessage(nonce++, messageRoot, message);
         return messageRoot;
     }
 
-    function send(uint32 recipientChainId, address recipientAddress, bytes calldata data)
+    function send(uint32 destinationChainId, address destinationAddress, bytes calldata data)
         external
         isSendingEnabled
         returns (bytes32)
     {
-        require(recipientChainId != block.chainid, "Cannot send to same chain");
+        require(destinationChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
-            _getMessageAndRoot(recipientChainId, Bytes32.fromAddress(recipientAddress), data);
+            _getMessageAndRoot(destinationChainId, Bytes32.fromAddress(destinationAddress), data);
         emit SentMessage(nonce++, messageRoot, message);
         return messageRoot;
     }
 
-    /// @notice Sends a message to a target chain.
+    /// @notice Sends a message to a destination chain.
     /// @notice This method is more expensive than the `send` method as it requires adding to
     ///         contract storage. Use `send` when interacting with Telepathy to save gas.
-    /// @param recipientChainId The chain id that specifies the target chain.
-    /// @param recipientAddress The contract address that will be called on the target chain.
+    /// @param destinationChainId The chain id that specifies the destination chain.
+    /// @param destinationAddress The contract address that will be called on the destination chain.
     /// @param data The data passed to the contract on the other chain
     /// @return bytes32 A unique identifier for a message.
-    function sendViaStorage(uint32 recipientChainId, bytes32 recipientAddress, bytes calldata data)
-        external
-        isSendingEnabled
-        returns (bytes32)
-    {
-        require(recipientChainId != block.chainid, "Cannot send to same chain");
+    function sendViaStorage(
+        uint32 destinationChainId,
+        bytes32 destinationAddress,
+        bytes calldata data
+    ) external isSendingEnabled returns (bytes32) {
+        require(destinationChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
-            _getMessageAndRoot(recipientChainId, recipientAddress, data);
+            _getMessageAndRoot(destinationChainId, destinationAddress, data);
         messages[nonce] = messageRoot;
         emit SentMessage(nonce++, messageRoot, message);
         return messageRoot;
     }
 
-    function sendViaStorage(uint32 recipientChainId, address recipientAddress, bytes calldata data)
-        external
-        isSendingEnabled
-        returns (bytes32)
-    {
-        require(recipientChainId != block.chainid, "Cannot send to same chain");
+    function sendViaStorage(
+        uint32 destinationChainId,
+        address destinationAddress,
+        bytes calldata data
+    ) external isSendingEnabled returns (bytes32) {
+        require(destinationChainId != block.chainid, "Cannot send to same chain");
         (bytes memory message, bytes32 messageRoot) =
-            _getMessageAndRoot(recipientChainId, Bytes32.fromAddress(recipientAddress), data);
+            _getMessageAndRoot(destinationChainId, Bytes32.fromAddress(destinationAddress), data);
         messages[nonce] = messageRoot;
         emit SentMessage(nonce++, messageRoot, message);
         return messageRoot;
     }
 
     /// @notice Gets the message and message root from the user-provided arguments to `send`
-    /// @param recipientChainId The chain id that specifies the target chain.
-    /// @param recipientAddress The contract address that will be called on the target chain.
-    /// @param data The calldata used when calling the contract on the target chain.
+    /// @param destinationChainId The chain id that specifies the destination chain.
+    /// @param destinationAddress The contract address that will be called on the destination chain.
+    /// @param data The calldata used when calling the contract on the destination chain.
     /// @return messageBytes The message encoded as bytes, used in SentMessage event.
     /// @return messageRoot The hash of messageBytes, used as a unique identifier for a message.
     function _getMessageAndRoot(
-        uint32 recipientChainId,
-        bytes32 recipientAddress,
+        uint32 destinationChainId,
+        bytes32 destinationAddress,
         bytes calldata data
     ) internal view returns (bytes memory messageBytes, bytes32 messageRoot) {
         messageBytes = MessageEncoding.encode(
@@ -97,8 +97,8 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
             nonce,
             uint32(block.chainid),
             msg.sender,
-            recipientChainId,
-            recipientAddress,
+            destinationChainId,
+            destinationAddress,
             data
         );
         messageRoot = keccak256(messageBytes);
