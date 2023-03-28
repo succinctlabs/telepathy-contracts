@@ -35,6 +35,16 @@ jobs:
         working-directory: .
         run: forge build --sizes --build-info
 
+      # Uses https://github.com/tj-actions/verify-changed-files action
+      # to get any uncommitted changes from previous step
+      - name: Get changes after last step
+        id: abi-changes
+        uses: tj-actions/verify-changed-files@v14
+
+      - name: Make sure ABI hasn't changed
+        if: steps.abi-changes.outputs.files_changed == 'true'
+        run: exit 1
+
       # TODO most likely stuck on unchecked external calls @ src/oracle/TelepathyOracle.sol:94
       # - name: Run Slither
       #   uses: crytic/slither-action@main
