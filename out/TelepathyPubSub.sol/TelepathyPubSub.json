@@ -1134,29 +1134,29 @@
   },
   "ast": {
     "absolutePath": "src/pubsub/TelepathyPubSub.sol",
-    "id": 48517,
+    "id": 48510,
     "exportedSymbols": {
       "PubSubStorage": [
-        48485
+        48478
       ],
       "TelepathyPubSub": [
-        48516
+        48509
       ],
       "TelepathyPublisher": [
-        48910
+        48903
       ],
       "TelepathyRouter": [
         42568
       ],
       "TelepathySubscriber": [
-        49073
+        49066
       ]
     },
     "nodeType": "SourceUnit",
     "src": "0:1230:122",
     "nodes": [
       {
-        "id": 48487,
+        "id": 48480,
         "nodeType": "PragmaDirective",
         "src": "0:24:122",
         "nodes": [],
@@ -1168,23 +1168,23 @@
         ]
       },
       {
-        "id": 48489,
+        "id": 48482,
         "nodeType": "ImportDirective",
         "src": "26:69:122",
         "nodes": [],
         "absolutePath": "src/pubsub/TelepathyPublisher.sol",
         "file": "src/pubsub/TelepathyPublisher.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 48517,
-        "sourceUnit": 48911,
+        "scope": 48510,
+        "sourceUnit": 48904,
         "symbolAliases": [
           {
             "foreign": {
-              "id": 48488,
+              "id": 48481,
               "name": "TelepathyPublisher",
               "nodeType": "Identifier",
               "overloadedDeclarations": [],
-              "referencedDeclaration": 48910,
+              "referencedDeclaration": 48903,
               "src": "34:18:122",
               "typeDescriptions": {}
             },
@@ -1194,23 +1194,23 @@
         "unitAlias": ""
       },
       {
-        "id": 48491,
+        "id": 48484,
         "nodeType": "ImportDirective",
         "src": "97:71:122",
         "nodes": [],
         "absolutePath": "src/pubsub/TelepathySubscriber.sol",
         "file": "src/pubsub/TelepathySubscriber.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 48517,
-        "sourceUnit": 49074,
+        "scope": 48510,
+        "sourceUnit": 49067,
         "symbolAliases": [
           {
             "foreign": {
-              "id": 48490,
+              "id": 48483,
               "name": "TelepathySubscriber",
               "nodeType": "Identifier",
               "overloadedDeclarations": [],
-              "referencedDeclaration": 49073,
+              "referencedDeclaration": 49066,
               "src": "105:19:122",
               "typeDescriptions": {}
             },
@@ -1220,23 +1220,23 @@
         "unitAlias": ""
       },
       {
-        "id": 48493,
+        "id": 48486,
         "nodeType": "ImportDirective",
         "src": "170:59:122",
         "nodes": [],
         "absolutePath": "src/pubsub/PubSubStorage.sol",
         "file": "src/pubsub/PubSubStorage.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 48517,
-        "sourceUnit": 48486,
+        "scope": 48510,
+        "sourceUnit": 48479,
         "symbolAliases": [
           {
             "foreign": {
-              "id": 48492,
+              "id": 48485,
               "name": "PubSubStorage",
               "nodeType": "Identifier",
               "overloadedDeclarations": [],
-              "referencedDeclaration": 48485,
+              "referencedDeclaration": 48478,
               "src": "178:13:122",
               "typeDescriptions": {}
             },
@@ -1246,19 +1246,19 @@
         "unitAlias": ""
       },
       {
-        "id": 48495,
+        "id": 48488,
         "nodeType": "ImportDirective",
         "src": "231:60:122",
         "nodes": [],
         "absolutePath": "src/amb/TelepathyRouter.sol",
         "file": "src/amb/TelepathyRouter.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 48517,
+        "scope": 48510,
         "sourceUnit": 42569,
         "symbolAliases": [
           {
             "foreign": {
-              "id": 48494,
+              "id": 48487,
               "name": "TelepathyRouter",
               "nodeType": "Identifier",
               "overloadedDeclarations": [],
@@ -1272,12 +1272,12 @@
         "unitAlias": ""
       },
       {
-        "id": 48516,
+        "id": 48509,
         "nodeType": "ContractDefinition",
         "src": "843:386:122",
         "nodes": [
           {
-            "id": 48503,
+            "id": 48496,
             "nodeType": "VariableDeclaration",
             "src": "917:33:122",
             "nodes": [],
@@ -1286,7 +1286,7 @@
             "mutability": "constant",
             "name": "VERSION",
             "nameLocation": "939:7:122",
-            "scope": 48516,
+            "scope": 48509,
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
@@ -1294,7 +1294,7 @@
               "typeString": "uint8"
             },
             "typeName": {
-              "id": 48501,
+              "id": 48494,
               "name": "uint8",
               "nodeType": "ElementaryTypeName",
               "src": "917:5:122",
@@ -1305,7 +1305,7 @@
             },
             "value": {
               "hexValue": "31",
-              "id": 48502,
+              "id": 48495,
               "isConstant": false,
               "isLValue": false,
               "isPure": true,
@@ -1322,29 +1322,29 @@
             "visibility": "public"
           },
           {
-            "id": 48515,
+            "id": 48508,
             "nodeType": "FunctionDefinition",
             "src": "957:106:122",
             "nodes": [],
             "body": {
-              "id": 48514,
+              "id": 48507,
               "nodeType": "Block",
               "src": "995:68:122",
               "nodes": [],
               "statements": [
                 {
                   "expression": {
-                    "id": 48512,
+                    "id": 48505,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
-                      "id": 48508,
+                      "id": 48501,
                       "name": "telepathyRouter",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 48469,
+                      "referencedDeclaration": 48462,
                       "src": "1005:15:122",
                       "typeDescriptions": {
                         "typeIdentifier": "t_contract$_TelepathyRouter_$42568",
@@ -1356,11 +1356,11 @@
                     "rightHandSide": {
                       "arguments": [
                         {
-                          "id": 48510,
+                          "id": 48503,
                           "name": "_telepathyRouter",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 48505,
+                          "referencedDeclaration": 48498,
                           "src": "1039:16:122",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -1375,7 +1375,7 @@
                             "typeString": "address"
                           }
                         ],
-                        "id": 48509,
+                        "id": 48502,
                         "name": "TelepathyRouter",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
@@ -1386,7 +1386,7 @@
                           "typeString": "type(contract TelepathyRouter)"
                         }
                       },
-                      "id": 48511,
+                      "id": 48504,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -1408,7 +1408,7 @@
                       "typeString": "contract TelepathyRouter"
                     }
                   },
-                  "id": 48513,
+                  "id": 48506,
                   "nodeType": "ExpressionStatement",
                   "src": "1005:51:122"
                 }
@@ -1420,17 +1420,17 @@
             "name": "",
             "nameLocation": "-1:-1:-1",
             "parameters": {
-              "id": 48506,
+              "id": 48499,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 48505,
+                  "id": 48498,
                   "mutability": "mutable",
                   "name": "_telepathyRouter",
                   "nameLocation": "977:16:122",
                   "nodeType": "VariableDeclaration",
-                  "scope": 48515,
+                  "scope": 48508,
                   "src": "969:24:122",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1439,7 +1439,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 48504,
+                    "id": 48497,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "969:7:122",
@@ -1455,12 +1455,12 @@
               "src": "968:26:122"
             },
             "returnParameters": {
-              "id": 48507,
+              "id": 48500,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "995:0:122"
             },
-            "scope": 48516,
+            "scope": 48509,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "public"
@@ -1470,31 +1470,31 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 48497,
+              "id": 48490,
               "name": "TelepathyPublisher",
               "nameLocations": [
                 "871:18:122"
               ],
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 48910,
+              "referencedDeclaration": 48903,
               "src": "871:18:122"
             },
-            "id": 48498,
+            "id": 48491,
             "nodeType": "InheritanceSpecifier",
             "src": "871:18:122"
           },
           {
             "baseName": {
-              "id": 48499,
+              "id": 48492,
               "name": "TelepathySubscriber",
               "nameLocations": [
                 "891:19:122"
               ],
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 49073,
+              "referencedDeclaration": 49066,
               "src": "891:19:122"
             },
-            "id": 48500,
+            "id": 48493,
             "nodeType": "InheritanceSpecifier",
             "src": "891:19:122"
           }
@@ -1503,27 +1503,27 @@
         "contractDependencies": [],
         "contractKind": "contract",
         "documentation": {
-          "id": 48496,
+          "id": 48489,
           "nodeType": "StructuredDocumentation",
           "src": "418:425:122",
           "text": "@title TelepathyPubSub\n @author Succinct Labs\n @notice This allows an on-chain Publisher-Suscriber model to be used for events. Contracts can subscribe to\n         events emitted from a source contract, and it will be relayed these events through the publisher. Before\n         the events are relayed, they are verified using the Telepathy Light Client for proof of consensus on the\n         source chain."
         },
         "fullyImplemented": true,
         "linearizedBaseContracts": [
-          48516,
-          49073,
-          48910,
-          48485,
-          49136,
-          49174
+          48509,
+          49066,
+          48903,
+          48478,
+          49129,
+          49167
         ],
         "name": "TelepathyPubSub",
         "nameLocation": "852:15:122",
-        "scope": 48517,
+        "scope": 48510,
         "usedErrors": [
-          48927,
-          48931,
-          48937
+          48920,
+          48924,
+          48930
         ]
       }
     ]

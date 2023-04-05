@@ -34,8 +34,6 @@ contract TelepathyOracle is TelepathyHandler {
     mapping(bytes32 => RequestStatus) public requests;
     /// @notice The next nonce to use when sending a cross-chain request
     uint256 public nextNonce = 1;
-    /// @notice The address of the Telepathy Router contract
-    address public telepathyRouter;
     /// @notice The address of the fulfiller contract on the other chain
     address public fulfiller;
     /// @notice The chain ID of the fulfiller contract
@@ -45,7 +43,6 @@ contract TelepathyOracle is TelepathyHandler {
         TelepathyHandler(_telepathyRouter)
     {
         fulfillerChainId = _fulfillerChainId;
-        telepathyRouter = _telepathyRouter;
         fulfiller = _fulfiller;
     }
 

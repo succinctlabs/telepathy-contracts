@@ -5,10 +5,10 @@ import {ITelepathyHandler} from "src/amb/interfaces/ITelepathy.sol";
 abstract contract TelepathyHandler is ITelepathyHandler {
     error NotFromTelepathyRouter(address sender);
 
-    address private _telepathyRouter;
+    address public telepathyRouter;
 
-    constructor(address telepathyRouter) {
-        _telepathyRouter = telepathyRouter;
+    constructor(address _telepathyRouter) {
+        telepathyRouter = _telepathyRouter;
     }
 
     function handleTelepathy(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
@@ -16,7 +16,7 @@ abstract contract TelepathyHandler is ITelepathyHandler {
         override
         returns (bytes4)
     {
-        if (msg.sender != _telepathyRouter) {
+        if (msg.sender != telepathyRouter) {
             revert NotFromTelepathyRouter(msg.sender);
         }
         handleTelepathyImpl(_sourceChainId, _sourceAddress, _data);

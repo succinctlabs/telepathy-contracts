@@ -436,10 +436,10 @@
         31597
       ],
       "SubscriptionReceiver": [
-        49286
+        49279
       ],
       "TelepathyPubSub": [
-        48516
+        48509
       ],
       "TelepathyValidator": [
         2853
@@ -469,7 +469,7 @@
         "file": "src/pubsub/TelepathyPubSub.sol",
         "nameLocation": "-1:-1:-1",
         "scope": 2860,
-        "sourceUnit": 48517,
+        "sourceUnit": 48510,
         "symbolAliases": [
           {
             "foreign": {
@@ -477,7 +477,7 @@
               "name": "TelepathyPubSub",
               "nodeType": "Identifier",
               "overloadedDeclarations": [],
-              "referencedDeclaration": 48516,
+              "referencedDeclaration": 48509,
               "src": "34:15:12",
               "typeDescriptions": {}
             },
@@ -495,7 +495,7 @@
         "file": "src/pubsub/interfaces/SubscriptionReceiver.sol",
         "nameLocation": "-1:-1:-1",
         "scope": 2860,
-        "sourceUnit": 49287,
+        "sourceUnit": 49280,
         "symbolAliases": [
           {
             "foreign": {
@@ -503,7 +503,7 @@
               "name": "SubscriptionReceiver",
               "nodeType": "Identifier",
               "overloadedDeclarations": [],
-              "referencedDeclaration": 49286,
+              "referencedDeclaration": 49279,
               "src": "98:20:12",
               "typeDescriptions": {}
             },
@@ -1458,7 +1458,7 @@
                     "1636:20:12"
                   ],
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 49286,
+                  "referencedDeclaration": 49279,
                   "src": "1636:20:12"
                 },
                 "nodeType": "ModifierInvocation",
@@ -1973,10 +1973,10 @@
                           "name": "telepathyPubSub",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 49210,
+                          "referencedDeclaration": 49203,
                           "src": "2162:15:12",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_contract$_TelepathyPubSub_$48516",
+                            "typeIdentifier": "t_contract$_TelepathyPubSub_$48509",
                             "typeString": "contract TelepathyPubSub"
                           }
                         },
@@ -1988,7 +1988,7 @@
                         "memberLocation": "2178:9:12",
                         "memberName": "subscribe",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 49013,
+                        "referencedDeclaration": 49006,
                         "src": "2162:25:12",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_external_nonpayable$_t_uint32_$_t_address_$_t_address_$_t_bytes32_$_t_uint64_$_t_uint64_$returns$_t_bytes32_$",
@@ -3093,7 +3093,7 @@
               ]
             },
             "baseFunctions": [
-              49285
+              49278
             ],
             "documentation": {
               "id": 2758,
@@ -3313,7 +3313,7 @@
                 "547:20:12"
               ],
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 49286,
+              "referencedDeclaration": 49279,
               "src": "547:20:12"
             },
             "id": 2627,
@@ -3350,8 +3350,8 @@
           2853,
           31597,
           35292,
-          49286,
-          49195
+          49279,
+          49188
         ],
         "name": "TelepathyValidator",
         "nameLocation": "525:18:12",
@@ -3361,7 +3361,7 @@
           2645,
           2649,
           2653,
-          49207
+          49200
         ]
       },
       {
