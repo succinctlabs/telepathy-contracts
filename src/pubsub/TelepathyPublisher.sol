@@ -48,8 +48,9 @@ contract TelepathyPublisher is IPublisher, PubSubStorage {
         bytes32 headerRoot =
             telepathyRouter.lightClients(subscription.sourceChainId).headers(srcSlot);
         require(headerRoot != bytes32(0), "HeaderRoot is missing");
-        bool isValid =
-            SSZ.verifyReceiptsRoot(receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot);
+        bool isValid = SSZ.verifyReceiptsRoot(
+            receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot, subscription.sourceChainId
+        );
         require(isValid, "Invalid receipts root proof");
 
         (bytes32[] memory eventTopics, bytes memory eventData) = EventProof.parseEvent(

@@ -120,8 +120,9 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
             requireLightClientDelay(srcSlot, message.sourceChainId);
             bytes32 headerRoot = lightClients[message.sourceChainId].headers(srcSlot);
             require(headerRoot != bytes32(0), "HeaderRoot is missing");
-            bool isValid =
-                SSZ.verifyReceiptsRoot(receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot);
+            bool isValid = SSZ.verifyReceiptsRoot(
+                receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot, message.sourceChainId
+            );
             require(isValid, "Invalid receipts root proof");
         }
 
