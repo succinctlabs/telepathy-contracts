@@ -8,6 +8,6 @@
     "scripts": {
         "lint": "forge fmt --check src test script examples",
         "test": "forge test",
-        "build": "FOUNDRY_IGNORED_ERROR_CODES='[5740,1878]' forge build"
+        "build": "FOUNDRY_IGNORED_ERROR_CODES='[5740,1878]' forge build --force"
     }
 }
