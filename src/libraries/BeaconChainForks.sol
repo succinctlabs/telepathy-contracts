@@ -1,7 +1,7 @@
 pragma solidity 0.8.16;
 
 library BeaconChainForks {
-    function getCapellaSlot(uint32 sourceChainId) public pure returns (uint256) {
+    function getCapellaSlot(uint32 sourceChainId) internal pure returns (uint256) {
         // Returns CAPELLA_FORK_EPOCH * SLOTS_PER_EPOCH for the corresponding beacon chain.
         if (sourceChainId == 1) {
             // https://github.com/ethereum/consensus-specs/blob/dev/specs/capella/fork.md?plain=1#L30
