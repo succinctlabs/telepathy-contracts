@@ -1,0 +1,265 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_telepathyPubSub",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_sourceChainId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "_sourceAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_startSlot",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_endSlot",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "_homeAMB",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "slot",
+        "type": "uint64"
+      }
+    ],
+    "name": "InvalidSlot",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sourceAddress",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidSourceAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "sourceChainId",
+        "type": "uint32"
+      }
+    ],
+    "name": "InvalidSourceChain",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "InvalidSubscriptionId",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "NotFromTelepathyPubSub",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "messageId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "header",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "AffirmationHandled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_subscriptionId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_sourceChainId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "_sourceAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_slot",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_eventTopics",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_eventdata",
+        "type": "bytes"
+      }
+    ],
+    "name": "handlePublish",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "subscribeToAffirmationEvent",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "subscriptionId",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "telepathyPubSub",
+    "outputs": [
+      {
+        "internalType": "contract TelepathyPubSub",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "toggleExecuteAffirmations",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
