@@ -34,3 +34,6 @@
 	path = contracts-v2/lib/optimism-bedrock-contracts
 	url = https://github.com/succinctlabs/optimism-bedrock-contracts
 	branch = main
+[submodule "contracts-v2/lib/eigenlayer-contracts"]
+	path = contracts-v2/lib/eigenlayer-contracts
+	url = https://github.com/succinctlabs/eigenlayer-contracts
