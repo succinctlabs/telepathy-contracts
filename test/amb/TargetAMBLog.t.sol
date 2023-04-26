@@ -9,7 +9,7 @@ import {MessageStatus, ITelepathyHandler, Message} from "src/amb/interfaces/ITel
 import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
-import {LightClientMock} from "./LightClientMock.sol";
+import {LightClientMock} from "src/lightclient/LightClientMock.sol";
 import {SimpleHandler} from "./TargetAMB.t.sol";
 import {WrappedInitialize} from "./TargetAMB.t.sol";
 import {BeaconChainForks} from "src/libraries/BeaconChainForks.sol";
