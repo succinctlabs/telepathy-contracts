@@ -2,13 +2,14 @@ pragma solidity ^0.8.16;
 
 import {TelepathyPubSub} from "src/pubsub/TelepathyPubSub.sol";
 import {ISubscriptionReceiver} from "src/pubsub/interfaces/ISubscriptionReceiver.sol";
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 
-abstract contract SubscriptionReceiver is ISubscriptionReceiver {
+abstract contract SubscriptionReceiverUpgradeable is ISubscriptionReceiver, Initializable {
     TelepathyPubSub public telepathyPubSub;
 
     error NotFromTelepathyPubSub(address sender);
 
-    constructor(address _telepathyPubSub) {
+    function __SubscriptionReceiver_init(address _telepathyPubSub) public onlyInitializing {
         telepathyPubSub = TelepathyPubSub(_telepathyPubSub);
     }
 

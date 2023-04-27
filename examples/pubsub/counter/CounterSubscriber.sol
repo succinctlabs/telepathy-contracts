@@ -89,8 +89,9 @@ contract CounterSubscriber is SubscriptionReceiver {
         uint32 _sourceChainId,
         address _sourceAddress,
         uint64 _slot,
+        bytes32,
         bytes32[] memory eventTopics,
-        bytes memory eventdata
+        bytes memory eventData
     ) internal override {
         if (_sourceChainId != EVENT_SOURCE_CHAIN_ID) {
             revert InvalidSourceChain(_sourceChainId);
@@ -114,9 +115,9 @@ contract CounterSubscriber is SubscriptionReceiver {
         bytes32 eventSig = eventTopics[0];
         uint256 count = uint256(eventTopics[1]);
         if (eventSig == INCREMENT_EVENT_SIG) {
-            emit CrossChainIncremented(count, abi.decode(eventdata, (address)));
+            emit CrossChainIncremented(count, abi.decode(eventData, (address)));
         } else if (eventSig == DECREMENT_EVENT_SIG) {
-            emit CrossChainDecremented(count, abi.decode(eventdata, (address)));
+            emit CrossChainDecremented(count, abi.decode(eventData, (address)));
         }
     }
 }
