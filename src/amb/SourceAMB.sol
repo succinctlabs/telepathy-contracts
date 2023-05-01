@@ -13,9 +13,14 @@ import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";
 /// @author Succinct Labs
 /// @notice This contract is the entrypoint for sending messages to other chains.
 contract SourceAMB is TelepathyStorage, ITelepathyRouter {
+    error SendingDisabled();
+    error CannotSendToSameChain();
+
     /// @notice Modifier to require that sending is enabled.
     modifier isSendingEnabled() {
-        require(sendingEnabled, "Sending is disabled");
+        if (!sendingEnabled) {
+            revert SendingDisabled();
+        }
         _;
     }
 
@@ -29,7 +34,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         isSendingEnabled
         returns (bytes32)
     {
-        require(destinationChainId != block.chainid, "Cannot send to same chain");
+        if (destinationChainId == block.chainid) revert CannotSendToSameChain();
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(destinationChainId, destinationAddress, data);
         emit SentMessage(nonce++, messageRoot, message);
@@ -41,7 +46,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         isSendingEnabled
         returns (bytes32)
     {
-        require(destinationChainId != block.chainid, "Cannot send to same chain");
+        if (destinationChainId == block.chainid) revert CannotSendToSameChain();
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(destinationChainId, Bytes32.fromAddress(destinationAddress), data);
         emit SentMessage(nonce++, messageRoot, message);
@@ -60,7 +65,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         bytes32 destinationAddress,
         bytes calldata data
     ) external isSendingEnabled returns (bytes32) {
-        require(destinationChainId != block.chainid, "Cannot send to same chain");
+        if (destinationChainId == block.chainid) revert CannotSendToSameChain();
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(destinationChainId, destinationAddress, data);
         messages[nonce] = messageRoot;
@@ -73,7 +78,7 @@ contract SourceAMB is TelepathyStorage, ITelepathyRouter {
         address destinationAddress,
         bytes calldata data
     ) external isSendingEnabled returns (bytes32) {
-        require(destinationChainId != block.chainid, "Cannot send to same chain");
+        if (destinationChainId == block.chainid) revert CannotSendToSameChain();
         (bytes memory message, bytes32 messageRoot) =
             _getMessageAndRoot(destinationChainId, Bytes32.fromAddress(destinationAddress), data);
         messages[nonce] = messageRoot;

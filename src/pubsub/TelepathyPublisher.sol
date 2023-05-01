@@ -35,21 +35,21 @@ contract TelepathyPublisher is IPublisher, PubSubStorage {
         requireLightClientConsistency(subscription.sourceChainId);
         requireNotFrozen(subscription.sourceChainId);
 
+        (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
         // Ensure the event emit may only be published to a subscriber once
         bytes32 subscriptionId = keccak256(abi.encode(subscription));
         bytes32 publishKey =
-            keccak256(abi.encode(srcSlotTxSlotPack, txIndexRLPEncoded, logIndex, subscriptionId));
+            keccak256(abi.encode(txSlot, txIndexRLPEncoded, logIndex, subscriptionId));
         require(
             eventsPublished[publishKey] == PublishStatus.NOT_EXECUTED, "Event already published"
         );
 
-        (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
-        requireLightClientDelay(srcSlot, subscription.sourceChainId);
         bytes32 headerRoot =
             telepathyRouter.lightClients(subscription.sourceChainId).headers(srcSlot);
         require(headerRoot != bytes32(0), "HeaderRoot is missing");
-        bool isValid =
-            SSZ.verifyReceiptsRoot(receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot);
+        bool isValid = SSZ.verifyReceiptsRoot(
+            receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot, subscription.sourceChainId
+        );
         require(isValid, "Invalid receipts root proof");
 
         (bytes32[] memory eventTopics, bytes memory eventData) = EventProof.parseEvent(
@@ -61,7 +61,7 @@ contract TelepathyPublisher is IPublisher, PubSubStorage {
             subscription.eventSig
         );
 
-        _publish(subscriptionId, subscription, publishKey, txSlot, eventTopics, eventData);
+        _publish(subscriptionId, subscription, txSlot, publishKey, eventTopics, eventData);
     }
 
     /// @notice Checks that the light client for a given chainId is consistent.
@@ -77,29 +77,12 @@ contract TelepathyPublisher is IPublisher, PubSubStorage {
         require(!telepathyRouter.frozen(chainId), "Contract is frozen.");
     }
 
-    /// @notice Checks that the light client delay is adequate.
-    function requireLightClientDelay(uint64 slot, uint32 chainId) internal view {
-        require(
-            address(telepathyRouter.lightClients(chainId)) != address(0), "Light client is not set."
-        );
-        require(
-            telepathyRouter.lightClients(chainId).timestamps(slot) != 0,
-            "Timestamp is not set for slot."
-        );
-        uint256 elapsedTime =
-            block.timestamp - telepathyRouter.lightClients(chainId).timestamps(slot);
-        require(
-            elapsedTime >= telepathyRouter.MIN_LIGHT_CLIENT_DELAY(),
-            "Must wait longer to use this slot."
-        );
-    }
-
     /// @notice Executes the callback function on the subscriber, and marks the event publish as successful or failed.
     function _publish(
         bytes32 _subscriptionId,
         Subscription calldata _subscription,
-        bytes32 _publishKey,
         uint64 _txSlot,
+        bytes32 _publishKey,
         bytes32[] memory _eventTopics,
         bytes memory _eventData
     ) internal {
@@ -112,6 +95,7 @@ contract TelepathyPublisher is IPublisher, PubSubStorage {
                 _subscription.sourceChainId,
                 _subscription.sourceAddress,
                 _txSlot,
+                _publishKey,
                 _eventTopics,
                 _eventData
             );

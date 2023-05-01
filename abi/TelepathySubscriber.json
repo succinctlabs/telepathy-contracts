@@ -1,0 +1,245 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "startSlot",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "endSlot",
+        "type": "uint64"
+      }
+    ],
+    "name": "InvalidSlotRange",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "SubscriptionAlreadyActive",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "SubscriptionNotActive",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint64",
+        "name": "startSlot",
+        "type": "uint64"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint64",
+        "name": "endSlot",
+        "type": "uint64"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "sourceChainId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "address",
+            "name": "sourceAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "callbackAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "eventSig",
+            "type": "bytes32"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct Subscription",
+        "name": "subscription",
+        "type": "tuple"
+      }
+    ],
+    "name": "Subscribe",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "subscriptionId",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "sourceChainId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "address",
+            "name": "sourceAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "callbackAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "eventSig",
+            "type": "bytes32"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct Subscription",
+        "name": "subscription",
+        "type": "tuple"
+      }
+    ],
+    "name": "Unsubscribe",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "eventsPublished",
+    "outputs": [
+      {
+        "internalType": "enum PublishStatus",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_sourceChainId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "_sourceAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_callbackAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_eventSig",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_startSlot",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_endSlot",
+        "type": "uint64"
+      }
+    ],
+    "name": "subscribe",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "subscriptions",
+    "outputs": [
+      {
+        "internalType": "enum SubscriptionStatus",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_sourceChainId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "_sourceAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_eventSig",
+        "type": "bytes32"
+      }
+    ],
+    "name": "unsubscribe",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

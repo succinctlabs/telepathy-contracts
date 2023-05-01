@@ -6,7 +6,8 @@ interface ISubscriptionReceiver {
         uint32 sourceChainId,
         address sourceAddress,
         uint64 slot,
+        bytes32 publishKey,
         bytes32[] memory eventTopics,
-        bytes memory eventdata
+        bytes memory eventData
     ) external returns (bytes4);
 }

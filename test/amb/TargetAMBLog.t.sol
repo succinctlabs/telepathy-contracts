@@ -9,9 +9,12 @@ import {MessageStatus, ITelepathyHandler, Message} from "src/amb/interfaces/ITel
 import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
-import {LightClientMock} from "./LightClientMock.sol";
+import {LightClientMock} from "src/lightclient/LightClientMock.sol";
 import {SimpleHandler} from "./TargetAMB.t.sol";
 import {WrappedInitialize} from "./TargetAMB.t.sol";
+import {BeaconChainForks} from "src/libraries/BeaconChainForks.sol";
+import {MessageEncoding} from "src/libraries/MessageEncoding.sol";
+import {Address} from "src/libraries/Typecast.sol";
 
 // The weird ordering here is because vm.parseJSON requires
 // alphabetaical ordering of the fields in the struct
@@ -184,6 +187,76 @@ contract TargetAMBTest is Test {
         // Check that the simpleHandler processed the message correctly
         assertEq(simpleHandler.nonce(), 1);
         bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
+    }
+
+    function test_ExecuteMessageFromLog_WhenFarSlotBellatrixCapella() public {
+        // This test has tx slot in bellatrix, source slot in capella
+        ExecuteMessageFromLogParams memory testParams = parseParams("farSlotBellatrixCapella");
+        getDefaultContractSetup(testParams);
+
+        (uint64 srcSlot, uint64 txSlot) = abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
+        Message memory message = MessageEncoding.decode(testParams.message);
+        assertTrue(txSlot < BeaconChainForks.getCapellaSlot(message.sourceChainId));
+        assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId));
+
+        SimpleHandler simpleHandlerTemplate = new SimpleHandler();
+        address destination = Address.fromBytes32(message.destinationAddress);
+        vm.etch(address(destination), address(simpleHandlerTemplate).code);
+        simpleHandler = SimpleHandler(address(destination));
+        simpleHandler.setParams(testParams.SOURCE_CHAIN, message.sourceAddress, address(targetAMB));
+
+        // Execute the message and check that it succeeded
+        targetAMB.executeMessageFromLog(
+            testParams.srcSlotTxSlotPack,
+            testParams.message,
+            testParams.receiptsRootProof,
+            testParams.receiptsRoot,
+            testParams.receiptProof,
+            testParams.txIndexRLPEncoded,
+            testParams.logIndex
+        );
+        bytes32 messageRoot = keccak256(testParams.message);
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
+
+        // Check that the simpleHandler processed the message correctly
+        assertEq(simpleHandler.nonce(), 1);
+        bytes32 expectedDataHash = keccak256(message.data);
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
+    }
+
+    function test_ExecuteMessageFromLog_WhenFarSlotCapellaCapella() public {
+        // This test has tx slot in capella, source slot in capella
+        ExecuteMessageFromLogParams memory testParams = parseParams("farSlotCapellaCapella");
+        getDefaultContractSetup(testParams);
+
+        (uint64 srcSlot, uint64 txSlot) = abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
+        Message memory message = MessageEncoding.decode(testParams.message);
+        assertTrue(txSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId));
+        assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId));
+
+        SimpleHandler simpleHandlerTemplate = new SimpleHandler();
+        address destination = Address.fromBytes32(message.destinationAddress);
+        vm.etch(address(destination), address(simpleHandlerTemplate).code);
+        simpleHandler = SimpleHandler(address(destination));
+        simpleHandler.setParams(testParams.SOURCE_CHAIN, message.sourceAddress, address(targetAMB));
+
+        // Execute the message and check that it succeeded
+        targetAMB.executeMessageFromLog(
+            testParams.srcSlotTxSlotPack,
+            testParams.message,
+            testParams.receiptsRootProof,
+            testParams.receiptsRoot,
+            testParams.receiptProof,
+            testParams.txIndexRLPEncoded,
+            testParams.logIndex
+        );
+        bytes32 messageRoot = keccak256(testParams.message);
+        assertTrue(targetAMB.messageStatus(messageRoot) == MessageStatus.EXECUTION_SUCCEEDED);
+
+        // Check that the simpleHandler processed the message correctly
+        assertEq(simpleHandler.nonce(), 1);
+        bytes32 expectedDataHash = keccak256(message.data);
         assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
     }
 

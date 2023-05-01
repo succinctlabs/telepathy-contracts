@@ -8,7 +8,7 @@ import {MessageStatus, ITelepathyHandler} from "src/amb/interfaces/ITelepathy.so
 import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
-import {LightClientMock} from "./LightClientMock.sol";
+import {LightClientMock} from "src/lightclient/LightClientMock.sol";
 
 // The weird ordering here is because vm.parseJSON requires
 // alphabetaical ordering of the fields in the struct

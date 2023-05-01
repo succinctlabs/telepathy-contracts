@@ -5,7 +5,33 @@ import "forge-std/Test.sol";
 
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 
+// The weird ordering here is because vm.parseJSON requires
+// alphabetical ordering of the fields in the struct
+struct ReceiptsRootProof {
+    uint256 gindex;
+    bytes32 headerRoot;
+    bytes32 receiptsRoot;
+    bytes32[] receiptsRootProof;
+    uint32 sourceChain;
+    uint64 srcSlot;
+    uint64 txSlot;
+}
+
 contract SSZTest is Test {
+    // Loads fixtures generated with scripts/src/contracts/generateCapellaSSZFixtures.ts
+    function loadReceiptsRootProof(string memory filename)
+        internal
+        view
+        returns (ReceiptsRootProof memory)
+    {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/test/amb/fixtures/", filename, ".json");
+        string memory file = vm.readFile(path);
+        bytes memory parsed = vm.parseJson(file);
+        ReceiptsRootProof memory params = abi.decode(parsed, (ReceiptsRootProof));
+        return params;
+    }
+
     function setUp() public {}
 
     function test_FinalityProof_WhenEthereum() public {
@@ -112,5 +138,30 @@ contract SSZTest is Test {
 
     function test_ReceiptRootProof_WhenFarSlots() public pure {
         // TODO
+    }
+
+    function test_ReceiptRootProof_WhenCapellaFixtures() public {
+        // iterate letters A-J
+        for (uint8 i = 65; i <= 74; i++) {
+            // iterate numbers 1-5
+            for (uint8 j = 1; j <= 5; j++) {
+                // get filename like receiptsRootProof_A1.json
+                string memory filename = string(
+                    abi.encodePacked("capella/receiptsRootProof_", bytes1(i), bytes1(j + 48))
+                );
+
+                ReceiptsRootProof memory json = loadReceiptsRootProof(filename);
+
+                bool verified = SSZ.verifyReceiptsRoot(
+                    json.receiptsRoot,
+                    json.receiptsRootProof,
+                    json.headerRoot,
+                    json.srcSlot,
+                    json.txSlot,
+                    json.sourceChain
+                );
+                assertTrue(verified);
+            }
+        }
     }
 }

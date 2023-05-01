@@ -1,5 +1,7 @@
 pragma solidity 0.8.16;
 
+import {BeaconChainForks} from "src/libraries/BeaconChainForks.sol";
+
 struct BeaconBlockHeader {
     uint64 slot;
     uint64 proposerIndex;
@@ -91,8 +93,21 @@ library SSZ {
         bytes32[] memory receiptsRootProof,
         bytes32 headerRoot,
         uint64 srcSlot,
-        uint64 txSlot
+        uint64 txSlot,
+        uint32 sourceChainId
     ) internal pure returns (bool) {
+        uint256 capellaForkSlot = BeaconChainForks.getCapellaSlot(sourceChainId);
+
+        // In Bellatrix we use state.historical_roots, in Capella we use state.historical_summaries
+        // We use < here because capellaForkSlot is the last slot processed using Bellatrix logic;
+        // the last batch in state.historical_roots contains the 8192 slots *before* capellaForkSlot.
+        uint256 stateToHistoricalGIndex = txSlot < capellaForkSlot ? 7 : 27;
+
+        // The list state.historical_summaries is empty at the beginning of Capella
+        uint256 historicalListIndex = txSlot < capellaForkSlot
+            ? txSlot / SLOTS_PER_HISTORICAL_ROOT
+            : (txSlot - capellaForkSlot) / SLOTS_PER_HISTORICAL_ROOT;
+
         uint256 index;
         if (srcSlot == txSlot) {
             index = 8 + 3;
@@ -104,14 +119,14 @@ library SSZ {
             index = index * 2 ** 9 + 387;
         } else if (txSlot < srcSlot) {
             index = 8 + 3;
-            index = index * 2 ** 5 + 7;
+            index = index * 2 ** 5 + stateToHistoricalGIndex;
             index = index * 2 + 0;
-            index = index * HISTORICAL_ROOTS_LIMIT + txSlot / SLOTS_PER_HISTORICAL_ROOT;
+            index = index * HISTORICAL_ROOTS_LIMIT + historicalListIndex;
             index = index * 2 + 1;
             index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
             index = index * 2 ** 9 + 387;
         } else {
-            revert("TrustlessAMB: invalid target slot");
+            revert("TargetAMB: invalid target slot");
         }
         return isValidMerkleBranch(receiptsRoot, index, receiptsRootProof, headerRoot);
     }
