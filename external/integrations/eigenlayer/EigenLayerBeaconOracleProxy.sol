@@ -7,7 +7,7 @@ import {AccessControlUpgradeable} from
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 
-import {EigenLayerBeaconOracle} from "src/integrations/eigenlayer/EigenLayerBeaconOracle.sol";
+import {EigenLayerBeaconOracle} from "external/integrations/eigenlayer/EigenLayerBeaconOracle.sol";
 
 /// @title EigenLayer Beacon Oracle Proxy
 /// @author Succinct Labs

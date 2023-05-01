@@ -2,9 +2,9 @@ pragma solidity 0.8.16;
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
-import {ILightClientUpdater} from "src/integrations/eigenlayer/ILightClientUpdater.sol";
+import {ILightClientUpdater} from "external/integrations/eigenlayer/ILightClientUpdater.sol";
 import {EigenLayerBeaconOracleStorage} from
-    "src/integrations/eigenlayer/EigenLayerBeaconOracleStorage.sol";
+    "external/integrations/eigenlayer/EigenLayerBeaconOracleStorage.sol";
 import {ReentrancyGuardUpgradeable} from
     "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 

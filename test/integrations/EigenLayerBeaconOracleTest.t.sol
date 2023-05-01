@@ -8,9 +8,9 @@ import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {LightClient, LightClientStep, LightClientRotate} from "src/lightclient/LightClient.sol";
 import {LightClientFixture} from "test/lightclient/LightClientFixture.sol";
 import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
-import {EigenLayerBeaconOracle} from "src/integrations/eigenlayer/EigenLayerBeaconOracle.sol";
+import {EigenLayerBeaconOracle} from "external/integrations/eigenlayer/EigenLayerBeaconOracle.sol";
 import {EigenLayerBeaconOracleProxy} from
-    "src/integrations/eigenlayer/EigenLayerBeaconOracleProxy.sol";
+    "external/integrations/eigenlayer/EigenLayerBeaconOracleProxy.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 
 import {LightClientMock} from "src/lightclient/LightClientMock.sol";
