@@ -6,7 +6,7 @@ import {MockTelepathy} from "src/amb/mocks/MockTelepathy.sol";
 import {TelepathyPubSub} from "src/pubsub/TelepathyPubSub.sol";
 import {Subscription} from "src/pubsub/interfaces/IPubSub.sol";
 import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
-import {TelepathyValidator} from "examples/pubsub/gnosis/TelepathyValidator.sol";
+import {TelepathyValidator} from "external/integrations/gnosis/TelepathyValidator.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 
 interface IForeignAMB {}
