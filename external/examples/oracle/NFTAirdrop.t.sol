@@ -2,7 +2,7 @@ pragma solidity ^0.8.16;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
-import {NFTAirdrop} from "examples/oracle/NFTAirdrop.sol";
+import {NFTAirdrop} from "external/examples/oracle/NFTAirdrop.sol";
 import {MockTelepathy} from "src/amb/mocks/MockTelepathy.sol";
 import {TelepathyOracle, RequestData} from "src/oracle/TelepathyOracle.sol";
 import {TelepathyOracleFulfiller} from "src/oracle/TelepathyOracleFulfiller.sol";

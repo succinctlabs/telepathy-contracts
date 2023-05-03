@@ -3,15 +3,13 @@ pragma solidity 0.8.16;
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {ILightClientUpdater} from "external/integrations/eigenlayer/ILightClientUpdater.sol";
+import {BeaconOracleHelper} from "external/integrations/libraries/BeaconOracleHelper.sol";
 import {EigenLayerBeaconOracleStorage} from
     "external/integrations/eigenlayer/EigenLayerBeaconOracleStorage.sol";
 import {ReentrancyGuardUpgradeable} from
     "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 contract EigenLayerBeaconOracle is ILightClientUpdater, EigenLayerBeaconOracleStorage {
-    uint256 internal constant EXECUTION_PAYLOAD_BLOCK_NUMBER_INDEX = 3222;
-    uint256 internal constant BEACON_STATE_ROOT_INDEX = 11;
-
     event BeaconStateOracleUpdate(uint256 slot, uint256 blockNumber, bytes32 stateRoot);
 
     error InvalidBlockNumberProof();
@@ -31,57 +29,35 @@ contract EigenLayerBeaconOracle is ILightClientUpdater, EigenLayerBeaconOracleSt
     }
 
     function fulfillRequest(
-        uint256 _slot,
+        BeaconOracleHelper.BeaconStateRootProofInfo calldata _beaconStateRootProofInfo,
         uint256 _blockNumber,
-        bytes32[] calldata _blockNumberProof,
-        bytes32 _beaconStateRoot,
-        bytes32[] calldata _beaconStateRootProof
+        bytes32[] calldata _blockNumberProof
     ) external onlyWhitelistedUpdater {
-        if (_slot <= head) {
+        if (_beaconStateRootProofInfo.slot <= head) {
             revert SlotNumberTooLow();
         }
 
-        bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_slot);
+        bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
         // Verify block number against block header root
-        if (!verifyBlockNumber(_blockNumber, _blockNumberProof, blockHeaderRoot)) {
+        if (!BeaconOracleHelper._verifyBlockNumber(_blockNumber, _blockNumberProof, blockHeaderRoot))
+        {
             revert InvalidBlockNumberProof();
         }
 
         // Verify beacon state root against block header root
-        if (!verifyBeaconStateRoot(_beaconStateRoot, _beaconStateRootProof, blockHeaderRoot)) {
+        if (!BeaconOracleHelper._verifyBeaconStateRoot(_beaconStateRootProofInfo, blockHeaderRoot)) {
             revert InvalidBeaconStateRootProof();
         }
 
         // Store the header root
-        blockNumberToStateRoot[_blockNumber] = _beaconStateRoot;
+        blockNumberToStateRoot[_blockNumber] = _beaconStateRootProofInfo.beaconStateRoot;
 
         // Require that the slot number is greater than the previous slot number
-        head = _slot;
+        head = _beaconStateRootProofInfo.slot;
 
-        emit BeaconStateOracleUpdate(_slot, _blockNumber, _beaconStateRoot);
-    }
-
-    function verifyBlockNumber(
-        uint256 _blockNumber,
-        bytes32[] memory _blockNumberProof,
-        bytes32 _blockHeaderRoot
-    ) internal pure returns (bool) {
-        return SSZ.isValidMerkleBranch(
-            SSZ.toLittleEndian(_blockNumber),
-            EXECUTION_PAYLOAD_BLOCK_NUMBER_INDEX,
-            _blockNumberProof,
-            _blockHeaderRoot
-        );
-    }
-
-    function verifyBeaconStateRoot(
-        bytes32 _beaconStateRoot,
-        bytes32[] memory _beaconStateRootProof,
-        bytes32 _blockHeaderRoot
-    ) internal pure returns (bool) {
-        return SSZ.isValidMerkleBranch(
-            _beaconStateRoot, BEACON_STATE_ROOT_INDEX, _beaconStateRootProof, _blockHeaderRoot
+        emit BeaconStateOracleUpdate(
+            _beaconStateRootProofInfo.slot, _blockNumber, _beaconStateRootProofInfo.beaconStateRoot
         );
     }
 }
