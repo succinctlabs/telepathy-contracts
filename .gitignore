@@ -19,3 +19,5 @@ abi/*
 !abi/TelepathyPublisher.json
 !abi/TelepathySubscriber.json
 !abi/TelepathyValidator.json
+!abi/EigenLayerBeaconOracle.json
+!abi/EigenLayerBeaconOracleProxy.json
