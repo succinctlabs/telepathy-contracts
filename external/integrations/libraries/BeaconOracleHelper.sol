@@ -6,6 +6,7 @@ library BeaconOracleHelper {
     /// @notice Beacon block constants
     uint256 internal constant BEACON_STATE_ROOT_INDEX = 11;
     uint256 internal constant BASE_DEPOSIT_INDEX = 6336;
+    uint256 internal constant BASE_WITHDRAWAL_INDEX = 103360;
     uint256 internal constant EXECUTION_PAYLOAD_BLOCK_NUMBER_INDEX = 3222;
 
     /// @notice Validator proof constants
@@ -34,6 +35,8 @@ library BeaconOracleHelper {
     error InvalidBeaconStateRootProof();
     error InvalidBlockNumberProof();
     error InvalidDepositProof(bytes32 validatorPubkeyHash);
+    error InvalidWithdrawalProofIndex(uint256 validatorIndex);
+    error InvalidWithdrawalProofAmount(uint256 validatorIndex);
 
     struct BeaconStateRootProofInfo {
         uint256 slot;
@@ -158,6 +161,35 @@ library BeaconOracleHelper {
         }
     }
 
+    /// @notice Proves the amount that a specified validator withdrew at _withdrawalIndex
+    function _verifyValidatorWithdrawal(
+        uint256 _withdrawalIndex,
+        uint256 _validatorIndex,
+        uint256 _amount,
+        bytes32[] memory _withdrawalValidatorIndexProof,
+        bytes32[] memory _withdrawalAmountProof,
+        bytes32 _blockHeaderRoot
+    ) internal pure {
+        // 1) Verify the validator index
+        if (!SSZ.isValidMerkleBranch(
+            SSZ.toLittleEndian(_validatorIndex),
+            ((BASE_WITHDRAWAL_INDEX + _withdrawalIndex) * 4) + 1,
+            _withdrawalValidatorIndexProof,
+            _blockHeaderRoot
+        )) {
+            revert InvalidWithdrawalProofIndex(_validatorIndex);
+        }
+        // 2) Verify the amount withdrawn
+        if (!SSZ.isValidMerkleBranch(
+            SSZ.toLittleEndian(_amount),
+            ((BASE_WITHDRAWAL_INDEX + _withdrawalIndex) * 4) + 3,
+            _withdrawalAmountProof,
+            _blockHeaderRoot
+        )) {
+            revert InvalidWithdrawalProofAmount(_validatorIndex);
+        }
+    }
+
     /// @notice Proves the validator balance against the beacon state root
     /// @dev The validator balance is stored in a packed array of 4 64-bit integers, so we prove the combined balance at gindex (BASE_BALANCE_INDEX + (validatorIndex / 4)
     function _verifyValidatorBalance(
@@ -231,7 +263,7 @@ library BeaconOracleHelper {
         }
     }
 
-    /// @notice Proves the balance of a validator against combined balances array &
+    /// @notice Proves the balance of a validator against combined balances array
     /// @return Validator balance
     function _proveValidatorBalance(
         uint256 _validatorIndex,

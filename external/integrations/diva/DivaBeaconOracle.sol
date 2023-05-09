@@ -20,6 +20,8 @@ contract DivaBeaconOracle {
 
     /// @notice Mapping from SHA-256 hash of padded pubkey to the slot of the latest proved deposit
     mapping(bytes32 => uint256) public depositedSlots;
+    /// @notice Mapping from validator index to latest proved withdrawal amount
+    mapping(uint256 => uint256) public withdrawalAmounts;
     /// @notice Mapping from validator index to latest proved balance
     mapping(uint256 => uint256) public validatorBalances;
     /// @notice Mapping from validator index to validator struct
@@ -40,6 +42,25 @@ contract DivaBeaconOracle {
         );
 
         depositedSlots[_pubkeyHash] = _slot;
+    }
+
+    /// @notice Prove pubkey against deposit in beacon block
+    function proveWithdrawal(
+        uint256 _slot,
+        uint256 _validatorIndex,
+        uint256 _amount,
+        // Index of deposit in deposit tree (MAX_LENGTH = 16)
+        uint256 _withdrawalIndex,
+        bytes32[] memory _withdrawalValidatorIndexProof,
+        bytes32[] memory _withdrawalAmountProof
+    ) external {
+        bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_slot);
+
+        BeaconOracleHelper._verifyValidatorWithdrawal(
+                _withdrawalIndex, _validatorIndex, _amount, _withdrawalValidatorIndexProof, _withdrawalAmountProof, blockHeaderRoot
+            );
+
+        withdrawalAmounts[_validatorIndex] = _amount;
     }
 
     /// @notice Prove pubkey, withdrawal credentials
@@ -174,5 +195,9 @@ contract DivaBeaconOracle {
 
     function getDepositStatus(bytes32 _validatorPubkeyHash) external view returns (uint256) {
         return depositedSlots[_validatorPubkeyHash];
+    }
+
+    function getWithdrawalAmount(uint256 _validatorIndex) external view returns (uint256) {
+        return withdrawalAmounts[_validatorIndex];
     }
 }

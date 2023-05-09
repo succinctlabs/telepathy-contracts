@@ -22,6 +22,16 @@ struct DepositFixture {
     uint256 slot;
 }
 
+struct WithdrawalFixture {
+    uint256 amount;
+    bytes32[] amountProof;
+    bytes32 headerRoot;
+    uint256 slot;
+    uint256 validatorIndex;
+    bytes32[] validatorIndexProof;
+    uint256 withdrawalIndex;
+}
+
 struct StatusFixture {
     uint64 activationEpoch;
     bytes32[] activationProof;
@@ -59,9 +69,9 @@ struct BeaconOracleUpdateFixture {
 
 contract TestErrors {
     error InvalidBeaconStateRootProof();
-
     error InvalidValidatorProof(uint256 validatorIndex);
-
+    error InvalidWithdrawalProofIndex(uint256 validatorIndex);
+    error InvalidWithdrawalProofAmount(uint256 validatorIndex);
     error InvalidDepositProof(bytes32 validatorPubkeyHash);
     error InvalidBalanceProof(uint256 validatorIndex);
     error InvalidValidatorFieldProof(
@@ -80,6 +90,7 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
     address public oracleOperator;
     BeaconOracleUpdateFixture fixture;
     DepositFixture depositFixture;
+    WithdrawalFixture withdrawalFixture;
     StatusFixture statusFixture;
     DivaBeaconOracle oracle;
 
@@ -106,6 +117,12 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
         parsed = vm.parseJson(file);
         depositFixture = abi.decode(parsed, (DepositFixture));
 
+        filename = "diva_withdrawal_6358918";
+        path = string.concat(root, "/test/integrations/diva/fixtures/", filename, ".json");
+        file = vm.readFile(path);
+        parsed = vm.parseJson(file);
+        withdrawalFixture = abi.decode(parsed, (WithdrawalFixture));
+
         filename = "diva_status_6308974";
         path = string.concat(root, "/test/integrations/diva/fixtures/", filename, ".json");
         file = vm.readFile(path);
@@ -114,6 +131,7 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
 
         lightClient.setHeader(fixture.slot, fixture.headerRoot);
         lightClient.setHeader(depositFixture.slot, depositFixture.headerRoot);
+        lightClient.setHeader(withdrawalFixture.slot, withdrawalFixture.headerRoot);
     }
 
     function test_ProveDeposit() public {
@@ -126,6 +144,20 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
 
         uint256 slotDeposited = oracle.getDepositStatus(depositFixture.pubkeyHash);
         assertEq(slotDeposited, depositFixture.slot);
+    }
+
+    function test_ProveWithdrawal() public {
+        oracle.proveWithdrawal(
+            withdrawalFixture.slot,
+            withdrawalFixture.validatorIndex,
+            withdrawalFixture.amount,
+            withdrawalFixture.withdrawalIndex,
+            withdrawalFixture.validatorIndexProof,
+            withdrawalFixture.amountProof
+        );
+
+        uint256 amountWithdrawn = oracle.getWithdrawalAmount(withdrawalFixture.validatorIndex);
+        assertEq(amountWithdrawn, withdrawalFixture.amount);
     }
 
     function test_ProveValidatorField() public {
@@ -233,6 +265,37 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
             // Incorrect deposit index
             16,
             depositFixture.pubkeyProof
+        );
+    }
+
+    function test_RevertInProveWithdrawal() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                InvalidWithdrawalProofIndex.selector, withdrawalFixture.validatorIndex
+            )
+        );
+        oracle.proveWithdrawal(
+            withdrawalFixture.slot,
+            withdrawalFixture.validatorIndex,
+            withdrawalFixture.amount,
+            // Incorrect withdrawal index
+            16,
+            withdrawalFixture.validatorIndexProof,
+            withdrawalFixture.amountProof
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                InvalidWithdrawalProofAmount.selector, withdrawalFixture.validatorIndex
+            )
+        );
+        oracle.proveWithdrawal(
+            withdrawalFixture.slot,
+            withdrawalFixture.validatorIndex,
+            // Incorrect withdrawal amount
+            0,
+            withdrawalFixture.withdrawalIndex,
+            withdrawalFixture.validatorIndexProof,
+            withdrawalFixture.amountProof
         );
     }
 
