@@ -9,12 +9,7 @@ contract DivaBeaconOracle {
 
     event BeaconOracleUpdate(uint256 validatorIndex);
 
-    error InvalidBeaconStateRootProof();
-    error InvalidValidatorProof(uint256 validatorIndex);
-    error InvalidDepositProof(bytes32 validatorPubkeyHash);
-    error InvalidBalanceProof(uint256 validatorIndex);
     error InvalidLightClientAddress();
-    error InvalidValidatorFieldProof(BeaconOracleHelper.ValidatorField field, uint256 validatorIndex);
 
     constructor(address _lightClient) {
         if (_lightClient == address(0)) {
@@ -40,13 +35,9 @@ contract DivaBeaconOracle {
     ) external {
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_slot);
 
-        if (
-            !BeaconOracleHelper._verifyValidatorDeposited(
-                _depositIndex, _pubkeyHash, _depositedPubkeyProof, blockHeaderRoot
-            )
-        ) {
-            revert InvalidDepositProof(_pubkeyHash);
-        }
+        BeaconOracleHelper._verifyValidatorDeposited(
+            _depositIndex, _pubkeyHash, _depositedPubkeyProof, blockHeaderRoot
+        );
 
         depositedSlots[_pubkeyHash] = _slot;
     }
@@ -60,19 +51,22 @@ contract DivaBeaconOracle {
         bytes32[] calldata _validatorFieldProof,
         BeaconOracleHelper.ValidatorField _field
     ) external {
-        _verifyValidator(_beaconStateRootProofInfo, _validatorProofInfo);
-        if (
-            !BeaconOracleHelper._verifyValidatorField(
-                _validatorProofInfo.validatorRoot,
-                _validatorFieldLeaf,
-                _validatorFieldProof,
-                _field)
-        ) {
-            revert InvalidValidatorFieldProof(_field, _validatorProofInfo.validatorIndex);
-        }
-        BeaconOracleHelper.Validator storage validator = validatorState[_validatorProofInfo.validatorIndex];
+        bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
+
+        BeaconOracleHelper._verifyValidatorRoot(
+            _beaconStateRootProofInfo, _validatorProofInfo, blockHeaderRoot
+        );
+        BeaconOracleHelper._verifyValidatorField(
+            _validatorProofInfo.validatorRoot,
+            _validatorProofInfo.validatorIndex,
+            _validatorFieldLeaf,
+            _validatorFieldProof,
+            _field
+        );
+        BeaconOracleHelper.Validator storage validator =
+            validatorState[_validatorProofInfo.validatorIndex];
         if (_field == BeaconOracleHelper.ValidatorField.Pubkey) {
-            validator.pubkey = _validatorFieldLeaf;
+            validator.pubkeyHash = _validatorFieldLeaf;
         } else if (_field == BeaconOracleHelper.ValidatorField.WithdrawalCredentials) {
             validator.withdrawalCredentials = _validatorFieldLeaf;
         }
@@ -83,22 +77,26 @@ contract DivaBeaconOracle {
         BeaconOracleHelper.BeaconStateRootProofInfo calldata _beaconStateRootProofInfo,
         BeaconOracleHelper.ValidatorProofInfo calldata _validatorProofInfo,
         // Prove fields that are uint256 or bool
-        uint256 _validatorFieldLeaf,
+        uint64 _validatorFieldLeaf,
         bytes32[] calldata _validatorFieldProof,
         BeaconOracleHelper.ValidatorField _field
     ) external {
-        _verifyValidator(_beaconStateRootProofInfo, _validatorProofInfo);
-        if (
-            !BeaconOracleHelper._verifyValidatorField(
-                _validatorProofInfo.validatorRoot,
-                SSZ.toLittleEndian(_validatorFieldLeaf),
-                _validatorFieldProof,
-                _field)
-        ) {
-            revert InvalidValidatorFieldProof(_field, _validatorProofInfo.validatorIndex);
-        }
+        bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
-        BeaconOracleHelper.Validator memory validator = validatorState[_validatorProofInfo.validatorIndex];
+        BeaconOracleHelper._verifyValidatorRoot(
+            _beaconStateRootProofInfo, _validatorProofInfo, blockHeaderRoot
+        );
+
+        BeaconOracleHelper._verifyValidatorField(
+            _validatorProofInfo.validatorRoot,
+            _validatorProofInfo.validatorIndex,
+            SSZ.toLittleEndian(_validatorFieldLeaf),
+            _validatorFieldProof,
+            _field
+        );
+
+        BeaconOracleHelper.Validator memory validator =
+            validatorState[_validatorProofInfo.validatorIndex];
         if (_field == BeaconOracleHelper.ValidatorField.Slashed) {
             validator.slashed = _validatorFieldLeaf == 1;
         } else if (_field == BeaconOracleHelper.ValidatorField.ActivationEligibilityEpoch) {
@@ -121,20 +119,19 @@ contract DivaBeaconOracle {
         bytes32 _combinedBalance,
         bytes32[] calldata _balanceProof
     ) external {
-        _verifyValidator(_beaconStateRootProofInfo, _validatorProofInfo);
-        if (
-            !BeaconOracleHelper._verifyValidatorBalance(
-                _balanceProof,
-                _validatorProofInfo.validatorIndex,
-                _combinedBalance,
-                _beaconStateRootProofInfo.beaconStateRoot
-            )
-        ) {
-            revert InvalidBalanceProof(_validatorProofInfo.validatorIndex);
-        }
+        bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
+
+        BeaconOracleHelper._verifyValidatorRoot(
+            _beaconStateRootProofInfo, _validatorProofInfo, blockHeaderRoot
+        );
 
         validatorBalances[_validatorProofInfo.validatorIndex] = BeaconOracleHelper
-            ._getBalanceFromCombinedBalance(_validatorProofInfo.validatorIndex, _combinedBalance);
+            ._proveValidatorBalance(
+            _validatorProofInfo.validatorIndex,
+            _beaconStateRootProofInfo.beaconStateRoot,
+            _combinedBalance,
+            _balanceProof
+        );
 
         emit BeaconOracleUpdate(_validatorProofInfo.validatorIndex);
     }
@@ -144,7 +141,7 @@ contract DivaBeaconOracle {
     }
 
     function getPubkey(uint256 _validatorIndex) external view returns (bytes32) {
-        return validatorState[_validatorIndex].pubkey;
+        return validatorState[_validatorIndex].pubkeyHash;
     }
 
     function getSlashed(uint256 _validatorIndex) external view returns (bool) {
@@ -159,15 +156,15 @@ contract DivaBeaconOracle {
         return validatorState[_validatorIndex].activationEligibilityEpoch;
     }
 
-    function getActivationEpoch(uint256 _validatorIndex) external view returns (uint256) {
+    function getActivationEpoch(uint256 _validatorIndex) external view returns (uint64) {
         return validatorState[_validatorIndex].activationEpoch;
     }
 
-    function getExitEpoch(uint256 _validatorIndex) external view returns (uint256) {
+    function getExitEpoch(uint256 _validatorIndex) external view returns (uint64) {
         return validatorState[_validatorIndex].exitEpoch;
     }
 
-    function getWithdrawableEpoch(uint256 _validatorIndex) external view returns (uint256) {
+    function getWithdrawableEpoch(uint256 _validatorIndex) external view returns (uint64) {
         return validatorState[_validatorIndex].withdrawableEpoch;
     }
 
@@ -177,24 +174,5 @@ contract DivaBeaconOracle {
 
     function getDepositStatus(bytes32 _validatorPubkeyHash) external view returns (uint256) {
         return depositedSlots[_validatorPubkeyHash];
-    }
-
-    function _verifyValidator(
-        BeaconOracleHelper.BeaconStateRootProofInfo calldata _beaconStateRootProofInfo,
-        BeaconOracleHelper.ValidatorProofInfo calldata _validatorProofInfo
-    ) internal view {
-        bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
-
-        if (!BeaconOracleHelper._verifyBeaconStateRoot(_beaconStateRootProofInfo, blockHeaderRoot)) {
-            revert InvalidBeaconStateRootProof();
-        }
-
-        if (
-            !BeaconOracleHelper._verifyValidatorRoot(
-                _validatorProofInfo, _beaconStateRootProofInfo.beaconStateRoot
-            )
-        ) {
-            revert InvalidValidatorProof(_validatorProofInfo.validatorIndex);
-        }
     }
 }

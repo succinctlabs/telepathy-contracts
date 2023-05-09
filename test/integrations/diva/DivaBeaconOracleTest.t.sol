@@ -23,16 +23,16 @@ struct DepositFixture {
 }
 
 struct StatusFixture {
-    uint256 activationEpoch;
+    uint64 activationEpoch;
     bytes32[] activationProof;
     bytes32 beaconStateRoot;
     bytes32[] beaconStateRootProof;
     bytes32 blockHeaderRoot;
-    uint256 exitEpoch;
+    uint64 exitEpoch;
     bytes32[] exitProof;
-    uint256 pendingEpoch;
+    uint64 pendingEpoch;
     bytes32[] pendingProof;
-    uint256 slashed;
+    uint64 slashed;
     bytes32[] slashedProof;
     uint256 slot;
     uint256 validatorIndex;
@@ -223,7 +223,6 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
         assertEq(balance, fixture.validatorBalance);
     }
 
-    // TESTING REVERTS
     function test_RevertInProveDeposit() public {
         vm.expectRevert(
             abi.encodeWithSelector(InvalidDepositProof.selector, depositFixture.pubkeyHash)
@@ -306,7 +305,7 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
             beaconStateRootProofInfo,
             validatorProofInfo,
             // Incorrect leaf
-            uint256(0),
+            uint64(0),
             statusFixture.pendingProof,
             BeaconOracleHelper.ValidatorField.ActivationEligibilityEpoch
         );
@@ -322,7 +321,7 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
             beaconStateRootProofInfo,
             validatorProofInfo,
             // Incorrect leaf
-            uint256(0),
+            uint64(0),
             statusFixture.activationProof,
             BeaconOracleHelper.ValidatorField.ActivationEpoch
         );
@@ -338,7 +337,7 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
             beaconStateRootProofInfo,
             validatorProofInfo,
             // Incorrect leaf
-            uint256(0),
+            uint64(0),
             statusFixture.exitProof,
             BeaconOracleHelper.ValidatorField.ExitEpoch
         );
@@ -353,7 +352,7 @@ contract DivaBeaconOracleTest is Test, TestEvents, TestErrors {
         oracle.proveValidatorField(
             beaconStateRootProofInfo,
             validatorProofInfo, // Validator IS slashed
-            uint256(0),
+            uint64(0),
             statusFixture.slashedProof,
             BeaconOracleHelper.ValidatorField.Slashed
         );

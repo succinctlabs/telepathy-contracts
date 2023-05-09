@@ -12,8 +12,6 @@ import {ReentrancyGuardUpgradeable} from
 contract EigenLayerBeaconOracle is ILightClientUpdater, EigenLayerBeaconOracleStorage {
     event BeaconStateOracleUpdate(uint256 slot, uint256 blockNumber, bytes32 stateRoot);
 
-    error InvalidBlockNumberProof();
-    error InvalidBeaconStateRootProof();
     error InvalidUpdater(address updater);
     error SlotNumberTooLow();
 
@@ -40,15 +38,10 @@ contract EigenLayerBeaconOracle is ILightClientUpdater, EigenLayerBeaconOracleSt
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
         // Verify block number against block header root
-        if (!BeaconOracleHelper._verifyBlockNumber(_blockNumber, _blockNumberProof, blockHeaderRoot))
-        {
-            revert InvalidBlockNumberProof();
-        }
+        BeaconOracleHelper._verifyBlockNumber(_blockNumber, _blockNumberProof, blockHeaderRoot);
 
         // Verify beacon state root against block header root
-        if (!BeaconOracleHelper._verifyBeaconStateRoot(_beaconStateRootProofInfo, blockHeaderRoot)) {
-            revert InvalidBeaconStateRootProof();
-        }
+        BeaconOracleHelper._verifyBeaconStateRoot(_beaconStateRootProofInfo, blockHeaderRoot);
 
         // Store the header root
         blockNumberToStateRoot[_blockNumber] = _beaconStateRootProofInfo.beaconStateRoot;
