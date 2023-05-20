@@ -5,6 +5,7 @@ import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {StepVerifier} from "src/lightclient/StepVerifier.sol";
 import {RotateVerifier} from "src/lightclient/RotateVerifier.sol";
+import {OptimizedRotateVerifier} from "src/lightclient/OptimizedRotateVerifier.sol";
 
 struct Groth16Proof {
     uint256[2] a;
@@ -28,11 +29,18 @@ struct LightClientRotate {
     Groth16Proof proof;
 }
 
+struct LightClientOptimizedRotate {
+    LightClientStep step;
+    bytes32 syncCommitteeSSZ;
+    bytes32 syncCommitteePoseidon;
+    Groth16Proof proof;
+}
+
 /// @title Light Client
 /// @author Succinct Labs
 /// @notice Uses Ethereum 2's Sync Committee Protocol to keep up-to-date with block headers from a
 ///         Beacon Chain. This is done in a gas-efficient manner using zero-knowledge proofs.
-contract LightClient is ILightClient, StepVerifier, RotateVerifier {
+contract LightClient is ILightClient, StepVerifier, RotateVerifier, OptimizedRotateVerifier {
     bytes32 public immutable GENESIS_VALIDATORS_ROOT;
     uint256 public immutable GENESIS_TIME;
     uint256 public immutable SECONDS_PER_SLOT;
@@ -126,6 +134,40 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         }
     }
 
+    /// @notice Calls step using the update in rotate. Sets the sync committee for the next sync committeee period.
+    /// @dev A commitment to the the next sync committeee is signed by the current sync committee.
+    function optimizedRotate(LightClientOptimizedRotate memory update) external {
+        LightClientStep memory stepUpdate = update.step;
+
+        bool finalized = processStep(stepUpdate);
+
+        if (getCurrentSlot() < stepUpdate.attestedSlot) {
+            revert("Update slot is too far in the future");
+        }
+
+        if (stepUpdate.finalizedSlot < head) {
+            revert("Update slot less than current head");
+        }
+
+        if (finalized) {
+            setSlotRoots(
+                stepUpdate.finalizedSlot,
+                stepUpdate.finalizedHeaderRoot,
+                stepUpdate.executionStateRoot
+            );
+        } else {
+            revert("Not enough participants");
+        }
+
+        uint256 currentPeriod = getSyncCommitteePeriod(stepUpdate.finalizedSlot);
+        uint256 nextPeriod = currentPeriod + 1;
+
+        zkLightClientOptimizedRotate(update);
+
+        // Always finalized, as otherwise we would have reverted in step.
+        setSyncCommitteePoseidon(nextPeriod, update.syncCommitteePoseidon);
+    }
+
     /// @notice Verifies that the header has enough signatures for finality.
     function processStep(LightClientStep memory update) internal view returns (bool) {
         uint256 currentPeriod = getSyncCommitteePeriod(update.attestedSlot);
@@ -181,6 +223,24 @@ contract LightClient is ILightClient, StepVerifier, RotateVerifier {
         inputs[32] = uint256(SSZ.toLittleEndian(uint256(update.syncCommitteePoseidon)));
 
         require(verifyProofRotate(proof.a, proof.b, proof.c, inputs));
+    }
+
+    /// @notice Serializes the public inputs into a compressed form and verifies the rotate proof.
+    function zkLightClientOptimizedRotate(LightClientOptimizedRotate memory update) internal view {
+        bytes32 h;
+        h = sha256(
+            bytes.concat(
+                update.step.finalizedHeaderRoot,
+                update.syncCommitteeSSZ,
+                update.syncCommitteePoseidon
+            )
+        );
+        uint256 t = uint256(SSZ.toLittleEndian(uint256(h)));
+        t = t & ((uint256(1) << 253) - 1);
+
+        Groth16Proof memory proof = update.proof;
+        uint256[1] memory inputs = [uint256(t)];
+        require(verifyProofOptimizedRotate(proof.a, proof.b, proof.c, inputs));
     }
 
     /// @notice Gets the sync committee period from a slot.
