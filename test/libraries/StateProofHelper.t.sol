@@ -7,7 +7,7 @@ import {StateProofFixture} from "test/libraries/StateProofFixture.sol";
 import {RLPReader} from "@optimism-bedrock/rlp/RLPReader.sol";
 import {RLPWriter} from "@optimism-bedrock/rlp/RLPWriter.sol";
 import {MerkleTrie} from "@optimism-bedrock/trie/MerkleTrie.sol";
-import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract StateProofHelperTest is Test, StateProofFixture {
     using RLPReader for bytes;

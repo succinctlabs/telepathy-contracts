@@ -7,7 +7,7 @@ import "forge-std/Test.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {LightClient, LightClientStep, LightClientRotate} from "src/lightclient/LightClient.sol";
 import {LightClientFixture} from "test/lightclient/LightClientFixture.sol";
-import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {RocketPoolBeaconOracle} from "external/integrations/rocketpool/RocketPoolBeaconOracle.sol";
 import {BeaconOracleHelper} from "external/integrations/libraries/BeaconOracleHelper.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";

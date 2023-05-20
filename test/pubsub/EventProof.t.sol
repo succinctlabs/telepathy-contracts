@@ -14,7 +14,7 @@ import {RLPReader} from "optimism-bedrock-contracts/rlp/RLPReader.sol";
 import {RLPWriter} from "optimism-bedrock-contracts/rlp/RLPWriter.sol";
 import {MerkleTrie} from "optimism-bedrock-contracts/trie/MerkleTrie.sol";
 
-import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import {EventProof} from "src/pubsub/EventProof.sol";
 import {EventProofFixture} from "test/pubsub/EventProofFixture.sol";

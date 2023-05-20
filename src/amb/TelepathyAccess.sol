@@ -1,7 +1,7 @@
 pragma solidity 0.8.16;
 
 import {AccessControlUpgradeable} from
-    "openzeppelin-contracts-upgradeable/access/AccessControlUpgradeable.sol";
+    "@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";

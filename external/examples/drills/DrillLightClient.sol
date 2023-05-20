@@ -1,7 +1,7 @@
 pragma solidity 0.8.16;
 
 import {LightClient} from "src/lightclient/LightClient.sol";
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title DrillLightClient
 /// @dev This contract is used solely for testing purposes and should not be used by production contracts.

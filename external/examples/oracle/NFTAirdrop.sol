@@ -1,6 +1,6 @@
 pragma solidity ^0.8.16;
 
-import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {TelepathyOracle} from "src/oracle/TelepathyOracle.sol";
 import {IOracleCallbackReceiver} from "src/oracle/interfaces/IOracleCallbackReceiver.sol";
 

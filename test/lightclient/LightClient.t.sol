@@ -7,7 +7,7 @@ import "forge-std/Test.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {LightClient, LightClientStep, LightClientRotate} from "src/lightclient/LightClient.sol";
 import {LightClientFixture} from "test/lightclient/LightClientFixture.sol";
-import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract LightClientTest is Test, LightClientFixture {
     uint32 constant SOURCE_CHAIN_ID = 1;

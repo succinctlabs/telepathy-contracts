@@ -6,7 +6,7 @@ import "ds-test/test.sol";
 import "forge-std/Vm.sol";
 import "forge-std/Test.sol";
 
-import "openzeppelin-contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol";
 
 import "src/amb/mocks/MockTelepathy.sol";
 

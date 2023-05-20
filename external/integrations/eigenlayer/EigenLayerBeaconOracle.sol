@@ -7,7 +7,7 @@ import {BeaconOracleHelper} from "external/integrations/libraries/BeaconOracleHe
 import {EigenLayerBeaconOracleStorage} from
     "external/integrations/eigenlayer/EigenLayerBeaconOracleStorage.sol";
 import {ReentrancyGuardUpgradeable} from
-    "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+    "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 
 contract EigenLayerBeaconOracle is ILightClientUpdater, EigenLayerBeaconOracleStorage {
     event BeaconStateOracleUpdate(uint256 slot, uint256 blockNumber, bytes32 stateRoot);

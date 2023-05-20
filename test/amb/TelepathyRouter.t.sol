@@ -8,7 +8,7 @@ import {WrappedInitialize} from "./TargetAMB.t.sol";
 import {Timelock} from "src/libraries/Timelock.sol";
 import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
-import {UUPSUpgradeable} from "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 contract TelepathyRouterTest is Test {
     function test_InitializeImplementation() public {

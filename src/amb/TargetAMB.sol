@@ -1,7 +1,7 @@
 pragma solidity 0.8.16;
 
 import {ReentrancyGuardUpgradeable} from
-    "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+    "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {StorageProof, EventProof} from "src/libraries/StateProofHelper.sol";
