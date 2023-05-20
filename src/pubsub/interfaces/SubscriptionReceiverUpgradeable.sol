@@ -2,7 +2,7 @@ pragma solidity ^0.8.16;
 
 import {TelepathyPubSub} from "src/pubsub/TelepathyPubSub.sol";
 import {ISubscriptionReceiver} from "src/pubsub/interfaces/ISubscriptionReceiver.sol";
-import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 
 abstract contract SubscriptionReceiverUpgradeable is ISubscriptionReceiver, Initializable {
     TelepathyPubSub public telepathyPubSub;

@@ -6,7 +6,7 @@ import {NFTAirdrop} from "external/examples/oracle/NFTAirdrop.sol";
 import {MockTelepathy} from "src/amb/mocks/MockTelepathy.sol";
 import {TelepathyOracle, RequestData} from "src/oracle/TelepathyOracle.sol";
 import {TelepathyOracleFulfiller} from "src/oracle/TelepathyOracleFulfiller.sol";
-import {ERC721Mock} from "openzeppelin-contracts/mocks/ERC721Mock.sol";
+import {ERC721Mock} from "@openzeppelin/contracts/mocks/ERC721Mock.sol";
 
 contract SimpleNFTAirdrop is NFTAirdrop {
     constructor(address _nft, address _oracle) payable NFTAirdrop(_nft, _oracle) {

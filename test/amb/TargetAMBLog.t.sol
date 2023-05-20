@@ -4,7 +4,7 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
-import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {MessageStatus, ITelepathyHandler, Message} from "src/amb/interfaces/ITelepathy.sol";
 import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";

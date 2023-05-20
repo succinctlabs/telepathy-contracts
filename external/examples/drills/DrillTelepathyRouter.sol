@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 import {TargetAMB} from "src/amb/TargetAMB.sol";
 import {TelepathyStorage} from "src/amb/TelepathyStorage.sol";
 import {TelepathyAccess} from "src/amb/TelepathyAccess.sol";
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title DrillTelepathy
 /// @dev This contract is used solely for testing purposes and should not be used by production contracts.

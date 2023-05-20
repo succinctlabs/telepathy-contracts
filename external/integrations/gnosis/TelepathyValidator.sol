@@ -3,8 +3,8 @@ pragma solidity ^0.8.16;
 import {TelepathyPubSub} from "src/pubsub/TelepathyPubSub.sol";
 import {SubscriptionReceiverUpgradeable} from
     "src/pubsub/interfaces/SubscriptionReceiverUpgradeable.sol";
-import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
 /// @title TelepathyValidator
 /// @author Succinct Labs
