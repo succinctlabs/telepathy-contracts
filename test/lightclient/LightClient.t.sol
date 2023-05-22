@@ -150,17 +150,12 @@ contract LightClientTest is Test, LightClientFixture {
         }
     }
 
-    function test_CompareRotateGasCost() public {
+    function test_RotateGasCost() public {
         Fixture memory fixture = fixtures[0];
-        OptLightClientFixture.OptFixture memory optFixture = optFixtures[0];
 
         LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
 
         LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
-
-        OptLightClientFixture newContract = new OptLightClientFixture();
-        LightClientOptimizedRotate memory optRotate = newContract
-            .convertToLightClientOptimizedRotate(optFixture.step, optFixture.optimizedRotate);
 
         LightClientStep memory step = convertToLightClientStep(fixture.step);
 
@@ -171,8 +166,19 @@ contract LightClientTest is Test, LightClientFixture {
         gas = gasleft();
         lc.rotate(rotate);
         console.log("gas cost for rotate: %d", gas - gasleft());
+    }
 
-        gas = gasleft();
+    function test_OptimizedRotateGasCost() public {
+        OptLightClientFixture.OptFixture memory fixture = optFixtures[0];
+
+        OptLightClientFixture newContract = new OptLightClientFixture();
+        LightClientOptimizedRotate memory optRotate =
+            newContract.convertToLightClientOptimizedRotate(fixture.step, fixture.optimizedRotate);
+
+        LightClient lc =
+            newContract.newOptLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+
+        uint256 gas = gasleft();
         lc.optimizedRotate(optRotate);
         console.log("gas cost for optimized rotate: %d", gas - gasleft());
     }
