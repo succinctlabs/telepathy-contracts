@@ -13,7 +13,7 @@ import {
 } from "src/lightclient/LightClient.sol";
 import {LightClientFixture} from "test/lightclient/LightClientFixture.sol";
 import {OptLightClientFixture} from "test/lightclient/OptLightClientFixture.sol";
-import {Strings} from "openzeppelin-contracts/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract LightClientTest is Test, LightClientFixture {
     uint32 constant SOURCE_CHAIN_ID = 1;
