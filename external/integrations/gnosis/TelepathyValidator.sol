@@ -150,8 +150,8 @@ contract TelepathyValidator is SubscriptionReceiverUpgradeable, OwnableUpgradeab
             bytes32 messageId = _eventTopics[1];
 
             if (executeAffirmationsEnabled) {
-                // abi.decode strips away the added offset+length prefix, which is added
-                // by Solidity for all dynamic types.
+                // abi.decode strips away the added offset+length prefix, is added by Solidity
+                // for all dynamic types.
                 bytes memory eventData = abi.decode(_eventData, (bytes));
                 HOME_AMB.executeAffirmation(eventData);
             }
