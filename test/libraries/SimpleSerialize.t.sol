@@ -25,7 +25,7 @@ contract SSZTest is Test {
         returns (ReceiptsRootProof memory)
     {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/test/amb/fixtures/", filename, ".json");
+        string memory path = string.concat(root, "/test/amb-v2/fixtures/", filename, ".json");
         string memory file = vm.readFile(path);
         bytes memory parsed = vm.parseJson(file);
         ReceiptsRootProof memory params = abi.decode(parsed, (ReceiptsRootProof));
