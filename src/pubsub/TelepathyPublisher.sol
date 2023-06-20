@@ -7,13 +7,17 @@ import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
 import {Address} from "src/libraries/Typecast.sol";
 import {PubSubStorage} from "src/pubsub/PubSubStorage.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import {PublishStatus} from "src/pubsub/interfaces/IPubSub.sol";
 
 /// @title TelepathyPublisher
 /// @author Succinct Labs
 /// @notice A contract that can publish events to a ISubscriptionReceiver contract.
-contract TelepathyPublisher is IPublisher, PubSubStorage {
+contract TelepathyPublisher is IPublisher, PubSubStorage, ReentrancyGuard {
+    error CallFailed();
+    error InvalidSelector();
+
     /// @notice Publishes an event emit to a callback Subscriber, given an event proof.
     /// @param srcSlotTxSlotPack The slot where we want to read the header from and the slot where
     ///                          the tx executed, packed as two uint64s.
@@ -31,7 +35,7 @@ contract TelepathyPublisher is IPublisher, PubSubStorage {
         bytes memory txIndexRLPEncoded,
         uint256 logIndex,
         Subscription calldata subscription
-    ) external {
+    ) external nonReentrant {
         requireLightClientConsistency(subscription.sourceChainId);
         requireNotFrozen(subscription.sourceChainId);
 
@@ -108,12 +112,22 @@ contract TelepathyPublisher is IPublisher, PubSubStorage {
             implementsHandler = magic == ISubscriptionReceiver.handlePublish.selector;
         }
 
-        if (success && implementsHandler) {
-            eventsPublished[_publishKey] = PublishStatus.EXECUTION_SUCCEEDED;
-        } else {
-            eventsPublished[_publishKey] = PublishStatus.EXECUTION_FAILED;
+        // Resolves issue regarding EIP-150 (where the child call can fail due to "out of gas" error
+        // but the parent call will have 1/64 of original gas to finish execution) or, for example,
+        // because of possible NonReentrant logic in callback contract.
+        //
+        // This leads to the possibility to maliciously mark the event as published with
+        // `PublishStatus.EXECUTION_FAILED` status, while with "fair" execution it should succeed.
+        //
+        // To fix the issue, we simply revert the entire tx if the callback fails. This allows for
+        // retries.
+        if (!success) {
+            revert CallFailed();
+        } else if (!implementsHandler) {
+            revert InvalidSelector();
         }
 
+        eventsPublished[_publishKey] = PublishStatus.EXECUTION_SUCCEEDED;
         emit Publish(
             _subscriptionId,
             _subscription.sourceChainId,

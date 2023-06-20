@@ -6,7 +6,7 @@ import {MockTelepathy} from "src/amb/mocks/MockTelepathy.sol";
 import {TelepathyPubSub} from "src/pubsub/TelepathyPubSub.sol";
 import {Subscription} from "src/pubsub/interfaces/IPubSub.sol";
 import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
-import {TelepathyValidator} from "external/integrations/gnosis/TelepathyValidator.sol";
+import {TelepathyValidator} from "external/integrations/omnibridge/TelepathyValidator.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 
 interface IForeignAMB {}
@@ -67,11 +67,9 @@ contract TelepathyValidatorTest is Test {
             address(telepathyPubSub),
             SOURCE_CHAIN,
             address(foreignAMB),
-            address(foreignBridge),
             0,
             0,
             address(basicHomeAMB),
-            address(basicHomeBridge),
             owner
         );
     }
