@@ -9,7 +9,7 @@ import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 contract BeaconVerifierBase {
     /// @notice Source ChainId => LightClient address.
     mapping(uint32 => address) public lightClients;
-    /// @notice Source ChainId => TelepathyRouter address.
+    /// @notice Source ChainId => TelepathyRouterV2 address.
     mapping(uint32 => address) public telepathyRouters;
 
     error InvalidSourceChainLength(uint256 length);

@@ -2,22 +2,22 @@
 pragma solidity ^0.8.16;
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-import {TelepathyStorage} from "src/amb-v2/TelepathyStorage.sol";
+import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {
-    ITelepathyReceiver,
+    ITelepathyReceiverV2,
     MessageStatus,
-    ITelepathyHandler,
-    ITelepathyRouter
+    ITelepathyHandlerV2,
+    ITelepathyRouterV2
 } from "src/amb-v2/interfaces/ITelepathy.sol";
-import {TargetAMB} from "src/amb-v2/TargetAMB.sol";
-import {SourceAMB} from "src/amb-v2/SourceAMB.sol";
-import {TelepathyAccess} from "src/amb-v2/TelepathyAccess.sol";
+import {TargetAMBV2} from "src/amb-v2/TargetAMB.sol";
+import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
+import {TelepathyAccessV2} from "src/amb-v2/TelepathyAccess.sol";
 import {UUPSUpgradeable} from "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title Telepathy Router
 /// @author Succinct Labs
 /// @notice Send and receive arbitrary messages from other chains.
-contract TelepathyRouter is SourceAMB, TargetAMB, TelepathyAccess, UUPSUpgradeable {
+contract TelepathyRouterV2 is SourceAMBV2, TargetAMBV2, TelepathyAccessV2, UUPSUpgradeable {
     /// @notice Returns current contract version.
     uint8 public constant VERSION = 1;
 
@@ -46,7 +46,7 @@ contract TelepathyRouter is SourceAMB, TargetAMB, TelepathyAccess, UUPSUpgradeab
 
         require(
             _sourceChainIds.length == 0,
-            "TelepathyRouter no longer stores lightClients and telepathyRouters"
+            "TelepathyRouterV2 no longer stores lightClients and telepathyRouters"
         );
 
         sendingEnabled = _sendingEnabled;

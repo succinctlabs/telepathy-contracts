@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
-import {SourceAMB} from "src/amb-v2/SourceAMB.sol";
+import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
 import {Message} from "src/libraries/Message.sol";
 import {MerkleProof} from "src/libraries/MerkleProof.sol";
 
@@ -20,7 +20,7 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
 
     /// @notice The address of the EthCallGateway contract.
     address public immutable ethCallGateway;
-    /// @notice Source ChainId => TelepathyRouter address.
+    /// @notice Source ChainId => TelepathyRouterV2 address.
     mapping(uint32 => address) public telepathyRouters;
 
     error InvalidSourceChainLength(uint256 length);
@@ -71,7 +71,7 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
         if (_proofData.length == 0) {
             // Verifying a single attestation
             bytes memory toCalldata =
-                abi.encodeWithSelector(SourceAMB.getMessageId.selector, _message.nonce());
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, _message.nonce());
             bytes memory attestedResult = IEthCallGateway(ethCallGateway).getAttestedResult(
                 sourceChainId, telepathyRouter, toCalldata
             );
@@ -91,8 +91,8 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
             ) = abi.decode(_proofData, (bytes4, uint64[], uint256, bytes32[]));
 
             bytes memory toCalldata;
-            if (ambSelector == SourceAMB.getMessageIdBulk.selector) {
-                toCalldata = abi.encodeWithSelector(SourceAMB.getMessageIdBulk.selector, nonces);
+            if (ambSelector == SourceAMBV2.getMessageIdBulk.selector) {
+                toCalldata = abi.encodeWithSelector(SourceAMBV2.getMessageIdBulk.selector, nonces);
                 bytes memory attestedResult = IEthCallGateway(ethCallGateway).getAttestedResult(
                     sourceChainId, telepathyRouter, toCalldata
                 );
@@ -100,8 +100,8 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
                 if (ids[index] != msgId) {
                     revert InvalidMessageId(msgId);
                 }
-            } else if (ambSelector == SourceAMB.getMessageIdRoot.selector) {
-                toCalldata = abi.encodeWithSelector(SourceAMB.getMessageIdRoot.selector, nonces);
+            } else if (ambSelector == SourceAMBV2.getMessageIdRoot.selector) {
+                toCalldata = abi.encodeWithSelector(SourceAMBV2.getMessageIdRoot.selector, nonces);
                 bytes memory attestedResult = IEthCallGateway(ethCallGateway).getAttestedResult(
                     sourceChainId, telepathyRouter, toCalldata
                 );

@@ -11,15 +11,15 @@ import {BeaconVerifierBase} from "src/amb-v2/verifier/BeaconVerifierBase.sol";
 /// @title TelepathyEventVerifier
 /// @author Succinct Labs
 /// @notice Verifies that an event for the message was emitted by the source chain's
-///         TelepathyRouter.
+///         TelepathyRouterV2.
 contract TelepathyEventVerifier is IMessageVerifier, BeaconVerifierBase {
     using Message for bytes;
 
-    /// @notice The TelepathyRouter SentMessage event signature used in `executeMessageFromLog`.
+    /// @notice The TelepathyRouterV2 SentMessage event signature used in `executeMessageFromLog`.
     bytes32 internal constant SENT_MESSAGE_EVENT_SIG =
         keccak256("SentMessage(uint64,bytes32,bytes)");
 
-    /// @notice The topic index of the message root in the SourceAMB SentMessage event.
+    /// @notice The topic index of the message root in the SourceAMBV2 SentMessage event.
     /// @dev Because topic[0] is the hash of the event signature (`SENT_MESSAGE_EVENT_SIG` above),
     ///      the topic index of messageId is 2.
     uint256 internal constant MESSAGE_ID_TOPIC_IDX = 2;

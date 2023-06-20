@@ -3,18 +3,18 @@ pragma solidity ^0.8.16;
 
 import {Address, Bytes32} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
-import {SourceAMB} from "src/amb-v2/SourceAMB.sol";
-import {ITelepathyRouter, ITelepathyHandler} from "src/amb-v2/interfaces/ITelepathy.sol";
+import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
+import {ITelepathyRouterV2, ITelepathyHandlerV2} from "src/amb-v2/interfaces/ITelepathy.sol";
 
 /// @title Telepathy Mock AMB for testing
 /// @author Succinct Labs
 /// @notice This contract is used for testing.
-contract MockTelepathy is ITelepathyRouter {
+contract MockTelepathyV2 is ITelepathyRouterV2 {
     // All stuff related to sending
     uint8 public constant version = 1;
     uint32 chainId;
     uint64 sentNonce;
-    mapping(uint32 => MockTelepathy) public telepathyReceivers;
+    mapping(uint32 => MockTelepathyV2) public telepathyReceivers;
     mapping(uint64 => bytes) public sentMessages;
 
     // All stuff related to execution
@@ -24,11 +24,11 @@ contract MockTelepathy is ITelepathyRouter {
         chainId = _chainId;
     }
 
-    function addTelepathyReceiver(uint32 _chainId, MockTelepathy _receiver) external {
+    function addTelepathyReceiver(uint32 _chainId, MockTelepathyV2 _receiver) external {
         telepathyReceivers[_chainId] = _receiver;
     }
 
-    /// @notice SourceAMB methods
+    /// @notice SourceAMBV2 methods
 
     function send(uint32 _destinationChainId, bytes32 _destinationAddress, bytes calldata _data)
         external
@@ -70,8 +70,8 @@ contract MockTelepathy is ITelepathyRouter {
     /// @notice to execute the next message that has been sent
     function executeNextMessage() external returns (bool) {
         bytes memory message = sentMessages[++executedNonce];
-        MockTelepathy receiver = telepathyReceivers[Message.destinationChainId(message)];
-        require(receiver != MockTelepathy(address(0)), "MockAMB: No receiver for chain");
+        MockTelepathyV2 receiver = telepathyReceivers[Message.destinationChainId(message)];
+        require(receiver != MockTelepathyV2(address(0)), "MockAMB: No receiver for chain");
         return receiver._executeMessage(message);
     }
 
@@ -81,7 +81,7 @@ contract MockTelepathy is ITelepathyRouter {
         bytes memory data;
         {
             bytes memory receiveCall = abi.encodeWithSelector(
-                ITelepathyHandler.handleTelepathy.selector,
+                ITelepathyHandlerV2.handleTelepathy.selector,
                 Message.sourceChainId(message),
                 Message.sourceAddress(message),
                 Message.data(message)
@@ -97,7 +97,7 @@ contract MockTelepathy is ITelepathyRouter {
         bool implementsHandler = false;
         if (data.length == 32) {
             (bytes4 magic) = abi.decode(data, (bytes4));
-            implementsHandler = magic == ITelepathyHandler.handleTelepathy.selector;
+            implementsHandler = magic == ITelepathyHandlerV2.handleTelepathy.selector;
         }
         return status && implementsHandler;
     }

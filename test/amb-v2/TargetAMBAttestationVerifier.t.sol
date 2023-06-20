@@ -7,8 +7,8 @@ import "forge-std/Test.sol";
 
 import {Address, Bytes32} from "src/libraries/Typecast.sol";
 import {MessageStatus} from "src/amb-v2/interfaces/ITelepathy.sol";
-import {TelepathyRouter} from "src/amb-v2/TelepathyRouter.sol";
-import {SourceAMB} from "src/amb-v2/SourceAMB.sol";
+import {TelepathyRouterV2} from "src/amb-v2/TelepathyRouter.sol";
+import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {WrappedInitialize, SimpleHandler} from "test/amb-v2/TestUtils.sol";
 import {Message} from "src/libraries/Message.sol";
@@ -35,7 +35,7 @@ contract MockEthCallGateway {
     }
 }
 
-contract TargetAMBAttestationVerifier is Test {
+contract TargetAMBV2AttestationVerifier is Test {
     using Message for bytes;
 
     uint32 constant DESTINATION_CHAIN = 10;
@@ -46,17 +46,17 @@ contract TargetAMBAttestationVerifier is Test {
     bytes constant MESSAGE_DATA = bytes("hello, world!");
 
     MockEthCallGateway mockEthCallGateway;
-    TelepathyRouter telepathyRouter;
+    TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
 
     function setUp() public {
         vm.chainId(DESTINATION_CHAIN);
         mockEthCallGateway = new MockEthCallGateway();
 
-        // Set up the TelepathyRouter contract.
-        TelepathyRouter targetAMBImpl = new TelepathyRouter();
+        // Set up the TelepathyRouterV2 contract.
+        TelepathyRouterV2 targetAMBImpl = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImpl), "");
-        telepathyRouter = TelepathyRouter(address(proxy));
+        telepathyRouter = TelepathyRouterV2(address(proxy));
         address timelock = makeAddr("timelock");
 
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
@@ -79,8 +79,8 @@ contract TargetAMBAttestationVerifier is Test {
             VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
         );
 
-        // Setup the SimpleHandler contract which is a TelepathyHandler,
-        // called by the TargetAMB after message execution.
+        // Setup the SimpleHandler contract which is a TelepathyHandlerV2,
+        // called by the TargetAMBV2 after message execution.
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
         vm.etch(DESTINATION_HANDLER, address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(DESTINATION_HANDLER);
@@ -107,8 +107,8 @@ contract TargetAMBAttestationVerifier is Test {
         mockEthCallGateway.setAttestedResult(
             SOURCE_CHAIN,
             SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMB.getMessageId.selector, 0),
-            abi.encode(SourceAMB(address(telepathyRouter)).getMessageId(0))
+            abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
+            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageId(0))
         );
 
         // Execute the message and check that it succeeded.
@@ -148,12 +148,12 @@ contract TargetAMBAttestationVerifier is Test {
         mockEthCallGateway.setAttestedResult(
             SOURCE_CHAIN,
             SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMB.getMessageIdRoot.selector, nonces),
-            abi.encode(SourceAMB(address(telepathyRouter)).getMessageIdRoot(nonces))
+            abi.encodeWithSelector(SourceAMBV2.getMessageIdRoot.selector, nonces),
+            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageIdRoot(nonces))
         );
 
         bytes memory proofDataBatch =
-            SourceAMB(address(telepathyRouter)).getProofDataForExecution(nonces, 1);
+            SourceAMBV2(address(telepathyRouter)).getProofDataForExecution(nonces, 1);
         uint256 startSmallBatch = gasleft();
         telepathyRouter.execute(proofDataBatch, message2);
         assertTrue(
@@ -184,13 +184,13 @@ contract TargetAMBAttestationVerifier is Test {
         mockEthCallGateway.setAttestedResult(
             SOURCE_CHAIN,
             SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMB.getMessageIdRoot.selector, largeNonces),
-            abi.encode(SourceAMB(address(telepathyRouter)).getMessageIdRoot(largeNonces))
+            abi.encodeWithSelector(SourceAMBV2.getMessageIdRoot.selector, largeNonces),
+            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageIdRoot(largeNonces))
         );
-        require(SourceAMB(address(telepathyRouter)).getMessageId(8) == message8.getId());
+        require(SourceAMBV2(address(telepathyRouter)).getMessageId(8) == message8.getId());
 
         bytes memory proofDataBatchLarge =
-            SourceAMB(address(telepathyRouter)).getProofDataForExecution(largeNonces, 8);
+            SourceAMBV2(address(telepathyRouter)).getProofDataForExecution(largeNonces, 8);
 
         uint256 startBatch = gasleft();
         telepathyRouter.execute(proofDataBatchLarge, message8);
@@ -206,8 +206,8 @@ contract TargetAMBAttestationVerifier is Test {
         mockEthCallGateway.setAttestedResult(
             SOURCE_CHAIN,
             SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMB.getMessageId.selector, 9),
-            abi.encode(SourceAMB(address(telepathyRouter)).getMessageId(9))
+            abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 9),
+            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageId(9))
         );
         bytes memory message9 = Message.encode(
             1,

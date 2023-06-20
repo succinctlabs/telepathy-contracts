@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {MessageStatus} from "src/amb-v2/interfaces/ITelepathy.sol";
-import {TelepathyRouter} from "src/amb-v2/TelepathyRouter.sol";
+import {TelepathyRouterV2} from "src/amb-v2/TelepathyRouter.sol";
 import {LightClientMock} from "src/lightclient/LightClientMock.sol";
 import {SimpleHandler} from "test/amb-v2/TestUtils.sol";
 import {WrappedInitialize} from "test/amb-v2/TestUtils.sol";
@@ -35,11 +35,11 @@ struct ExecuteMessageFromLogParams {
     bytes txIndexRLPEncoded;
 }
 
-contract TargetAMBEventVerifierTest is Test {
+contract TargetAMBV2EventVerifierTest is Test {
     using Message for bytes;
 
     LightClientMock beaconLightClient;
-    TelepathyRouter telepathyRouter;
+    TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
     TelepathyEventVerifier eventVerifier;
 
@@ -64,10 +64,10 @@ contract TargetAMBEventVerifierTest is Test {
     function getDefaultContractSetup(ExecuteMessageFromLogParams memory testParams) internal {
         vm.chainId(testParams.DEST_CHAIN);
 
-        // Set up the TelepathyRouter contract
-        TelepathyRouter targetAMBImpl = new TelepathyRouter();
+        // Set up the TelepathyRouterV2 contract
+        TelepathyRouterV2 targetAMBImpl = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImpl), "");
-        telepathyRouter = TelepathyRouter(address(proxy));
+        telepathyRouter = TelepathyRouterV2(address(proxy));
         address timelock = makeAddr("timelock");
 
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
@@ -90,7 +90,7 @@ contract TargetAMBEventVerifierTest is Test {
             VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
         );
 
-        // Then initialize the contract that will be called by the TargetAMB
+        // Then initialize the contract that will be called by the TargetAMBV2
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
         vm.etch(address(0), address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(address(0));

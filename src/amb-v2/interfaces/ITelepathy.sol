@@ -7,7 +7,7 @@ enum MessageStatus {
     EXECUTION_SUCCEEDED
 }
 
-interface ITelepathyRouter {
+interface ITelepathyRouterV2 {
     event SentMessage(uint64 indexed nonce, bytes32 indexed msgHash, bytes message);
 
     function send(uint32 destinationChainId, bytes32 destinationAddress, bytes calldata data)
@@ -19,7 +19,7 @@ interface ITelepathyRouter {
         returns (bytes32);
 }
 
-interface ITelepathyReceiver {
+interface ITelepathyReceiverV2 {
     event ExecutedMessage(
         uint32 indexed sourceChainId,
         uint64 indexed nonce,
@@ -31,7 +31,7 @@ interface ITelepathyReceiver {
     function execute(bytes calldata _proof, bytes calldata _message) external;
 }
 
-interface ITelepathyHandler {
+interface ITelepathyHandlerV2 {
     function handleTelepathy(uint32 _sourceChainId, address _sourceAddress, bytes memory _data)
         external
         returns (bytes4);

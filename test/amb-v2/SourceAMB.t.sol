@@ -4,15 +4,15 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 import {WrappedInitialize} from "test/amb-v2/TestUtils.sol";
-import {TelepathyRouter} from "src/amb-v2/TelepathyRouter.sol";
-import {SourceAMB} from "src/amb-v2/SourceAMB.sol";
+import {TelepathyRouterV2} from "src/amb-v2/TelepathyRouter.sol";
+import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {Bytes32} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {MerkleProof} from "src/libraries/MerkleProof.sol";
 
-contract SourceAMBTest is Test {
+contract SourceAMBV2Test is Test {
     using Message for bytes;
 
     event SentMessage(uint64 indexed nonce, bytes32 indexed msgHash, bytes message);
@@ -22,16 +22,16 @@ contract SourceAMBTest is Test {
     bytes32 constant DEFAULT_DESTINATION_ADDR_BYTES32 = bytes32("0x690B9A9E9aa1C9dB991C7721a92d35");
     bytes constant DEFAULT_DESTINATION_DATA = hex"deadbeef";
 
-    TelepathyRouter telepathyRouter;
+    TelepathyRouterV2 telepathyRouter;
 
     address bob = payable(makeAddr("bob"));
 
     function setUp() public {
-        TelepathyRouter sourceAMBImplementation = new TelepathyRouter();
+        TelepathyRouterV2 sourceAMBImplementation = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(sourceAMBImplementation), "");
         address timelock = makeAddr("timelock");
 
-        telepathyRouter = TelepathyRouter(address(proxy));
+        telepathyRouter = TelepathyRouterV2(address(proxy));
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
         WrappedInitialize.initializeRouter(
             address(telepathyRouter),
@@ -57,7 +57,7 @@ contract SourceAMBTest is Test {
         vm.startPrank(bob);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
-            SourceAMB(telepathyRouter).nonce(),
+            SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
             bob,
             DEFAULT_DESTINATION_CHAIN_ID,
@@ -67,7 +67,7 @@ contract SourceAMBTest is Test {
         bytes32 expectedMessageId = keccak256(expectedMessage);
 
         vm.expectEmit(true, true, true, true);
-        emit SentMessage(SourceAMB(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
         bytes32 messageId = telepathyRouter.send(
             DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
@@ -79,7 +79,7 @@ contract SourceAMBTest is Test {
         vm.startPrank(bob);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
-            SourceAMB(telepathyRouter).nonce(),
+            SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
             bob,
             DEFAULT_DESTINATION_CHAIN_ID,
@@ -89,7 +89,7 @@ contract SourceAMBTest is Test {
         bytes32 expectedMessageId = keccak256(expectedMessage);
 
         vm.expectEmit(true, true, true, true);
-        emit SentMessage(SourceAMB(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
         bytes32 messageId = telepathyRouter.send(
             DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR_BYTES32, DEFAULT_DESTINATION_DATA
@@ -101,7 +101,7 @@ contract SourceAMBTest is Test {
         vm.startPrank(sender);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
-            SourceAMB(telepathyRouter).nonce(),
+            SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
             sender,
             DEFAULT_DESTINATION_CHAIN_ID,
@@ -111,7 +111,7 @@ contract SourceAMBTest is Test {
         bytes32 expectedMessageId = keccak256(expectedMessage);
 
         vm.expectEmit(true, true, true, true);
-        emit SentMessage(SourceAMB(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
         bytes32 messageId = telepathyRouter.send(
             DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
@@ -125,7 +125,7 @@ contract SourceAMBTest is Test {
         vm.startPrank(bob);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
-            SourceAMB(telepathyRouter).nonce(),
+            SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
             bob,
             _chainId,
@@ -135,7 +135,7 @@ contract SourceAMBTest is Test {
         bytes32 expectedMessageId = keccak256(expectedMessage);
 
         vm.expectEmit(true, true, true, true);
-        emit SentMessage(SourceAMB(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
         bytes32 messageId =
             telepathyRouter.send(_chainId, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA);
@@ -146,7 +146,7 @@ contract SourceAMBTest is Test {
         vm.startPrank(bob);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
-            SourceAMB(telepathyRouter).nonce(),
+            SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
             bob,
             DEFAULT_DESTINATION_CHAIN_ID,
@@ -156,7 +156,7 @@ contract SourceAMBTest is Test {
         bytes32 expectedMessageId = keccak256(expectedMessage);
 
         vm.expectEmit(true, true, true, true);
-        emit SentMessage(SourceAMB(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
         bytes32 messageId = telepathyRouter.send(
             DEFAULT_DESTINATION_CHAIN_ID, _destinationAddress, DEFAULT_DESTINATION_DATA
@@ -168,7 +168,7 @@ contract SourceAMBTest is Test {
         vm.startPrank(bob);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
-            SourceAMB(telepathyRouter).nonce(),
+            SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
             bob,
             DEFAULT_DESTINATION_CHAIN_ID,
@@ -178,7 +178,7 @@ contract SourceAMBTest is Test {
         bytes32 expectedMessageId = keccak256(expectedMessage);
 
         vm.expectEmit(true, true, true, true);
-        emit SentMessage(SourceAMB(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
         bytes32 messageId = telepathyRouter.send(
             DEFAULT_DESTINATION_CHAIN_ID, _destinationAddress, DEFAULT_DESTINATION_DATA
@@ -190,7 +190,7 @@ contract SourceAMBTest is Test {
         vm.startPrank(bob);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
-            SourceAMB(telepathyRouter).nonce(),
+            SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
             bob,
             DEFAULT_DESTINATION_CHAIN_ID,
@@ -200,7 +200,7 @@ contract SourceAMBTest is Test {
         bytes32 expectedMessageId = keccak256(expectedMessage);
 
         vm.expectEmit(true, true, true, true);
-        emit SentMessage(SourceAMB(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
         bytes32 messageId =
             telepathyRouter.send(DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, _data);
@@ -208,7 +208,7 @@ contract SourceAMBTest is Test {
     }
 
     function test_GetMessageIdRoot() public {
-        SourceAMB sourceAMB = SourceAMB(address(telepathyRouter));
+        SourceAMBV2 sourceAMB = SourceAMBV2(address(telepathyRouter));
 
         bytes32[] memory ids = new bytes32[](8);
         for (uint256 i = 0; i < 8; i++) {

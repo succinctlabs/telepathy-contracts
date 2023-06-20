@@ -7,14 +7,14 @@ import {StorageProof} from "src/libraries/StateProofHelper.sol";
 import {Message} from "src/libraries/Message.sol";
 import {BeaconVerifierBase} from "src/amb-v2/verifier/BeaconVerifierBase.sol";
 
-/// @title TelepathyStorageVerifier
+/// @title TelepathyStorageV2Verifier
 /// @author Succinct Labs
 /// @notice Verifies messages using a storage proof of inclusion in the source chain's
-///         TelepathyRouter.
-contract TelepathyStorageVerifier is IMessageVerifier, BeaconVerifierBase {
+///         TelepathyRouterV2.
+contract TelepathyStorageV2Verifier is IMessageVerifier, BeaconVerifierBase {
     using Message for bytes;
 
-    /// @notice The index of the `messages` mapping in TelepathyStorage.sol.
+    /// @notice The index of the `messages` mapping in TelepathyStorageV2.sol.
     /// @dev We need this when calling `executeMessage` via storage proofs, as it is used in
     /// getting the slot key.
     uint256 internal constant MESSAGES_MAPPING_STORAGE_INDEX = 1;

@@ -2,12 +2,12 @@
 pragma solidity ^0.8.16;
 
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-import {TelepathyStorage} from "src/amb-v2/TelepathyStorage.sol";
+import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {AccessControlUpgradeable} from
     "@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
-contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
+contract TelepathyAccessV2 is TelepathyStorageV2, AccessControlUpgradeable {
     /// @notice Emitted when the sendingEnabled flag is changed.
     event SendingEnabledChanged(bool enabled);
 
@@ -23,7 +23,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
     modifier onlyAdmin() {
         require(
             hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "TelepathyRouter: only admin can call this function"
+            "TelepathyRouterV2: only admin can call this function"
         );
         _;
     }
@@ -31,7 +31,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
     modifier onlyTimelock() {
         require(
             hasRole(TIMELOCK_ROLE, msg.sender),
-            "TelepathyRouter: only timelock can call this function"
+            "TelepathyRouterV2: only timelock can call this function"
         );
         _;
     }
@@ -39,7 +39,7 @@ contract TelepathyAccess is TelepathyStorage, AccessControlUpgradeable {
     modifier onlyGuardian() {
         require(
             hasRole(GUARDIAN_ROLE, msg.sender),
-            "TelepathyRouter: only guardian can call this function"
+            "TelepathyRouterV2: only guardian can call this function"
         );
         _;
     }

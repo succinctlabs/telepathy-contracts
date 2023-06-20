@@ -3,14 +3,14 @@ pragma solidity ^0.8.16;
 
 import {Bytes32} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
-import {ITelepathyRouter} from "src/amb-v2/interfaces/ITelepathy.sol";
-import {TelepathyStorage} from "src/amb-v2/TelepathyStorage.sol";
+import {ITelepathyRouterV2} from "src/amb-v2/interfaces/ITelepathy.sol";
+import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {MerkleProof} from "src/libraries/MerkleProof.sol";
 
 /// @title Source Arbitrary Message Bridge
 /// @author Succinct Labs
 /// @notice This contract is the entrypoint for sending messages to other chains.
-contract SourceAMB is TelepathyStorage, ITelepathyRouter {
+contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
     using Message for bytes;
 
     error SendingDisabled();

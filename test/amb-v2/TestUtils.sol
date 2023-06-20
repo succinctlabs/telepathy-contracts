@@ -2,16 +2,16 @@
 pragma solidity ^0.8.16;
 
 import {
-    ITelepathyReceiver,
+    ITelepathyReceiverV2,
     MessageStatus,
-    ITelepathyHandler,
-    ITelepathyRouter
+    ITelepathyHandlerV2,
+    ITelepathyRouterV2
 } from "src/amb-v2/interfaces/ITelepathy.sol";
-import {TelepathyRouter} from "src/amb-v2/TelepathyRouter.sol";
-import {TelepathyStorageVerifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
+import {TelepathyRouterV2} from "src/amb-v2/TelepathyRouter.sol";
+import {TelepathyStorageV2Verifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
 import {TelepathyEventVerifier} from "src/amb-v2/verifier/TelepathyEventVerifier.sol";
 import {Bytes32} from "src/libraries/Typecast.sol";
-import {TelepathyStorageVerifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
+import {TelepathyStorageV2Verifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
 import {TelepathyEventVerifier} from "src/amb-v2/verifier/TelepathyEventVerifier.sol";
 import {TelepathyAttestationVerifier} from "src/amb-v2/verifier/TelepathyAttestationVerifier.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
@@ -30,7 +30,7 @@ library WrappedInitialize {
         address[] memory beaconLightClients = new address[](0);
         address[] memory sourceAMBs = new address[](0);
 
-        TelepathyRouter(_targetAMB).initialize(
+        TelepathyRouterV2(_targetAMB).initialize(
             sourceChainIds, beaconLightClients, sourceAMBs, _timelock, _guardian, true
         );
 
@@ -51,7 +51,7 @@ library WrappedInitialize {
         sourceAMBs[0] = _sourceAMB;
 
         address storageVerifierAddr =
-            address(new TelepathyStorageVerifier(sourceChainIds, beaconLightClients, sourceAMBs));
+            address(new TelepathyStorageV2Verifier(sourceChainIds, beaconLightClients, sourceAMBs));
         address eventVerifierAddr =
             address(new TelepathyEventVerifier(sourceChainIds, beaconLightClients, sourceAMBs));
         address attestationVerifierAddr =
@@ -61,7 +61,7 @@ library WrappedInitialize {
     }
 }
 
-contract SimpleHandler is ITelepathyHandler {
+contract SimpleHandler is ITelepathyHandlerV2 {
     uint32 public sourceChain;
     address public sourceAddress;
     address public targetAMB;
@@ -84,7 +84,7 @@ contract SimpleHandler is ITelepathyHandler {
         require(_sourceChainId == sourceChain, "Invalid source chain id");
         require(_sourceAddress == sourceAddress, "Invalid source address");
         nonceToDataHash[nonce++] = keccak256(_data);
-        return ITelepathyHandler.handleTelepathy.selector;
+        return ITelepathyHandlerV2.handleTelepathy.selector;
     }
 
     function setVerifierType(VerifierType _verifierType) external {

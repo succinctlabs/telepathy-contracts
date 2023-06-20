@@ -5,10 +5,10 @@ import {ReentrancyGuardUpgradeable} from
     "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import {Address} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
-import {TelepathyStorage} from "src/amb-v2/TelepathyStorage.sol";
+import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {
-    ITelepathyHandler,
-    ITelepathyReceiver,
+    ITelepathyHandlerV2,
+    ITelepathyReceiverV2,
     MessageStatus
 } from "src/amb-v2/interfaces/ITelepathy.sol";
 import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
@@ -16,7 +16,7 @@ import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMe
 /// @title Target Arbitrary Message Bridge
 /// @author Succinct Labs
 /// @notice Executes messages sent from the source chain on the destination chain.
-contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyReceiver {
+contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepathyReceiverV2 {
     using Message for bytes;
 
     error VerifierNotFound(uint256 verifierType);
@@ -118,7 +118,7 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
         bytes memory data;
         {
             bytes memory receiveCall = abi.encodeWithSelector(
-                ITelepathyHandler.handleTelepathy.selector,
+                ITelepathyHandlerV2.handleTelepathy.selector,
                 _message.sourceChainId(),
                 _message.sourceAddress(),
                 _message.data()
@@ -134,7 +134,7 @@ contract TargetAMB is TelepathyStorage, ReentrancyGuardUpgradeable, ITelepathyRe
         bool implementsHandler = false;
         if (data.length == 32) {
             (bytes4 magic) = abi.decode(data, (bytes4));
-            implementsHandler = magic == ITelepathyHandler.handleTelepathy.selector;
+            implementsHandler = magic == ITelepathyHandlerV2.handleTelepathy.selector;
         }
 
         if (status && implementsHandler) {

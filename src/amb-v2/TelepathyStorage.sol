@@ -5,7 +5,7 @@ import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {MessageStatus} from "src/amb-v2/interfaces/ITelepathy.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 
-contract TelepathyStorage {
+contract TelepathyStorageV2 {
     /*//////////////////////////////////////////////////////////////
                            BROADCASTER STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -31,7 +31,7 @@ contract TelepathyStorage {
     /// @dev DEPRECATED: This is no longer in use since the move over to external IMessageVerifiers.
     mapping(uint32 => ILightClient) public lightClients;
 
-    /// @notice Mapping between source chainId and the address of the TelepathyRouter on that chain.
+    /// @notice Mapping between source chainId and the address of the TelepathyRouterV2 on that chain.
     /// @dev DEPRECATED: This is no longer in use since the move over to external IMessageVerifiers.
     mapping(uint32 => address) public broadcasters;
 

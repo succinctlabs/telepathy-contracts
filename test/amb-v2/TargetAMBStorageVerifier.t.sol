@@ -4,13 +4,13 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
-import {MessageStatus, ITelepathyHandler} from "src/amb-v2/interfaces/ITelepathy.sol";
-import {TelepathyRouter} from "src/amb-v2/TelepathyRouter.sol";
+import {MessageStatus, ITelepathyHandlerV2} from "src/amb-v2/interfaces/ITelepathy.sol";
+import {TelepathyRouterV2} from "src/amb-v2/TelepathyRouter.sol";
 import {Message} from "src/libraries/Message.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {LightClientMock} from "src/lightclient/LightClientMock.sol";
 import {WrappedInitialize, SimpleHandler} from "test/amb-v2/TestUtils.sol";
-import {TelepathyStorageVerifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
+import {TelepathyStorageV2Verifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 
 // The weird ordering here is because vm.parseJSON requires
@@ -41,13 +41,13 @@ struct ExecuteMessageFromStorageParams {
     bytes32 storageRoot;
 }
 
-contract TargetAMBStorageVerifierTest is Test {
+contract TargetAMBV2StorageVerifierTest is Test {
     using Message for bytes;
 
     LightClientMock beaconLightClient;
-    TelepathyRouter telepathyRouter;
+    TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
-    TelepathyStorageVerifier storageVerifier;
+    TelepathyStorageV2Verifier storageVerifier;
 
     function setUp() public {
         beaconLightClient = new LightClientMock();
@@ -114,10 +114,10 @@ contract TargetAMBStorageVerifierTest is Test {
     {
         vm.chainId(messageParams.DEST_CHAIN);
 
-        // Set up the TelepathyRouter contract
-        TelepathyRouter targetAMBImpl = new TelepathyRouter();
+        // Set up the TelepathyRouterV2 contract
+        TelepathyRouterV2 targetAMBImpl = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImpl), "");
-        telepathyRouter = TelepathyRouter(address(proxy));
+        telepathyRouter = TelepathyRouterV2(address(proxy));
         address timelock = makeAddr("timelock");
 
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
@@ -140,9 +140,9 @@ contract TargetAMBStorageVerifierTest is Test {
             VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
         );
 
-        storageVerifier = TelepathyStorageVerifier(storageVerifierAddr);
+        storageVerifier = TelepathyStorageV2Verifier(storageVerifierAddr);
 
-        // Then initialize the contract that will be called by the TargetAMB
+        // Then initialize the contract that will be called by the TargetAMBV2
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
         vm.etch(address(0), address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(address(0));
@@ -225,13 +225,13 @@ contract TargetAMBStorageVerifierTest is Test {
         );
     }
 
-    function test_RevertExecuteMessage_WhenWrongSourceAMBAddress() public {
+    function test_RevertExecuteMessage_WhenWrongSourceAMBV2Address() public {
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
         messageParams.sourceAMBAddress = address(0x1234); // Set the sourceAMBAddress to something incorrect
         getDefaultContractSetup(messageParams);
 
         vm.expectRevert();
-        // The MPT verification should fail since the SourceAMB address provided is different than the one in the account proof
+        // The MPT verification should fail since the SourceAMBV2 address provided is different than the one in the account proof
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -240,13 +240,13 @@ contract TargetAMBStorageVerifierTest is Test {
         );
     }
 
-    function test_ExecuteMessage_WrongTargetAMBFails() public {
+    function test_ExecuteMessage_WrongTargetAMBV2Fails() public {
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
         getDefaultContractSetup(messageParams);
 
-        address randomTargetAMB = address(0x1234);
+        address randomTargetAMBV2 = address(0x1234);
         simpleHandler.setParams(
-            simpleHandler.sourceChain(), simpleHandler.sourceAddress(), randomTargetAMB
+            simpleHandler.sourceChain(), simpleHandler.sourceAddress(), randomTargetAMBV2
         );
 
         // Finally, execute the message and check that it failed
@@ -265,7 +265,7 @@ contract TargetAMBStorageVerifierTest is Test {
     }
 
     function test_RevertExecuteMessage_WhenInvalidDestination() public {
-        // Test what happens when the destination address doesn't implement the ITelepathyHandler
+        // Test what happens when the destination address doesn't implement the ITelepathyHandlerV2
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
         getDefaultContractSetup(messageParams);
 

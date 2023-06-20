@@ -7,13 +7,13 @@ import "forge-std/Test.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {WrappedInitialize} from "test/amb-v2/TestUtils.sol";
 import {Timelock} from "src/libraries/Timelock.sol";
-import {TelepathyRouter} from "src/amb-v2/TelepathyRouter.sol";
+import {TelepathyRouterV2} from "src/amb-v2/TelepathyRouter.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {UUPSUpgradeable} from "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract TelepathyRouterTest is Test {
+contract TelepathyRouterV2Test is Test {
     function test_InitializeImplementation() public {
-        TelepathyRouter telepathyRouter = new TelepathyRouter();
+        TelepathyRouterV2 telepathyRouter = new TelepathyRouterV2();
 
         uint32[] memory sourceChainIds = new uint32[](0);
         address[] memory lightClients = new address[](0);
@@ -26,24 +26,24 @@ contract TelepathyRouterTest is Test {
     }
 
     function test_InitializeProxy() public {
-        TelepathyRouter implementation = new TelepathyRouter();
+        TelepathyRouterV2 implementation = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(implementation), "");
 
         uint32[] memory sourceChainIds = new uint32[](0);
         address[] memory lightClients = new address[](0);
         address[] memory broadcasters = new address[](0);
 
-        TelepathyRouter(address(proxy)).initialize(
+        TelepathyRouterV2(address(proxy)).initialize(
             sourceChainIds, lightClients, broadcasters, address(this), address(this), true
         );
     }
 }
 
-contract TelepathyRouterUpgradeableTest is Test {
+contract TelepathyRouterV2UpgradeableTest is Test {
     uint32 constant SOURCE_CHAIN = 1;
     uint32 constant DESTINATION_CHAIN = 10;
 
-    TelepathyRouter wrappedRouterProxy;
+    TelepathyRouterV2 wrappedRouterProxy;
     UUPSProxy proxy;
     Timelock timelock;
 
@@ -52,7 +52,7 @@ contract TelepathyRouterUpgradeableTest is Test {
     uint256 MIN_DELAY = 60 * 24 * 24;
 
     function setUp() public {
-        TelepathyRouter telepathyRouter = new TelepathyRouter();
+        TelepathyRouterV2 telepathyRouter = new TelepathyRouterV2();
         proxy = new UUPSProxy(address(telepathyRouter), "");
 
         // Setup timelock
@@ -67,7 +67,7 @@ contract TelepathyRouterUpgradeableTest is Test {
             address(0)
         );
 
-        wrappedRouterProxy = TelepathyRouter(address(proxy));
+        wrappedRouterProxy = TelepathyRouterV2(address(proxy));
 
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
         WrappedInitialize.initializeRouter(
@@ -198,7 +198,7 @@ contract TelepathyRouterUpgradeableTest is Test {
     function test_RevertUpgrade_WhenNonOwner() public {
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
 
-        vm.expectRevert(bytes("TelepathyRouter: only timelock can call this function"));
+        vm.expectRevert(bytes("TelepathyRouterV2: only timelock can call this function"));
         wrappedRouterProxy.upgradeTo(address(testContractV2));
     }
 }
