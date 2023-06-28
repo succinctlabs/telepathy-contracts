@@ -11,6 +11,16 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "CallFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSelector",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint64",

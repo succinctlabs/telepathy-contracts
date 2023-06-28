@@ -32,6 +32,27 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "AffirmationNotSupported",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExecuteAffirmationsDisabled",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "eventSig",
+        "type": "bytes32"
+      }
+    ],
+    "name": "InvalidEventSignature",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint64",
@@ -90,56 +111,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "publishKey",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "messageId",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "eventData",
-        "type": "bytes"
-      }
-    ],
-    "name": "AMBAffirmationHandled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "publishKey",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "BridgeAffirmationHandled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": false,
         "internalType": "uint8",
         "name": "version",
@@ -166,6 +137,31 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "publishKey",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "messageId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "eventData",
+        "type": "bytes"
+      }
+    ],
+    "name": "UserRequestForAffirmationHandled",
     "type": "event"
   },
   {
@@ -196,25 +192,12 @@
   },
   {
     "inputs": [],
-    "name": "BRIDGE_AFFIRMATION_EVENT_SIG",
+    "name": "AMB_AFFIRMATION_SUBSCRIPTION_ID",
     "outputs": [
       {
         "internalType": "bytes32",
         "name": "",
         "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "BRIDGE_AFFIRMATION_SOURCE_ADDRESS",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -239,19 +222,6 @@
     "outputs": [
       {
         "internalType": "contract IBasicHomeAMB",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "HOME_BRIDGE",
-    "outputs": [
-      {
-        "internalType": "contract IBasicHomeBridge",
         "name": "",
         "type": "address"
       }
@@ -294,74 +264,6 @@
       }
     ],
     "name": "__SubscriptionReceiver_init",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ambAffirmationSubscriptionId",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "bridgeAffirmationStatuses",
-    "outputs": [
-      {
-        "internalType": "enum TelepathyValidator.ExecutionStatus",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "bridgeAffirmationSubscriptionId",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_recipient",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_value",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "_transactionHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "executeAffirmationForBridge",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -446,11 +348,6 @@
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "_bridgeAffirmationSourceAddress",
-        "type": "address"
-      },
-      {
         "internalType": "uint64",
         "name": "_startSlot",
         "type": "uint64"
@@ -463,11 +360,6 @@
       {
         "internalType": "address",
         "name": "_homeAMB",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_homeBridge",
         "type": "address"
       },
       {
@@ -498,32 +390,6 @@
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "subscribeToAMBAffirmationEvent",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "subscribeToBridgeAffirmationEvent",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },

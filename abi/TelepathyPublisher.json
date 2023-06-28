@@ -1,5 +1,15 @@
 [
   {
+    "inputs": [],
+    "name": "CallFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSelector",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {

@@ -5,8 +5,14 @@ import "forge-std/console.sol";
 import "forge-std/Test.sol";
 
 import {SSZ} from "src/libraries/SimpleSerialize.sol";
-import {LightClient, LightClientStep, LightClientRotate} from "src/lightclient/LightClient.sol";
+import {
+    LightClient,
+    LightClientStep,
+    LightClientRotate,
+    LightClientOptimizedRotate
+} from "src/lightclient/LightClient.sol";
 import {LightClientFixture} from "test/lightclient/LightClientFixture.sol";
+import {OptLightClientFixture} from "test/lightclient/OptLightClientFixture.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract LightClientTest is Test, LightClientFixture {
@@ -16,7 +22,11 @@ contract LightClientTest is Test, LightClientFixture {
     uint256 constant FIXTURE_SLOT_START = 6000991;
     uint256 constant FIXTURE_SLOT_END = 6001088;
 
+    uint256 constant OPT_FIXTURE_SLOT_START = 6440799;
+    uint256 constant OPT_FIXTURE_SLOT_END = 6443999;
+
     Fixture[] fixtures;
+    OptLightClientFixture.OptFixture[] optFixtures;
 
     function setUp() public {
         // read all fixtures from entire directory
@@ -30,6 +40,20 @@ contract LightClientTest is Test, LightClientFixture {
             try vm.readFile(path) returns (string memory file) {
                 bytes memory parsed = vm.parseJson(file);
                 fixtures.push(abi.decode(parsed, (Fixture)));
+            } catch {
+                continue;
+            }
+        }
+
+        for (uint256 i = OPT_FIXTURE_SLOT_START; i <= OPT_FIXTURE_SLOT_END; i++) {
+            uint256 slot = i;
+
+            string memory filename = string.concat("opt_slot", Strings.toString(slot));
+            string memory path =
+                string.concat(root, "/test/lightclient/fixtures/", filename, ".json");
+            try vm.readFile(path) returns (string memory file) {
+                bytes memory parsed = vm.parseJson(file);
+                optFixtures.push(abi.decode(parsed, (OptLightClientFixture.OptFixture)));
             } catch {
                 continue;
             }
@@ -78,6 +102,85 @@ contract LightClientTest is Test, LightClientFixture {
 
             lc.rotate(rotate);
         }
+    }
+
+    function test_RotatePublicInputsHash() public {
+        Fixture memory fixture = fixtures[2];
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        console.log("syncCommitteeSSZ (Bytes32)");
+        console.logBytes32(SSZ.toLittleEndian(uint256(rotate.syncCommitteeSSZ)));
+        console.log("finalizedHeaderRoot (Bytes32)");
+        console.logBytes32(SSZ.toLittleEndian(uint256(rotate.step.finalizedHeaderRoot)));
+        console.log("syncCommitteePoseidon (uint256)");
+        console.logUint(uint256(SSZ.toLittleEndian(uint256(rotate.syncCommitteePoseidon))));
+
+        lc.rotate(rotate);
+
+        bytes32 h = sha256(
+            bytes.concat(
+                SSZ.toLittleEndian(uint256(rotate.step.finalizedHeaderRoot)),
+                SSZ.toLittleEndian(uint256(rotate.syncCommitteeSSZ)),
+                rotate.syncCommitteePoseidon
+            )
+        );
+
+        uint256 t = uint256(SSZ.toLittleEndian(uint256(h)));
+        t = t & ((uint256(1) << 253) - 1);
+        console.log("Output Hash (BigInt)");
+        console.logUint(uint256(t));
+        console.log("Output Hash (bytes32)");
+        console.logBytes32(SSZ.toLittleEndian(uint256(t)));
+    }
+
+    function test_OptimizedRotate() public {
+        OptLightClientFixture newContract = new OptLightClientFixture();
+        for (uint256 i = 0; i < optFixtures.length; i++) {
+            OptLightClientFixture.OptFixture memory optFixture = optFixtures[i];
+
+            LightClient lc = newContract.newOptLightClient(
+                optFixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD
+            );
+            LightClientOptimizedRotate memory optRotate = newContract
+                .convertToLightClientOptimizedRotate(optFixture.step, optFixture.optimizedRotate);
+
+            lc.optimizedRotate(optRotate);
+        }
+    }
+
+    function test_RotateGasCost() public {
+        Fixture memory fixture = fixtures[0];
+
+        LightClient lc = newLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+
+        LightClientRotate memory rotate = convertToLightClientRotate(fixture.step, fixture.rotate);
+
+        LightClientStep memory step = convertToLightClientStep(fixture.step);
+
+        uint256 gas = gasleft();
+        lc.step(step);
+        console.log("gas cost for step: %d", gas - gasleft());
+
+        gas = gasleft();
+        lc.rotate(rotate);
+        console.log("gas cost for rotate: %d", gas - gasleft());
+    }
+
+    function test_OptimizedRotateGasCost() public {
+        OptLightClientFixture.OptFixture memory fixture = optFixtures[0];
+
+        OptLightClientFixture newContract = new OptLightClientFixture();
+        LightClientOptimizedRotate memory optRotate =
+            newContract.convertToLightClientOptimizedRotate(fixture.step, fixture.optimizedRotate);
+
+        LightClient lc =
+            newContract.newOptLightClient(fixture.initial, SOURCE_CHAIN_ID, FINALITY_THRESHOLD);
+
+        uint256 gas = gasleft();
+        lc.optimizedRotate(optRotate);
+        console.log("gas cost for optimized rotate: %d", gas - gasleft());
     }
 
     // Particularly important as an early slot (within in the first 2 epochs of a period) will have
