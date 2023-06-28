@@ -14,28 +14,33 @@ import {WrappedInitialize, SimpleHandler} from "test/amb-v2/TestUtils.sol";
 import {Message} from "src/libraries/Message.sol";
 import {Bytes32, Address} from "src/libraries/Typecast.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
+import {EthCallResponse} from "src/amb-v2/verifier/TelepathyAttestationVerifier.sol";
 
 contract MockEthCallGateway {
-    mapping(bytes32 => bytes) store;
+    EthCallResponse currResponse;
 
-    function getAttestedResult(uint32 chainId, address toAddress, bytes memory calldata_)
-        external
-        returns (bytes memory)
-    {
-        return store[keccak256(abi.encode(chainId, toAddress, calldata_))];
+    function currentResponse() external view returns (EthCallResponse memory) {
+        return currResponse;
     }
 
-    function setAttestedResult(
-        uint32 chainId,
-        address toAddress,
-        bytes memory calldata_,
-        bytes memory result
-    ) external {
-        store[keccak256(abi.encode(chainId, toAddress, calldata_))] = result;
+    function setCurrentResponse(EthCallResponse memory _response) external {
+        currResponse = _response;
     }
 }
 
-contract TargetAMBV2AttestationVerifier is Test {
+contract TestErrors {
+    error VerifierNotFound(uint256 verifierType);
+    error VerificationFailed();
+
+    error InvalidSourceChainLength(uint256 length);
+    error TelepathyRouterNotFound(uint32 sourceChainId);
+    error TelepathyRouterIncorrect(address telepathyRouter);
+    error InvalidResult();
+    error InvalidMessageId(bytes32 messageId);
+    error InvalidFuncSelector(bytes4 selector);
+}
+
+contract TargetAMBV2AttestationVerifier is Test, TestErrors {
     using Message for bytes;
 
     uint32 constant DESTINATION_CHAIN = 10;
@@ -88,7 +93,48 @@ contract TargetAMBV2AttestationVerifier is Test {
         simpleHandler.setVerifierType(VerifierType.ATTESTATION_ETHCALL);
     }
 
-    function test_ExecuteMessageAttestationVerifier() public {
+    function test_ExecuteMessage() public {
+        bytes memory message = Message.encode(
+            1,
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        bytes memory messageIdBytes = abi.encode(message.getId());
+        mockEthCallGateway.setCurrentResponse(
+            EthCallResponse(
+                SOURCE_CHAIN,
+                0,
+                SOURCE_SENDER,
+                SOURCE_TELEPATHY_ROUTER,
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
+                messageIdBytes
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockEthCallGateway));
+        telepathyRouter.execute(hex"", message);
+
+        assertTrue(
+            telepathyRouter.messageStatus(message.getId()) == MessageStatus.EXECUTION_SUCCEEDED
+        );
+
+        // Check that the simpleHandler processed the message correctly.
+        assertEq(simpleHandler.nonce(), 1);
+        bytes32 expectedDataHash = keccak256(MESSAGE_DATA);
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
+    }
+
+    function test_RevertExecuteMessage_WhenResponseNotSet() public {
         bytes memory message = Message.encode(
             1,
             0,
@@ -100,128 +146,11 @@ contract TargetAMBV2AttestationVerifier is Test {
         );
         vm.chainId(SOURCE_CHAIN);
         vm.prank(SOURCE_SENDER);
-        bytes32 messageId =
-            telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
-        require(message.getId() == messageId);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
         vm.chainId(DESTINATION_CHAIN);
-        mockEthCallGateway.setAttestedResult(
-            SOURCE_CHAIN,
-            SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
-            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageId(0))
-        );
-
-        // Execute the message and check that it succeeded.
-        // bytes memory proofData = abi.encode(MESSAGE_PROOF, LIGHT_CLIENT_INDEX, MESSAGE_INDEX);
-        bytes memory proofData = hex"";
-
-        telepathyRouter.execute(proofData, message);
-
-        assertTrue(
-            telepathyRouter.messageStatus(message.getId()) == MessageStatus.EXECUTION_SUCCEEDED
-        );
-
-        // Check that the simpleHandler processed the message correctly.
-        assertEq(simpleHandler.nonce(), 1);
-        bytes32 expectedDataHash = keccak256(MESSAGE_DATA);
-        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
-
-        // Now do a second message with bulk
-        bytes memory message2 = Message.encode(
-            1,
-            1,
-            SOURCE_CHAIN,
-            SOURCE_SENDER,
-            DESTINATION_CHAIN,
-            Bytes32.fromAddress(DESTINATION_HANDLER),
-            MESSAGE_DATA
-        );
-        vm.chainId(SOURCE_CHAIN);
-        vm.prank(SOURCE_SENDER);
-        bytes32 messageId2 =
-            telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
-        vm.chainId(DESTINATION_CHAIN);
-        require(message2.getId() == messageId2);
-        uint64[] memory nonces = new uint64[](2);
-        nonces[0] = 0;
-        nonces[1] = 1;
-        mockEthCallGateway.setAttestedResult(
-            SOURCE_CHAIN,
-            SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMBV2.getMessageIdRoot.selector, nonces),
-            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageIdRoot(nonces))
-        );
-
-        bytes memory proofDataBatch =
-            SourceAMBV2(address(telepathyRouter)).getProofDataForExecution(nonces, 1);
-        uint256 startSmallBatch = gasleft();
-        telepathyRouter.execute(proofDataBatch, message2);
-        assertTrue(
-            telepathyRouter.messageStatus(message2.getId()) == MessageStatus.EXECUTION_SUCCEEDED
-        );
-        // Check that the simpleHandler processed the message correctly.
-        assertEq(simpleHandler.nonce(), 2);
-        assertEq(simpleHandler.nonceToDataHash(1), expectedDataHash);
-
-        // ANOTHER TEST WITH LARGE NONCE BATCH
-        uint64[] memory largeNonces = new uint64[](8);
-        for (uint64 i = 0; i < 8; i++) {
-            vm.chainId(SOURCE_CHAIN);
-            vm.prank(SOURCE_SENDER);
-            telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
-            largeNonces[i] = 2 + i;
-        }
-        vm.chainId(DESTINATION_CHAIN);
-        bytes memory message8 = Message.encode(
-            1,
-            8,
-            SOURCE_CHAIN,
-            SOURCE_SENDER,
-            DESTINATION_CHAIN,
-            Bytes32.fromAddress(DESTINATION_HANDLER),
-            MESSAGE_DATA
-        );
-        mockEthCallGateway.setAttestedResult(
-            SOURCE_CHAIN,
-            SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMBV2.getMessageIdRoot.selector, largeNonces),
-            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageIdRoot(largeNonces))
-        );
-        require(SourceAMBV2(address(telepathyRouter)).getMessageId(8) == message8.getId());
-
-        bytes memory proofDataBatchLarge =
-            SourceAMBV2(address(telepathyRouter)).getProofDataForExecution(largeNonces, 8);
-
-        uint256 startBatch = gasleft();
-        telepathyRouter.execute(proofDataBatchLarge, message8);
-
-        assertTrue(
-            telepathyRouter.messageStatus(message8.getId()) == MessageStatus.EXECUTION_SUCCEEDED
-        );
-        // Check that the simpleHandler processed the message correctly.
-        assertEq(simpleHandler.nonce(), 3);
-        assertEq(simpleHandler.nonceToDataHash(1), expectedDataHash);
-
-        // Gas profiling at end for singleton so warm vs. cold doesn't matter
-        mockEthCallGateway.setAttestedResult(
-            SOURCE_CHAIN,
-            SOURCE_TELEPATHY_ROUTER,
-            abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 9),
-            abi.encode(SourceAMBV2(address(telepathyRouter)).getMessageId(9))
-        );
-        bytes memory message9 = Message.encode(
-            1,
-            9,
-            SOURCE_CHAIN,
-            SOURCE_SENDER,
-            DESTINATION_CHAIN,
-            Bytes32.fromAddress(DESTINATION_HANDLER),
-            MESSAGE_DATA
-        );
-        // Execute the message and check that it succeeded.
-        // bytes memory proofData = abi.encode(MESSAGE_PROOF, LIGHT_CLIENT_INDEX, MESSAGE_INDEX);
-        bytes memory proofData9 = hex"";
-
-        telepathyRouter.execute(proofData9, message9);
+        vm.prank(address(mockEthCallGateway));
+        vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
+        telepathyRouter.execute(hex"", message);
     }
 }

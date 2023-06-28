@@ -4,12 +4,30 @@ pragma solidity ^0.8.16;
 import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
 import {Message} from "src/libraries/Message.sol";
-import {MerkleProof} from "src/libraries/MerkleProof.sol";
+
+/// @notice Struct for eth_call request information wrapped with the attested result.
+/// @param chainId The chain ID of the chain where the eth_call will be made.
+/// @param blockNumber The block number of the chain where the eth_call is made.
+///        If blockNumber is 0, then the eth_call is made at the latest avaliable
+///        block.
+/// @param fromAddress The address that is used as the 'from' eth_call argument
+///        (influencing msg.sender & tx.origin). If set to address(0) then the
+///        call is made from address(0).
+/// @param toAddress The address that is used as the 'to' eth_call argument.
+/// @param toCalldata The calldata that is used as the 'data' eth_call argument.
+/// @param result The result from executing the eth_call.
+struct EthCallResponse {
+    uint32 chainId;
+    uint64 blockNumber;
+    address fromAddress;
+    address toAddress;
+    bytes toCalldata;
+    bytes result;
+}
 
 interface IEthCallGateway {
-    function getAttestedResult(uint32 chainId, address toAddress, bytes memory toCalldata)
-        external
-        returns (bytes memory);
+    /// @notice The response currently being processed by the gateway.
+    function currentResponse() external view returns (EthCallResponse memory);
 }
 
 /// @title TelepathyAttestationVerifier
@@ -24,7 +42,11 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
     mapping(uint32 => address) public telepathyRouters;
 
     error InvalidSourceChainLength(uint256 length);
+    error InvalidChainId(uint32 chainId);
     error TelepathyRouterNotFound(uint32 sourceChainId);
+    error TelepathyRouterIncorrect(address telepathyRouter);
+    error InvalidResult();
+    error InvalidToCalldata(bytes toCalldata);
     error InvalidMessageId(bytes32 messageId);
     error InvalidFuncSelector(bytes4 selector);
 
@@ -47,72 +69,47 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
     }
 
     /// @notice Verifies messages using Telepathy EthCall attestations.
-    /// @param _proofData The proof of the message, which is either (1) empty in the
-    ///        case of a single message, or (2) contains:
-    ///             bytes4 ambSelector
-    ///             uint64[] nonces
-    ///             uint256 index
-    ///             bytes32[] merkleProof
-    ///        in the case of bulk attestations.
+    /// @dev The first argument will be the same as the response.result (in the expected case),
+    ///      so it is better to just ignore it.
     /// @param _message The message to verify.
-    function verify(bytes calldata _proofData, bytes calldata _message)
+    function verify(bytes calldata, bytes calldata _message)
         external
+        view
         override
         returns (bool)
     {
-        bytes32 msgId = _message.getId();
-        uint32 sourceChainId = _message.sourceChainId();
-        address telepathyRouter = telepathyRouters[sourceChainId];
-
-        if (telepathyRouter == address(0)) {
-            revert TelepathyRouterNotFound(sourceChainId);
+        EthCallResponse memory response = IEthCallGateway(ethCallGateway).currentResponse();
+        if (response.result.length == 0) {
+            revert InvalidResult();
         }
 
-        if (_proofData.length == 0) {
-            // Verifying a single attestation
-            bytes memory toCalldata =
-                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, _message.nonce());
-            bytes memory attestedResult = IEthCallGateway(ethCallGateway).getAttestedResult(
-                sourceChainId, telepathyRouter, toCalldata
-            );
+        // Check that the attestation is from the same chain as the message.
+        if (response.chainId != _message.sourceChainId()) {
+            revert InvalidChainId(response.chainId);
+        }
 
-            // Check that the claimed messageId matches the attested ethcall result for getMessageId()
-            bytes32 attestedId = abi.decode(attestedResult, (bytes32));
-            if (msgId != attestedId) {
-                revert InvalidMessageId(msgId);
-            }
-        } else {
-            // Verifying bulk attestations
-            (
-                bytes4 ambSelector,
-                uint64[] memory nonces,
-                uint256 index,
-                bytes32[] memory merkleProof
-            ) = abi.decode(_proofData, (bytes4, uint64[], uint256, bytes32[]));
+        // Check that the attestation is from the same contract as the telepathyRouter.
+        address telepathyRouter = telepathyRouters[response.chainId];
+        if (telepathyRouter == address(0)) {
+            revert TelepathyRouterNotFound(response.chainId);
+        }
+        if (response.toAddress != telepathyRouter) {
+            revert TelepathyRouterIncorrect(response.toAddress);
+        }
 
-            bytes memory toCalldata;
-            if (ambSelector == SourceAMBV2.getMessageIdBulk.selector) {
-                toCalldata = abi.encodeWithSelector(SourceAMBV2.getMessageIdBulk.selector, nonces);
-                bytes memory attestedResult = IEthCallGateway(ethCallGateway).getAttestedResult(
-                    sourceChainId, telepathyRouter, toCalldata
-                );
-                bytes32[] memory ids = abi.decode(attestedResult, (bytes32[]));
-                if (ids[index] != msgId) {
-                    revert InvalidMessageId(msgId);
-                }
-            } else if (ambSelector == SourceAMBV2.getMessageIdRoot.selector) {
-                toCalldata = abi.encodeWithSelector(SourceAMBV2.getMessageIdRoot.selector, nonces);
-                bytes memory attestedResult = IEthCallGateway(ethCallGateway).getAttestedResult(
-                    sourceChainId, telepathyRouter, toCalldata
-                );
-                bytes32 root = abi.decode(attestedResult, (bytes32));
-                bool verified = MerkleProof.verifyProof(root, msgId, merkleProof, index);
-                if (!verified) {
-                    revert InvalidMessageId(msgId);
-                }
-            } else {
-                revert InvalidFuncSelector(ambSelector);
-            }
+        // Check that the attestation toCalldata has the correct function selector and nonce.
+        bytes memory expectedToCalldata =
+            abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, _message.nonce());
+        if (keccak256(abi.encode(response.toCalldata)) != keccak256(abi.encode(expectedToCalldata)))
+        {
+            revert InvalidToCalldata(response.toCalldata);
+        }
+
+        // Check that the claimed messageId matches the attested ethcall result for
+        // "getMessageId(uint64)".
+        bytes32 attestedMsgId = abi.decode(response.result, (bytes32));
+        if (attestedMsgId != _message.getId()) {
+            revert InvalidMessageId(attestedMsgId);
         }
 
         return true;

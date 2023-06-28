@@ -47,7 +47,7 @@ contract MockTelepathyV2 is ITelepathyRouterV2 {
     /// @dev Helper methods for processing all send methods
 
     function _send(uint32 _destinationChainId, bytes32 _destinationAddress, bytes calldata _data)
-        public
+        internal
         returns (bytes32)
     {
         (bytes memory message, bytes32 messageId) =
@@ -60,7 +60,7 @@ contract MockTelepathyV2 is ITelepathyRouterV2 {
         uint32 _destinationChainId,
         bytes32 _destinationAddress,
         bytes calldata _data
-    ) public view returns (bytes memory message, bytes32 messageId) {
+    ) internal view returns (bytes memory message, bytes32 messageId) {
         message = Message.encode(
             version, sentNonce, chainId, msg.sender, _destinationChainId, _destinationAddress, _data
         );
@@ -72,11 +72,11 @@ contract MockTelepathyV2 is ITelepathyRouterV2 {
         bytes memory message = sentMessages[++executedNonce];
         MockTelepathyV2 receiver = telepathyReceivers[Message.destinationChainId(message)];
         require(receiver != MockTelepathyV2(address(0)), "MockAMB: No receiver for chain");
-        return receiver._executeMessage(message);
+        return receiver.executeMessage(message);
     }
 
     /// @dev helper method to execute the message
-    function _executeMessage(bytes memory message) public returns (bool) {
+    function executeMessage(bytes memory message) public returns (bool) {
         bool status;
         bytes memory data;
         {

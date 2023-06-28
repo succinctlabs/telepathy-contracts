@@ -86,70 +86,10 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
         messageId = keccak256(message);
     }
 
-    // These are all functions for EthCall Attestation
-
+    /// @notice Gets the messageId for a nonce.
+    /// @param _nonce The nonce of the message, assigned when the message is sent.
+    /// @return messageId The hash of message contents, used as a unique identifier for a message.
     function getMessageId(uint64 _nonce) external view returns (bytes32) {
         return messages[_nonce];
-    }
-
-    function getMessageIdBulk(uint64[] calldata _nonces) public view returns (bytes32[] memory) {
-        bytes32[] memory messageIds = new bytes32[](_nonces.length);
-        for (uint256 i = 0; i < _nonces.length; i++) {
-            messageIds[i] = messages[_nonces[i]];
-        }
-        return messageIds;
-    }
-
-    function getMessageIdBulkHash(uint64[] calldata _nonces) external view returns (bytes32) {
-        return keccak256(abi.encode(getMessageIdBulk(_nonces)));
-    }
-
-    function getMessageIdRoot(uint64[] memory _nonces) external view returns (bytes32) {
-        uint256 n = _nonces.length;
-        require((n & (n - 1)) == 0, "nonces must be perfect power of 2");
-
-        bytes32[] memory messageIds = new bytes32[](n);
-        for (uint256 i = 0; i < n; i++) {
-            messageIds[i] = messages[_nonces[i]];
-        }
-
-        while (n > 1) {
-            for (uint256 i = 0; i < n / 2; i++) {
-                messageIds[i] =
-                    keccak256(abi.encodePacked(messageIds[2 * i], messageIds[2 * i + 1]));
-            }
-            if (n % 2 == 1) {
-                messageIds[n / 2] = messageIds[n - 1];
-                n = n / 2 + 1;
-            } else {
-                n = n / 2;
-            }
-        }
-
-        return bytes32(messageIds[0]);
-    }
-
-    function getProofDataForExecution(uint64[] memory _nonces, uint64 _nonce)
-        external
-        view
-        returns (bytes memory)
-    {
-        // Find the index of the nonce
-        uint256 index;
-        for (uint256 i = 0; i < _nonces.length; i++) {
-            if (_nonces[i] == _nonce) {
-                index = i;
-                break;
-            }
-        }
-
-        // Generate the leaf nodes
-        bytes32[] memory nodes = new bytes32[](_nonces.length);
-        for (uint256 i = 0; i < _nonces.length; i++) {
-            nodes[i] = messages[_nonces[i]];
-        }
-
-        bytes32[] memory proof = MerkleProof.getProof(nodes, index);
-        return abi.encode(this.getMessageIdRoot.selector, _nonces, index, proof);
     }
 }
