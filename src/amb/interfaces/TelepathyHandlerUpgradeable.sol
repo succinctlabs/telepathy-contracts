@@ -8,7 +8,7 @@ abstract contract TelepathyHandlerUpgradeable is ITelepathyHandler, Initializabl
 
     address public telepathyRouter;
 
-    function __TelepathyHandler_init(address _telepathyRouter) public onlyInitializing {
+    function __TelepathyHandler_init(address _telepathyRouter) internal onlyInitializing {
         telepathyRouter = _telepathyRouter;
     }
 
