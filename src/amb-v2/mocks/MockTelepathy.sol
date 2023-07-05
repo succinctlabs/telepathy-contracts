@@ -15,7 +15,7 @@ import {
 /// @notice This contract is used for testing.
 contract MockTelepathyV2 is ITelepathyRouterV2 {
     // All stuff related to sending
-    uint8 public constant version = 1;
+    uint8 public constant VERSION = 2;
     uint32 chainId;
     uint64 sentNonce;
     mapping(uint32 => MockTelepathyV2) public telepathyReceivers;
@@ -66,7 +66,7 @@ contract MockTelepathyV2 is ITelepathyRouterV2 {
         bytes calldata _data
     ) internal view returns (bytes memory message, bytes32 messageId) {
         message = Message.encode(
-            version, sentNonce, chainId, msg.sender, _destinationChainId, _destinationAddress, _data
+            VERSION, sentNonce, chainId, msg.sender, _destinationChainId, _destinationAddress, _data
         );
         messageId = Message.getId(message);
     }

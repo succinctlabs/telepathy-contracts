@@ -19,7 +19,7 @@ import {UUPSUpgradeable} from "@openzeppelin-upgradeable/contracts/proxy/utils/U
 /// @notice Send and receive arbitrary messages from other chains.
 contract TelepathyRouterV2 is SourceAMBV2, TargetAMBV2, TelepathyAccessV2, UUPSUpgradeable {
     /// @notice Returns current contract version.
-    uint8 public constant VERSION = 1;
+    uint8 public constant VERSION = 2;
 
     /// @notice Prevents the implementation contract from being initialized outside of the upgradeable proxy.
     constructor() {

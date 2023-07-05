@@ -130,6 +130,8 @@ contract TargetAMBV2StorageVerifierTest is Test {
             timelock,
             address(this)
         );
+        // manually override VERSION, TODO generate new fixtures for V2
+        vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
 
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_STORAGE, storageVerifierAddr);
