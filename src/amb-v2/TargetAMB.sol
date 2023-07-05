@@ -7,6 +7,7 @@ import {Address} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
 import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {
+    BROADCAST_ALL_CHAINS,
     ITelepathyHandlerV2,
     ITelepathyReceiverV2,
     MessageStatus
@@ -71,7 +72,9 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     {
         if (messageStatus[_messageId] != MessageStatus.NOT_EXECUTED) {
             revert("Message already executed.");
-        } else if (_destinationChainId != 0 && _destinationChainId != block.chainid) {
+        } else if (
+            _destinationChainId != BROADCAST_ALL_CHAINS && _destinationChainId != block.chainid
+        ) {
             revert("Wrong chain.");
         } else if (_version != version) {
             revert("Wrong version.");

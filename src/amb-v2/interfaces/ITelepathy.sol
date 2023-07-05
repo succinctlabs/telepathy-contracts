@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.16;
 
+// A magic destinationChainId number to specify for messages that can be executed on any chain.
+// Check the doc for current set of chains where the message will be executed. If any are not
+// included in this set, it will still be possible to execute via self-relay.
+uint32 constant BROADCAST_ALL_CHAINS = uint32(0);
+
 enum MessageStatus {
     NOT_EXECUTED,
     EXECUTION_FAILED,
