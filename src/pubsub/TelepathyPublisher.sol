@@ -36,8 +36,8 @@ contract TelepathyPublisher is IPublisher, PubSubStorage, ReentrancyGuard {
         uint256 logIndex,
         Subscription calldata subscription
     ) external nonReentrant {
+        require(!paused, "Publishing events is paused");
         requireLightClientConsistency(subscription.sourceChainId);
-        requireNotFrozen(subscription.sourceChainId);
 
         (uint64 srcSlot, uint64 txSlot) = abi.decode(srcSlotTxSlotPack, (uint64, uint64));
         // Ensure the event emit may only be published to a subscriber once
@@ -48,8 +48,7 @@ contract TelepathyPublisher is IPublisher, PubSubStorage, ReentrancyGuard {
             eventsPublished[publishKey] == PublishStatus.NOT_EXECUTED, "Event already published"
         );
 
-        bytes32 headerRoot =
-            telepathyRouter.lightClients(subscription.sourceChainId).headers(srcSlot);
+        bytes32 headerRoot = lightClient.headers(srcSlot);
         require(headerRoot != bytes32(0), "HeaderRoot is missing");
         bool isValid = SSZ.verifyReceiptsRoot(
             receiptsRoot, receiptsRootProof, headerRoot, srcSlot, txSlot, subscription.sourceChainId
@@ -70,15 +69,8 @@ contract TelepathyPublisher is IPublisher, PubSubStorage, ReentrancyGuard {
 
     /// @notice Checks that the light client for a given chainId is consistent.
     function requireLightClientConsistency(uint32 chainId) internal view {
-        require(
-            address(telepathyRouter.lightClients(chainId)) != address(0), "Light client is not set."
-        );
-        require(telepathyRouter.lightClients(chainId).consistent(), "Light client is inconsistent.");
-    }
-
-    /// @notice Checks that the chainId is not frozen.
-    function requireNotFrozen(uint32 chainId) internal view {
-        require(!telepathyRouter.frozen(chainId), "Contract is frozen.");
+        require(address(lightClient) != address(0), "Light client is not set.");
+        require(lightClient.consistent(), "Light client is inconsistent.");
     }
 
     /// @notice Executes the callback function on the subscriber, and marks the event publish as successful or failed.

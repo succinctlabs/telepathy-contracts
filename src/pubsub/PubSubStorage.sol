@@ -3,15 +3,21 @@ pragma solidity 0.8.16;
 import {PublishStatus} from "src/pubsub/interfaces/IPubSub.sol";
 
 import {SubscriptionStatus} from "src/pubsub/interfaces/IPubSub.sol";
-
+import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {TelepathyRouter} from "src/amb/TelepathyRouter.sol";
 
 contract PubSubStorage {
+    address public guardian;
+
+    address public timelock;
+
+    ILightClient public lightClient;
+
+    bool public paused;
+
     /*//////////////////////////////////////////////////////////////
                            PUBLISHER STORAGE
     //////////////////////////////////////////////////////////////*/
-
-    TelepathyRouter telepathyRouter;
 
     mapping(bytes32 => PublishStatus) public eventsPublished;
 
