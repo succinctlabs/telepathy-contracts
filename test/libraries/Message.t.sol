@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 import {Message} from "src/libraries/Message.sol";
+import {Address, Bytes32} from "src/libraries/Typecast.sol";
 
 contract MessageTest is Test {
     using Message for bytes;
@@ -12,7 +13,7 @@ contract MessageTest is Test {
     uint32 constant DEFAULT_SOURCE_CHAIN_ID = 5;
     address constant DEFAULT_SOURCE_ADDRESS = address(0xe2B19845Fe2B7Bb353f377d12dD51af012fbba20);
     uint32 constant DEFAULT_DESTINATION_CHAIN_ID = 100;
-    bytes32 constant DEFAULT_DESTINATION_ADDRESS = bytes32(uint256(12345678));
+    address constant DEFAULT_DESTINATION_ADDRESS = address(uint160(12345678));
     bytes constant DEFAULT_DATA = hex"6789";
 
     function test_EncodeMessage() public {
@@ -22,7 +23,7 @@ contract MessageTest is Test {
             DEFAULT_SOURCE_CHAIN_ID,
             DEFAULT_SOURCE_ADDRESS,
             DEFAULT_DESTINATION_CHAIN_ID,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             DEFAULT_DATA
         );
 
@@ -42,7 +43,7 @@ contract MessageTest is Test {
             DEFAULT_SOURCE_CHAIN_ID,
             DEFAULT_SOURCE_ADDRESS,
             DEFAULT_DESTINATION_CHAIN_ID,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             DEFAULT_DATA
         );
         bytes32 id = message.getId();
@@ -58,7 +59,7 @@ contract MessageTest is Test {
             DEFAULT_SOURCE_CHAIN_ID,
             DEFAULT_SOURCE_ADDRESS,
             DEFAULT_DESTINATION_CHAIN_ID,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             DEFAULT_DATA
         );
         assertEq(message.version(), _version);
@@ -77,7 +78,7 @@ contract MessageTest is Test {
             DEFAULT_SOURCE_CHAIN_ID,
             DEFAULT_SOURCE_ADDRESS,
             DEFAULT_DESTINATION_CHAIN_ID,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             DEFAULT_DATA
         );
         assertEq(message.version(), DEFAULT_VERSION);
@@ -96,7 +97,7 @@ contract MessageTest is Test {
             _sourceChainId,
             DEFAULT_SOURCE_ADDRESS,
             DEFAULT_DESTINATION_CHAIN_ID,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             DEFAULT_DATA
         );
         assertEq(message.version(), DEFAULT_VERSION);
@@ -115,7 +116,7 @@ contract MessageTest is Test {
             DEFAULT_SOURCE_CHAIN_ID,
             _sourceAddress,
             DEFAULT_DESTINATION_CHAIN_ID,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             DEFAULT_DATA
         );
         assertEq(message.version(), DEFAULT_VERSION);
@@ -134,7 +135,7 @@ contract MessageTest is Test {
             DEFAULT_SOURCE_CHAIN_ID,
             DEFAULT_SOURCE_ADDRESS,
             _destinationChainId,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             DEFAULT_DATA
         );
         assertEq(message.version(), DEFAULT_VERSION);
@@ -161,7 +162,7 @@ contract MessageTest is Test {
         assertEq(message.sourceChainId(), DEFAULT_SOURCE_CHAIN_ID);
         assertEq(message.sourceAddress(), DEFAULT_SOURCE_ADDRESS);
         assertEq(message.destinationChainId(), DEFAULT_DESTINATION_CHAIN_ID);
-        assertEq(message.destinationAddress(), destinationAddress);
+        assertEq(message.destinationAddress(), Address.fromBytes32(destinationAddress));
         assertEq(keccak256(message.data()), keccak256(DEFAULT_DATA));
     }
 
@@ -173,7 +174,7 @@ contract MessageTest is Test {
             DEFAULT_SOURCE_CHAIN_ID,
             DEFAULT_SOURCE_ADDRESS,
             DEFAULT_DESTINATION_CHAIN_ID,
-            DEFAULT_DESTINATION_ADDRESS,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDRESS),
             _data
         );
         assertEq(message.version(), DEFAULT_VERSION);

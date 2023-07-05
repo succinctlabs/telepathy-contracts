@@ -105,7 +105,7 @@ contract MockTelepathyV2 is ITelepathyRouterV2 {
                 Message.sourceAddress(message),
                 Message.data(message)
             );
-            address destination = Address.fromBytes32(Message.destinationAddress(message));
+            address destination = Message.destinationAddress(message);
             (status, data) = destination.call(receiveCall);
         }
 

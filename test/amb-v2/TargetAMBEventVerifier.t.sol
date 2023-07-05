@@ -12,7 +12,7 @@ import {SimpleHandler} from "test/amb-v2/TestUtils.sol";
 import {WrappedInitialize} from "test/amb-v2/TestUtils.sol";
 import {BeaconChainForks} from "src/libraries/BeaconChainForks.sol";
 import {Message} from "src/libraries/Message.sol";
-import {Bytes32, Address} from "src/libraries/Typecast.sol";
+import {Bytes32} from "src/libraries/Typecast.sol";
 import {TelepathyEventVerifier} from "src/amb-v2/verifier/TelepathyEventVerifier.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
@@ -231,7 +231,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId()));
 
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
-        address destination = Address.fromBytes32(message.destinationAddress());
+        address destination = message.destinationAddress();
         vm.etch(address(destination), address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(address(destination));
         simpleHandler.setParams(
@@ -273,7 +273,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId()));
 
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
-        address destination = Address.fromBytes32(message.destinationAddress());
+        address destination = message.destinationAddress();
         vm.etch(address(destination), address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(address(destination));
         simpleHandler.setParams(

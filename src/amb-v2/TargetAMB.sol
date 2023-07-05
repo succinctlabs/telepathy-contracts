@@ -3,7 +3,6 @@ pragma solidity ^0.8.16;
 
 import {ReentrancyGuardUpgradeable} from
     "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
-import {Address} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
 import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {
@@ -42,7 +41,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     /// @param _message The message to get the verifier for.
     /// @return verifierType The type of verifierType to use.
     function getVerifierType(bytes memory _message) public view returns (VerifierType) {
-        address verifier = Address.fromBytes32(_message.destinationAddress());
+        address verifier = _message.destinationAddress();
         try IMessageVerifier(verifier).verifierType() returns (VerifierType _verifierType) {
             // If the destination address doesn't specify a VerifierType, we use our defaults
             if (_verifierType != VerifierType.NULL) {
@@ -94,7 +93,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     ) internal {
         address verifier;
         if (verifierType == VerifierType.CUSTOM) {
-            verifier = Address.fromBytes32(_message.destinationAddress());
+            verifier = _message.destinationAddress();
         } else {
             verifier = defaultVerifiers[verifierType];
         }
@@ -126,7 +125,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
                 _message.sourceAddress(),
                 _message.data()
             );
-            address destination = Address.fromBytes32(_message.destinationAddress());
+            address destination = _message.destinationAddress();
             (status, data) = destination.call(receiveCall);
         }
 

@@ -93,10 +93,12 @@ library Message {
     function destinationAddress(bytes memory _message)
         internal
         pure
-        returns (bytes32 destinationAddress_)
+        returns (address destinationAddress_)
     {
         assembly {
             // Extract the full 256 bits in the slot.
+            // Even though the destination address is stored as a bytes32, we want to read it as an address.
+            // This is equivalent to address(uint160(destinationAddress_)) if we load destinationAddress_ as a full bytes32.
             destinationAddress_ := mload(add(_message, DESTINATION_ADDRESS_OFFSET))
         }
         return destinationAddress_;
