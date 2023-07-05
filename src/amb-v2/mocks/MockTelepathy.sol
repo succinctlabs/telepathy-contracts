@@ -4,7 +4,11 @@ pragma solidity ^0.8.16;
 import {Address, Bytes32} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
 import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
-import {ITelepathyRouterV2, ITelepathyHandlerV2} from "src/amb-v2/interfaces/ITelepathy.sol";
+import {
+    BROADCAST_ALL_CHAINS,
+    ITelepathyRouterV2,
+    ITelepathyHandlerV2
+} from "src/amb-v2/interfaces/ITelepathy.sol";
 
 /// @title Telepathy Mock AMB for testing
 /// @author Succinct Labs
@@ -67,10 +71,25 @@ contract MockTelepathyV2 is ITelepathyRouterV2 {
         messageId = Message.getId(message);
     }
 
-    /// @notice to execute the next message that has been sent
+    /// @notice Execute the next message that has been sent.
     function executeNextMessage() external returns (bool) {
         bytes memory message = sentMessages[++executedNonce];
         MockTelepathyV2 receiver = telepathyReceivers[Message.destinationChainId(message)];
+        require(receiver != MockTelepathyV2(address(0)), "MockAMB: No receiver for chain");
+        return receiver.executeMessage(message);
+    }
+
+    /// @notice Execute the next message that has been sent.
+    /// @param _destinationChainId which chain to execute the message on. Must be the same
+    ///        as the destinationChainId of the message if BROADCAST_ALL_CHAINS wasn't used.
+    function executeNextMessage(uint32 _destinationChainId) external returns (bool) {
+        bytes memory message = sentMessages[++executedNonce];
+        require(
+            Message.destinationChainId(message) == BROADCAST_ALL_CHAINS
+                || Message.destinationChainId(message) == _destinationChainId,
+            "MockAMB: Message not for chain"
+        );
+        MockTelepathyV2 receiver = telepathyReceivers[_destinationChainId];
         require(receiver != MockTelepathyV2(address(0)), "MockAMB: No receiver for chain");
         return receiver.executeMessage(message);
     }

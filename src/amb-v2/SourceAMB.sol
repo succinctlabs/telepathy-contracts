@@ -14,7 +14,6 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
     using Message for bytes;
 
     error SendingDisabled();
-    error CannotSendToSameChain();
 
     /// @notice Modifier to require that sending is enabled.
     modifier isSendingEnabled() {
@@ -35,7 +34,6 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
         isSendingEnabled
         returns (bytes32)
     {
-        if (_destinationChainId == block.chainid) revert CannotSendToSameChain();
         (bytes memory message, bytes32 messageId) =
             _getMessageAndId(_destinationChainId, _destinationAddress, _data);
         messages[nonce] = messageId;
@@ -54,7 +52,6 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
         isSendingEnabled
         returns (bytes32)
     {
-        if (_destinationChainId == block.chainid) revert CannotSendToSameChain();
         (bytes memory message, bytes32 messageId) =
             _getMessageAndId(_destinationChainId, Bytes32.fromAddress(_destinationAddress), _data);
         messages[nonce] = messageId;

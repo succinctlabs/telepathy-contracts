@@ -9,7 +9,7 @@ abstract contract TelepathyHandlerV2UpgradeableV2 is ITelepathyHandlerV2, Initia
 
     address public telepathyRouter;
 
-    function __TelepathyHandlerV2_init(address _telepathyRouter) public onlyInitializing {
+    function __TelepathyHandlerV2_init(address _telepathyRouter) internal onlyInitializing {
         telepathyRouter = _telepathyRouter;
     }
 

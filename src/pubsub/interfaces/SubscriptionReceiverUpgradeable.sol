@@ -9,7 +9,7 @@ abstract contract SubscriptionReceiverUpgradeable is ISubscriptionReceiver, Init
 
     error NotFromTelepathyPubSub(address sender);
 
-    function __SubscriptionReceiver_init(address _telepathyPubSub) public onlyInitializing {
+    function __SubscriptionReceiver_init(address _telepathyPubSub) internal onlyInitializing {
         telepathyPubSub = TelepathyPubSub(_telepathyPubSub);
     }
 

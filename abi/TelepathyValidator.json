@@ -256,19 +256,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_telepathyPubSub",
-        "type": "address"
-      }
-    ],
-    "name": "__SubscriptionReceiver_init",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "executeAffirmationsEnabled",
     "outputs": [
