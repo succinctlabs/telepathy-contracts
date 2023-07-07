@@ -6,7 +6,7 @@ enum VerifierType {
     CUSTOM,
     ZK_EVENT,
     ZK_STORAGE,
-    ATTESTATION_ETHCALL
+    ATTESTATION_STATE_QUERY
 }
 
 /// @title IMessageVerifier

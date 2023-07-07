@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.16;
 
-import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
+import {Initializable} from "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 
 /// @title BeaconVerifierBase
 /// @author Succinct Labs
 /// @notice Base contract for verifiers to use when verifying against the Beacon LightClient.
-contract BeaconVerifierBase {
+contract BeaconVerifierBase is Initializable {
     /// @notice Source ChainId => LightClient address.
     mapping(uint32 => address) public lightClients;
-    /// @notice Source ChainId => TelepathyRouterV2 address.
+    /// @notice Source ChainId => TelepathyRouter address.
     mapping(uint32 => address) public telepathyRouters;
 
     error InvalidSourceChainLength(uint256 length);
     error LightClientNotFound(uint32 sourceChainId);
     error TelepathyRouterNotFound(uint32 sourceChainId);
 
-    constructor(
+    function __BeaconVerifierBase_init(
         uint32[] memory _sourceChainIds,
         address[] memory _lightClients,
         address[] memory _telepathyRouters
-    ) {
+    ) internal onlyInitializing {
         if (_sourceChainIds.length != _lightClients.length) {
             revert InvalidSourceChainLength(_sourceChainIds.length);
         }

@@ -8,10 +8,9 @@ import {
     ITelepathyRouterV2
 } from "src/amb-v2/interfaces/ITelepathy.sol";
 import {TelepathyRouterV2} from "src/amb-v2/TelepathyRouter.sol";
-import {TelepathyStorageV2Verifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
+import {TelepathyStorageVerifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
 import {TelepathyEventVerifier} from "src/amb-v2/verifier/TelepathyEventVerifier.sol";
 import {Bytes32} from "src/libraries/Typecast.sol";
-import {TelepathyStorageV2Verifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
 import {TelepathyEventVerifier} from "src/amb-v2/verifier/TelepathyEventVerifier.sol";
 import {TelepathyAttestationVerifier} from "src/amb-v2/verifier/TelepathyAttestationVerifier.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
@@ -21,26 +20,21 @@ library WrappedInitialize {
         address _targetAMB,
         uint32 _sourceChainId,
         address _beaconLightClient,
-        address _ethCallGateway,
+        address _stateQueryGateway,
         address _sourceAMB,
         address _timelock,
         address _guardian
     ) internal returns (address, address, address) {
-        uint32[] memory sourceChainIds = new uint32[](0);
-        address[] memory beaconLightClients = new address[](0);
-        address[] memory sourceAMBs = new address[](0);
+        TelepathyRouterV2(_targetAMB).initialize(true, true, _timelock, _guardian);
 
-        TelepathyRouterV2(_targetAMB).initialize(
-            sourceChainIds, beaconLightClients, sourceAMBs, _timelock, _guardian, true
-        );
-
-        return initializeVerifiers(_sourceChainId, _beaconLightClient, _ethCallGateway, _sourceAMB);
+        return
+            initializeVerifiers(_sourceChainId, _beaconLightClient, _stateQueryGateway, _sourceAMB);
     }
 
     function initializeVerifiers(
         uint32 _sourceChainId,
         address _beaconLightClient,
-        address _ethCallGateway,
+        address _stateQueryGateway,
         address _sourceAMB
     ) internal returns (address, address, address) {
         uint32[] memory sourceChainIds = new uint32[](1);
@@ -50,12 +44,20 @@ library WrappedInitialize {
         address[] memory sourceAMBs = new address[](1);
         sourceAMBs[0] = _sourceAMB;
 
-        address storageVerifierAddr =
-            address(new TelepathyStorageV2Verifier(sourceChainIds, beaconLightClients, sourceAMBs));
-        address eventVerifierAddr =
-            address(new TelepathyEventVerifier(sourceChainIds, beaconLightClients, sourceAMBs));
-        address attestationVerifierAddr =
-            address(new TelepathyAttestationVerifier(_ethCallGateway, sourceChainIds, sourceAMBs));
+        address storageVerifierAddr = address(new TelepathyStorageVerifier());
+        TelepathyStorageVerifier(storageVerifierAddr).initialize(
+            sourceChainIds, beaconLightClients, sourceAMBs
+        );
+
+        address eventVerifierAddr = address(new TelepathyEventVerifier());
+        TelepathyEventVerifier(eventVerifierAddr).initialize(
+            sourceChainIds, beaconLightClients, sourceAMBs
+        );
+
+        address attestationVerifierAddr = address(new TelepathyAttestationVerifier());
+        TelepathyAttestationVerifier(attestationVerifierAddr).initialize(
+            _stateQueryGateway, sourceChainIds, sourceAMBs
+        );
 
         return (storageVerifierAddr, eventVerifierAddr, attestationVerifierAddr);
     }

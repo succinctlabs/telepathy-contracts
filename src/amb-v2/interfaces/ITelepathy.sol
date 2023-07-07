@@ -8,7 +8,7 @@ uint32 constant BROADCAST_ALL_CHAINS = uint32(0);
 
 enum MessageStatus {
     NOT_EXECUTED,
-    EXECUTION_FAILED,
+    EXECUTION_FAILED, // Deprecated in V2: failed handleTelepathy calls will cause the execute call to revert
     EXECUTION_SUCCEEDED
 }
 
@@ -30,7 +30,7 @@ interface ITelepathyReceiverV2 {
         uint64 indexed nonce,
         bytes32 indexed msgHash,
         bytes message,
-        bool status
+        bool success
     );
 
     function execute(bytes calldata _proof, bytes calldata _message) external;

@@ -14,16 +14,16 @@ import {WrappedInitialize, SimpleHandler} from "test/amb-v2/TestUtils.sol";
 import {Message} from "src/libraries/Message.sol";
 import {Bytes32, Address} from "src/libraries/Typecast.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
-import {EthCallResponse} from "src/amb-v2/verifier/TelepathyAttestationVerifier.sol";
+import {StateQueryResponse} from "src/amb-v2/verifier/TelepathyAttestationVerifier.sol";
 
-contract MockEthCallGateway {
-    EthCallResponse currResponse;
+contract MockStateQueryGateway {
+    StateQueryResponse currResponse;
 
-    function currentResponse() external view returns (EthCallResponse memory) {
+    function currentResponse() external view returns (StateQueryResponse memory) {
         return currResponse;
     }
 
-    function setCurrentResponse(EthCallResponse memory _response) external {
+    function setCurrentResponse(StateQueryResponse memory _response) external {
         currResponse = _response;
     }
 }
@@ -50,13 +50,13 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
     address DESTINATION_HANDLER = makeAddr("destMessageReceiver");
     bytes constant MESSAGE_DATA = bytes("hello, world!");
 
-    MockEthCallGateway mockEthCallGateway;
+    MockStateQueryGateway mockStateQueryGateway;
     TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
 
     function setUp() public {
         vm.chainId(DESTINATION_CHAIN);
-        mockEthCallGateway = new MockEthCallGateway();
+        mockStateQueryGateway = new MockStateQueryGateway();
 
         // Set up the TelepathyRouterV2 contract.
         TelepathyRouterV2 targetAMBImpl = new TelepathyRouterV2();
@@ -69,11 +69,13 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
             address(telepathyRouter),
             SOURCE_CHAIN,
             makeAddr("beaconLightClient"),
-            address(mockEthCallGateway),
+            address(mockStateQueryGateway),
             SOURCE_TELEPATHY_ROUTER,
             timelock,
             address(this)
         );
+        // manually override VERSION, TODO generate new fixtures for V2
+        vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
 
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_STORAGE, storageVerifierAddr);
@@ -81,7 +83,7 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_EVENT, eventVerifierAddr);
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(
-            VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
+            VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
 
         // Setup the SimpleHandler contract which is a TelepathyHandlerV2,
@@ -90,7 +92,7 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         vm.etch(DESTINATION_HANDLER, address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(DESTINATION_HANDLER);
         simpleHandler.setParams(SOURCE_CHAIN, SOURCE_SENDER, address(telepathyRouter));
-        simpleHandler.setVerifierType(VerifierType.ATTESTATION_ETHCALL);
+        simpleHandler.setVerifierType(VerifierType.ATTESTATION_STATE_QUERY);
     }
 
     function test_ExecuteMessage() public {
@@ -109,8 +111,8 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
 
         bytes memory messageIdBytes = abi.encode(message.getId());
-        mockEthCallGateway.setCurrentResponse(
-            EthCallResponse(
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
                 SOURCE_CHAIN,
                 0,
                 SOURCE_SENDER,
@@ -121,7 +123,7 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         );
 
         vm.chainId(DESTINATION_CHAIN);
-        vm.prank(address(mockEthCallGateway));
+        vm.prank(address(mockStateQueryGateway));
         telepathyRouter.execute(hex"", message);
 
         assertTrue(
@@ -149,7 +151,7 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
 
         vm.chainId(DESTINATION_CHAIN);
-        vm.prank(address(mockEthCallGateway));
+        vm.prank(address(mockStateQueryGateway));
         vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
         telepathyRouter.execute(hex"", message);
     }

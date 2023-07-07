@@ -4,19 +4,22 @@ pragma solidity ^0.8.16;
 import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {SourceAMBV2} from "src/amb-v2/SourceAMB.sol";
 import {Message} from "src/libraries/Message.sol";
+import {Initializable} from "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 
-/// @notice Struct for eth_call request information wrapped with the attested result.
-/// @param chainId The chain ID of the chain where the eth_call will be made.
-/// @param blockNumber The block number of the chain where the eth_call is made.
-///        If blockNumber is 0, then the eth_call is made at the latest avaliable
+/// @notice Struct for StateQuery request information wrapped with the attested result.
+/// @dev Setting these corresponse to the `CallMsg` fields of StateQuery:
+///      https://github.com/ethereum/go-ethereum/blob/fd5d2ef0a6d9eac7542ead4bfbc9b5f0f399eb10/interfaces.go#L134
+/// @param chainId The chain ID of the chain where the StateQuery will be made.
+/// @param blockNumber The block number of the chain where the StateQuery is made.
+///        If blockNumber is 0, then the StateQuery is made at the latest avaliable
 ///        block.
-/// @param fromAddress The address that is used as the 'from' eth_call argument
+/// @param fromAddress The address that is used as the 'from' StateQuery argument
 ///        (influencing msg.sender & tx.origin). If set to address(0) then the
 ///        call is made from address(0).
-/// @param toAddress The address that is used as the 'to' eth_call argument.
-/// @param toCalldata The calldata that is used as the 'data' eth_call argument.
-/// @param result The result from executing the eth_call.
-struct EthCallResponse {
+/// @param toAddress The address that is used as the 'to' StateQuery argument.
+/// @param toCalldata The calldata that is used as the 'data' StateQuery argument.
+/// @param result The result from executing the StateQuery.
+struct StateQueryResponse {
     uint32 chainId;
     uint64 blockNumber;
     address fromAddress;
@@ -25,19 +28,19 @@ struct EthCallResponse {
     bytes result;
 }
 
-interface IEthCallGateway {
+interface IStateQueryGateway {
     /// @notice The response currently being processed by the gateway.
-    function currentResponse() external view returns (EthCallResponse memory);
+    function currentResponse() external view returns (StateQueryResponse memory);
 }
 
 /// @title TelepathyAttestationVerifier
 /// @author Succinct Labs
-/// @notice Verifies messages using Telepathy EthCall attestations.
-contract TelepathyAttestationVerifier is IMessageVerifier {
+/// @notice Verifies messages using Telepathy StateQuery attestations.
+contract TelepathyAttestationVerifier is IMessageVerifier, Initializable {
     using Message for bytes;
 
-    /// @notice The address of the EthCallGateway contract.
-    address public immutable ethCallGateway;
+    /// @notice The address of the StateQueryGateway contract.
+    address public stateQueryGateway;
     /// @notice Source ChainId => TelepathyRouterV2 address.
     mapping(uint32 => address) public telepathyRouters;
 
@@ -50,12 +53,15 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
     error InvalidMessageId(bytes32 messageId);
     error InvalidFuncSelector(bytes4 selector);
 
-    constructor(
-        address _ethCallGateway,
+    /// @param _stateQueryGateway The address of the StateQueryGateway contract on this chain.
+    /// @param _sourceChainIds The chain IDs that this contract will verify messages from.
+    /// @param _telepathyRouters The sending TelepathyRouters, one for each sourceChainId.
+    function initialize(
+        address _stateQueryGateway,
         uint32[] memory _sourceChainIds,
         address[] memory _telepathyRouters
-    ) {
-        ethCallGateway = _ethCallGateway;
+    ) external initializer {
+        stateQueryGateway = _stateQueryGateway;
         if (_sourceChainIds.length != _telepathyRouters.length) {
             revert InvalidSourceChainLength(_sourceChainIds.length);
         }
@@ -65,10 +71,10 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
     }
 
     function verifierType() external pure override returns (VerifierType) {
-        return VerifierType.ATTESTATION_ETHCALL;
+        return VerifierType.ATTESTATION_STATE_QUERY;
     }
 
-    /// @notice Verifies messages using Telepathy EthCall attestations.
+    /// @notice Verifies messages using Telepathy StateQuery attestations.
     /// @dev The first argument will be the same as the response.result (in the expected case),
     ///      so it is better to just ignore it.
     /// @param _message The message to verify.
@@ -78,7 +84,7 @@ contract TelepathyAttestationVerifier is IMessageVerifier {
         override
         returns (bool)
     {
-        EthCallResponse memory response = IEthCallGateway(ethCallGateway).currentResponse();
+        StateQueryResponse memory response = IStateQueryGateway(stateQueryGateway).currentResponse();
         if (response.result.length == 0) {
             revert InvalidResult();
         }

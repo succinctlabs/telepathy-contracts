@@ -12,7 +12,7 @@ import {SimpleHandler} from "test/amb-v2/TestUtils.sol";
 import {WrappedInitialize} from "test/amb-v2/TestUtils.sol";
 import {BeaconChainForks} from "src/libraries/BeaconChainForks.sol";
 import {Message} from "src/libraries/Message.sol";
-import {Bytes32, Address} from "src/libraries/Typecast.sol";
+import {Bytes32} from "src/libraries/Typecast.sol";
 import {TelepathyEventVerifier} from "src/amb-v2/verifier/TelepathyEventVerifier.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
@@ -75,11 +75,13 @@ contract TargetAMBV2EventVerifierTest is Test {
             address(telepathyRouter),
             testParams.SOURCE_CHAIN,
             address(beaconLightClient),
-            makeAddr("ethCallGateway"),
+            makeAddr("stateQueryGateway"),
             testParams.sourceAMBAddress,
             timelock,
             address(this)
         );
+        // manually override VERSION, TODO generate new fixtures for V2
+        vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
 
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_STORAGE, storageVerifierAddr);
@@ -87,7 +89,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_EVENT, eventVerifierAddr);
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(
-            VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
+            VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
 
         // Then initialize the contract that will be called by the TargetAMBV2
@@ -231,7 +233,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId()));
 
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
-        address destination = Address.fromBytes32(message.destinationAddress());
+        address destination = message.destinationAddress();
         vm.etch(address(destination), address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(address(destination));
         simpleHandler.setParams(
@@ -273,7 +275,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId()));
 
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
-        address destination = Address.fromBytes32(message.destinationAddress());
+        address destination = message.destinationAddress();
         vm.etch(address(destination), address(simpleHandlerTemplate).code);
         simpleHandler = SimpleHandler(address(destination));
         simpleHandler.setParams(

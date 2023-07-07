@@ -11,7 +11,7 @@ import {BeaconVerifierBase} from "src/amb-v2/verifier/BeaconVerifierBase.sol";
 /// @author Succinct Labs
 /// @notice Verifies messages using a storage proof of inclusion in the source chain's
 ///         TelepathyRouterV2.
-contract TelepathyStorageV2Verifier is IMessageVerifier, BeaconVerifierBase {
+contract TelepathyStorageVerifier is IMessageVerifier, BeaconVerifierBase {
     using Message for bytes;
 
     /// @notice The index of the `messages` mapping in TelepathyStorageV2.sol.
@@ -25,11 +25,16 @@ contract TelepathyStorageV2Verifier is IMessageVerifier, BeaconVerifierBase {
     error ExecutionStateRootNotSet(address lightClient, uint64 slot);
     error InvalidStorageProof();
 
-    constructor(
+    /// @param _sourceChainIds The chain IDs that this contract will verify messages from.
+    /// @param _lightClients The Beacon Light Clients, one for each sourceChainId.
+    /// @param _telepathyRouters The sending TelepathyRouters, one for each sourceChainId.
+    function initialize(
         uint32[] memory _sourceChainIds,
         address[] memory _lightClients,
         address[] memory _telepathyRouters
-    ) BeaconVerifierBase(_sourceChainIds, _lightClients, _telepathyRouters) {}
+    ) external initializer {
+        __BeaconVerifierBase_init(_sourceChainIds, _lightClients, _telepathyRouters);
+    }
 
     function verifierType() external pure override returns (VerifierType) {
         return VerifierType.ZK_STORAGE;

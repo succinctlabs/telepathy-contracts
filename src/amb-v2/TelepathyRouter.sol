@@ -19,7 +19,7 @@ import {UUPSUpgradeable} from "@openzeppelin-upgradeable/contracts/proxy/utils/U
 /// @notice Send and receive arbitrary messages from other chains.
 contract TelepathyRouterV2 is SourceAMBV2, TargetAMBV2, TelepathyAccessV2, UUPSUpgradeable {
     /// @notice Returns current contract version.
-    uint8 public constant VERSION = 1;
+    uint8 public constant VERSION = 2;
 
     /// @notice Prevents the implementation contract from being initialized outside of the upgradeable proxy.
     constructor() {
@@ -27,15 +27,15 @@ contract TelepathyRouterV2 is SourceAMBV2, TargetAMBV2, TelepathyAccessV2, UUPSU
     }
 
     /// @notice Initializes the contract and the parent contracts once.
-    /// @dev As of the switch to use external IMessageVerifiers, lightClients and telepathyRouters
-    ///      are no longer stored and should not be passed in to this function.
+    /// @param _sendingEnabled Whether the router is allowed to send messages.
+    /// @param _executingEnabled Whether the router is allowed to execute messages.
+    /// @param _timelock The address of the timelock.
+    /// @param _guardian The address of the guardian.
     function initialize(
-        uint32[] memory _sourceChainIds,
-        address[] memory,
-        address[] memory,
+        bool _sendingEnabled,
+        bool _executingEnabled,
         address _timelock,
-        address _guardian,
-        bool _sendingEnabled
+        address _guardian
     ) external initializer {
         __ReentrancyGuard_init();
         __AccessControl_init();
@@ -44,13 +44,8 @@ contract TelepathyRouterV2 is SourceAMBV2, TargetAMBV2, TelepathyAccessV2, UUPSU
         _grantRole(DEFAULT_ADMIN_ROLE, _timelock);
         __UUPSUpgradeable_init();
 
-        require(
-            _sourceChainIds.length == 0,
-            "TelepathyRouterV2 no longer stores lightClients and telepathyRouters"
-        );
-
         sendingEnabled = _sendingEnabled;
-        executingEnabled = true; // TODO: set from a parameter
+        executingEnabled = _executingEnabled;
         version = VERSION;
     }
 

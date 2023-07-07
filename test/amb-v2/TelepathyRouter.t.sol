@@ -15,31 +15,24 @@ contract TelepathyRouterV2Test is Test {
     function test_InitializeImplementation() public {
         TelepathyRouterV2 telepathyRouter = new TelepathyRouterV2();
 
-        uint32[] memory sourceChainIds = new uint32[](0);
-        address[] memory lightClients = new address[](0);
-        address[] memory broadcasters = new address[](0);
-
         vm.expectRevert();
-        telepathyRouter.initialize(
-            sourceChainIds, lightClients, broadcasters, address(this), address(this), true
-        );
+        telepathyRouter.initialize(true, true, address(this), address(this));
     }
 
     function test_InitializeProxy() public {
         TelepathyRouterV2 implementation = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(implementation), "");
 
-        uint32[] memory sourceChainIds = new uint32[](0);
-        address[] memory lightClients = new address[](0);
-        address[] memory broadcasters = new address[](0);
-
-        TelepathyRouterV2(address(proxy)).initialize(
-            sourceChainIds, lightClients, broadcasters, address(this), address(this), true
-        );
+        TelepathyRouterV2(address(proxy)).initialize(true, true, address(this), address(this));
     }
 }
 
-contract TelepathyRouterV2UpgradeableTest is Test {
+contract TestErrors {
+    error OnlyTimelock(address sender);
+    error OnlyGuardian(address sender);
+}
+
+contract TelepathyRouterV2UpgradeableTest is Test, TestErrors {
     uint32 constant SOURCE_CHAIN = 1;
     uint32 constant DESTINATION_CHAIN = 10;
 
@@ -74,7 +67,7 @@ contract TelepathyRouterV2UpgradeableTest is Test {
             address(wrappedRouterProxy),
             uint32(block.chainid),
             makeAddr("beaconLightClient"),
-            makeAddr("ethCallGateway"),
+            makeAddr("stateQueryGateway"),
             makeAddr("sourceAMB"),
             address(timelock),
             address(this)
@@ -86,7 +79,7 @@ contract TelepathyRouterV2UpgradeableTest is Test {
         wrappedRouterProxy.setDefaultVerifier(VerifierType.ZK_EVENT, eventVerifierAddr);
         vm.prank(address(timelock));
         wrappedRouterProxy.setDefaultVerifier(
-            VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
+            VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
     }
 
@@ -198,7 +191,8 @@ contract TelepathyRouterV2UpgradeableTest is Test {
     function test_RevertUpgrade_WhenNonOwner() public {
         ContractV2Upgradeable testContractV2 = new ContractV2Upgradeable();
 
-        vm.expectRevert(bytes("TelepathyRouterV2: only timelock can call this function"));
+        vm.expectRevert(abi.encodeWithSelector(OnlyTimelock.selector, msg.sender));
+        vm.prank(msg.sender);
         wrappedRouterProxy.upgradeTo(address(testContractV2));
     }
 }

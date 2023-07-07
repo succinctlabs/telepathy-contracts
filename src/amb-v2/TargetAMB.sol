@@ -3,7 +3,6 @@ pragma solidity ^0.8.16;
 
 import {ReentrancyGuardUpgradeable} from
     "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
-import {Address} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
 import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {
@@ -20,8 +19,14 @@ import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMe
 contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepathyReceiverV2 {
     using Message for bytes;
 
+    error MessageAlreadyExecuted(bytes32 messageId);
+    error MessageNotForChain(bytes32 messageId, uint32 destinationChainId, uint32 currentChainId);
+    error MessageWrongVersion(bytes32 messageId, uint8 messageVersion, uint8 currentVersion);
+    error ExecutionDisabled();
     error VerifierNotFound(uint256 verifierType);
     error VerificationFailed();
+    error CallFailed();
+    error InvalidSelector();
 
     /// @notice Execute a message generically
     /// @param _proofData The proof of the message, which gets used for verification.
@@ -42,7 +47,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     /// @param _message The message to get the verifier for.
     /// @return verifierType The type of verifierType to use.
     function getVerifierType(bytes memory _message) public view returns (VerifierType) {
-        address verifier = Address.fromBytes32(_message.destinationAddress());
+        address verifier = _message.destinationAddress();
         try IMessageVerifier(verifier).verifierType() returns (VerifierType _verifierType) {
             // If the destination address doesn't specify a VerifierType, we use our defaults
             if (_verifierType != VerifierType.NULL) {
@@ -59,7 +64,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
             return VerifierType.ZK_EVENT;
         }
         // Otherwise use the Attestation verification
-        return VerifierType.ATTESTATION_ETHCALL;
+        return VerifierType.ATTESTATION_STATE_QUERY;
     }
 
     /// @notice Checks conditions before message execution.
@@ -71,15 +76,16 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
         view
     {
         if (messageStatus[_messageId] != MessageStatus.NOT_EXECUTED) {
-            revert("Message already executed.");
+            revert MessageAlreadyExecuted(_messageId);
         } else if (
-            _destinationChainId != BROADCAST_ALL_CHAINS && _destinationChainId != block.chainid
+            _destinationChainId != BROADCAST_ALL_CHAINS
+                && _destinationChainId != uint32(block.chainid)
         ) {
-            revert("Wrong chain.");
+            revert MessageNotForChain(_messageId, _destinationChainId, uint32(block.chainid));
         } else if (_version != version) {
-            revert("Wrong version.");
+            revert MessageWrongVersion(_messageId, _version, version);
         } else if (!executingEnabled) {
-            revert("Execution disabled.");
+            revert ExecutionDisabled();
         }
     }
 
@@ -94,7 +100,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     ) internal {
         address verifier;
         if (verifierType == VerifierType.CUSTOM) {
-            verifier = Address.fromBytes32(_message.destinationAddress());
+            verifier = _message.destinationAddress();
         } else {
             verifier = defaultVerifiers[verifierType];
         }
@@ -117,7 +123,9 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     /// @param _message The message to be executed.
     /// @param _messageId The unique message identifier.
     function _executeMessage(bytes memory _message, bytes32 _messageId) internal {
-        bool status;
+        messageStatus[_messageId] = MessageStatus.EXECUTION_SUCCEEDED;
+
+        bool success;
         bytes memory data;
         {
             bytes memory receiveCall = abi.encodeWithSelector(
@@ -126,8 +134,8 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
                 _message.sourceAddress(),
                 _message.data()
             );
-            address destination = Address.fromBytes32(_message.destinationAddress());
-            (status, data) = destination.call(receiveCall);
+            address destination = _message.destinationAddress();
+            (success, data) = destination.call(receiveCall);
         }
 
         // Unfortunately, there are some edge cases where a call may have a successful status but
@@ -140,14 +148,14 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
             implementsHandler = magic == ITelepathyHandlerV2.handleTelepathy.selector;
         }
 
-        if (status && implementsHandler) {
-            messageStatus[_messageId] = MessageStatus.EXECUTION_SUCCEEDED;
-        } else {
-            messageStatus[_messageId] = MessageStatus.EXECUTION_FAILED;
+        if (!success) {
+            revert CallFailed();
+        } else if (!implementsHandler) {
+            revert InvalidSelector();
         }
 
         emit ExecutedMessage(
-            _message.sourceChainId(), _message.nonce(), _messageId, _message, status
+            _message.sourceChainId(), _message.nonce(), _messageId, _message, success
         );
     }
 }
