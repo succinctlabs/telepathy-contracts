@@ -19,6 +19,10 @@ import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMe
 contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepathyReceiverV2 {
     using Message for bytes;
 
+    error MessageAlreadyExecuted(bytes32 messageId);
+    error MessageNotForChain(bytes32 messageId, uint32 destinationChainId, uint32 currentChainId);
+    error MessageWrongVersion(bytes32 messageId, uint8 messageVersion, uint8 currentVersion);
+    error ExecutionDisabled();
     error VerifierNotFound(uint256 verifierType);
     error VerificationFailed();
 
@@ -58,7 +62,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
             return VerifierType.ZK_EVENT;
         }
         // Otherwise use the Attestation verification
-        return VerifierType.ATTESTATION_ETHCALL;
+        return VerifierType.ATTESTATION_STATE_QUERY;
     }
 
     /// @notice Checks conditions before message execution.
@@ -70,15 +74,16 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
         view
     {
         if (messageStatus[_messageId] != MessageStatus.NOT_EXECUTED) {
-            revert("Message already executed.");
+            revert MessageAlreadyExecuted(_messageId);
         } else if (
-            _destinationChainId != BROADCAST_ALL_CHAINS && _destinationChainId != block.chainid
+            _destinationChainId != BROADCAST_ALL_CHAINS
+                && _destinationChainId != uint32(block.chainid)
         ) {
-            revert("Wrong chain.");
+            revert MessageNotForChain(_messageId, _destinationChainId, uint32(block.chainid));
         } else if (_version != version) {
-            revert("Wrong version.");
+            revert MessageWrongVersion(_messageId, _version, version);
         } else if (!executingEnabled) {
-            revert("Execution disabled.");
+            revert ExecutionDisabled();
         }
     }
 

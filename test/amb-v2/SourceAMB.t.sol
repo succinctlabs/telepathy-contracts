@@ -37,7 +37,7 @@ contract SourceAMBV2Test is Test {
             address(telepathyRouter),
             uint32(block.chainid),
             makeAddr("beaconLightClient"),
-            makeAddr("ethCallGateway"),
+            makeAddr("stateQueryGateway"),
             makeAddr("sourceAMB"),
             timelock,
             address(this)
@@ -49,7 +49,7 @@ contract SourceAMBV2Test is Test {
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_EVENT, eventVerifierAddr);
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(
-            VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
+            VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
     }
 

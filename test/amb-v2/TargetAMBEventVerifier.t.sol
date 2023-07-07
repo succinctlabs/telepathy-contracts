@@ -75,7 +75,7 @@ contract TargetAMBV2EventVerifierTest is Test {
             address(telepathyRouter),
             testParams.SOURCE_CHAIN,
             address(beaconLightClient),
-            makeAddr("ethCallGateway"),
+            makeAddr("stateQueryGateway"),
             testParams.sourceAMBAddress,
             timelock,
             address(this)
@@ -89,7 +89,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_EVENT, eventVerifierAddr);
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(
-            VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
+            VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
 
         // Then initialize the contract that will be called by the TargetAMBV2

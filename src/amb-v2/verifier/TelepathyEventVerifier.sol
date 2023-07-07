@@ -28,11 +28,16 @@ contract TelepathyEventVerifier is IMessageVerifier, BeaconVerifierBase {
     error InvalidReceiptsRootProof();
     error InvalidEventProof();
 
-    constructor(
+    /// @param _sourceChainIds The chain IDs that this contract will verify messages from.
+    /// @param _lightClients The Beacon Light Clients, one for each sourceChainId.
+    /// @param _telepathyRouters The sending TelepathyRouters, one for each sourceChainId.
+    function initialize(
         uint32[] memory _sourceChainIds,
         address[] memory _lightClients,
         address[] memory _telepathyRouters
-    ) BeaconVerifierBase(_sourceChainIds, _lightClients, _telepathyRouters) {}
+    ) external initializer {
+        __BeaconVerifierBase_init(_sourceChainIds, _lightClients, _telepathyRouters);
+    }
 
     function verifierType() external pure override returns (VerifierType) {
         return VerifierType.ZK_EVENT;

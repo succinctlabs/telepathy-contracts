@@ -10,7 +10,7 @@ import {Message} from "src/libraries/Message.sol";
 import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {LightClientMock} from "src/lightclient/LightClientMock.sol";
 import {WrappedInitialize, SimpleHandler} from "test/amb-v2/TestUtils.sol";
-import {TelepathyStorageV2Verifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
+import {TelepathyStorageVerifier} from "src/amb-v2/verifier/TelepathyStorageVerifier.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 
 // The weird ordering here is because vm.parseJSON requires
@@ -41,13 +41,22 @@ struct ExecuteMessageFromStorageParams {
     bytes32 storageRoot;
 }
 
-contract TargetAMBV2StorageVerifierTest is Test {
+contract TestErrors {
+    error MessageAlreadyExecuted(bytes32 messageId);
+    error MessageNotForChain(bytes32 messageId, uint32 destinationChainId, uint32 currentChainId);
+    error MessageWrongVersion(bytes32 messageId, uint8 messageVersion, uint8 currentVersion);
+    error ExecutionDisabled();
+    error VerifierNotFound(uint256 verifierType);
+    error VerificationFailed();
+}
+
+contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
     using Message for bytes;
 
     LightClientMock beaconLightClient;
     TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
-    TelepathyStorageV2Verifier storageVerifier;
+    TelepathyStorageVerifier storageVerifier;
 
     function setUp() public {
         beaconLightClient = new LightClientMock();
@@ -125,7 +134,7 @@ contract TargetAMBV2StorageVerifierTest is Test {
             address(telepathyRouter),
             messageParams.SOURCE_CHAIN,
             address(beaconLightClient),
-            makeAddr("ethCallGateway"),
+            makeAddr("stateQueryGateway"),
             messageParams.sourceAMBAddress,
             timelock,
             address(this)
@@ -139,10 +148,10 @@ contract TargetAMBV2StorageVerifierTest is Test {
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_EVENT, eventVerifierAddr);
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(
-            VerifierType.ATTESTATION_ETHCALL, attestationVerifierAddr
+            VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
 
-        storageVerifier = TelepathyStorageV2Verifier(storageVerifierAddr);
+        storageVerifier = TelepathyStorageVerifier(storageVerifierAddr);
 
         // Then initialize the contract that will be called by the TargetAMBV2
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
@@ -218,7 +227,9 @@ contract TargetAMBV2StorageVerifierTest is Test {
                 == MessageStatus.EXECUTION_SUCCEEDED
         );
 
-        vm.expectRevert("Message already executed.");
+        vm.expectRevert(
+            abi.encodeWithSelector(MessageAlreadyExecuted.selector, messageParams.message.getId())
+        );
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof

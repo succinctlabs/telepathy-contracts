@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.16;
 
-import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
 import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
 import {AccessControlUpgradeable} from
@@ -20,27 +19,28 @@ contract TelepathyAccessV2 is TelepathyStorageV2, AccessControlUpgradeable {
     /// @notice A random constant used to identify addresses with the permission of a 'timelock'.
     bytes32 public constant TIMELOCK_ROLE = keccak256("TIMELOCK_ROLE");
 
+    error OnlyAdmin(address sender);
+    error OnlyTimelock(address sender);
+    error OnlyGuardian(address sender);
+
     modifier onlyAdmin() {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "TelepathyRouterV2: only admin can call this function"
-        );
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert OnlyAdmin(msg.sender);
+        }
         _;
     }
 
     modifier onlyTimelock() {
-        require(
-            hasRole(TIMELOCK_ROLE, msg.sender),
-            "TelepathyRouterV2: only timelock can call this function"
-        );
+        if (!hasRole(TIMELOCK_ROLE, msg.sender)) {
+            revert OnlyTimelock(msg.sender);
+        }
         _;
     }
 
     modifier onlyGuardian() {
-        require(
-            hasRole(GUARDIAN_ROLE, msg.sender),
-            "TelepathyRouterV2: only guardian can call this function"
-        );
+        if (!hasRole(GUARDIAN_ROLE, msg.sender)) {
+            revert OnlyGuardian(msg.sender);
+        }
         _;
     }
 
@@ -66,5 +66,11 @@ contract TelepathyAccessV2 is TelepathyStorageV2, AccessControlUpgradeable {
         onlyTimelock
     {
         defaultVerifiers[_verifierType] = _verifier;
+    }
+
+    /// @notice Sets the current version of the contract.
+    /// @param _version The new version.
+    function setVersion(uint8 _version) external onlyTimelock {
+        version = _version;
     }
 }
