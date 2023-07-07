@@ -48,6 +48,8 @@ contract TestErrors {
     error ExecutionDisabled();
     error VerifierNotFound(uint256 verifierType);
     error VerificationFailed();
+    error CallFailed();
+    error InvalidSelector();
 }
 
 contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
@@ -197,15 +199,16 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         getDefaultContractSetup(messageParams);
 
         // Finally, execute the message and check that it failed
+        vm.expectRevert();
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
             ),
             messageParams.message
         );
-        assertTrue(
+        assertFalse(
             telepathyRouter.messageStatus(messageParams.message.getId())
-                == MessageStatus.EXECUTION_FAILED
+                == MessageStatus.EXECUTION_SUCCEEDED
         );
 
         assertEq(simpleHandler.nonce(), 0);
@@ -263,15 +266,16 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         );
 
         // Finally, execute the message and check that it failed
+        vm.expectRevert();
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
             ),
             messageParams.message
         );
-        assertTrue(
+        assertFalse(
             telepathyRouter.messageStatus(messageParams.message.getId())
-                == MessageStatus.EXECUTION_FAILED
+                == MessageStatus.EXECUTION_SUCCEEDED
         );
 
         assertEq(simpleHandler.nonce(), 0);

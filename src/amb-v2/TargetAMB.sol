@@ -25,6 +25,8 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     error ExecutionDisabled();
     error VerifierNotFound(uint256 verifierType);
     error VerificationFailed();
+    error CallFailed();
+    error InvalidSelector();
 
     /// @notice Execute a message generically
     /// @param _proofData The proof of the message, which gets used for verification.
@@ -121,7 +123,9 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     /// @param _message The message to be executed.
     /// @param _messageId The unique message identifier.
     function _executeMessage(bytes memory _message, bytes32 _messageId) internal {
-        bool status;
+        messageStatus[_messageId] = MessageStatus.EXECUTION_SUCCEEDED;
+
+        bool success;
         bytes memory data;
         {
             bytes memory receiveCall = abi.encodeWithSelector(
@@ -131,7 +135,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
                 _message.data()
             );
             address destination = _message.destinationAddress();
-            (status, data) = destination.call(receiveCall);
+            (success, data) = destination.call(receiveCall);
         }
 
         // Unfortunately, there are some edge cases where a call may have a successful status but
@@ -144,14 +148,14 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
             implementsHandler = magic == ITelepathyHandlerV2.handleTelepathy.selector;
         }
 
-        if (status && implementsHandler) {
-            messageStatus[_messageId] = MessageStatus.EXECUTION_SUCCEEDED;
-        } else {
-            messageStatus[_messageId] = MessageStatus.EXECUTION_FAILED;
+        if (!success) {
+            revert CallFailed();
+        } else if (!implementsHandler) {
+            revert InvalidSelector();
         }
 
         emit ExecutedMessage(
-            _message.sourceChainId(), _message.nonce(), _messageId, _message, status
+            _message.sourceChainId(), _message.nonce(), _messageId, _message, success
         );
     }
 }
