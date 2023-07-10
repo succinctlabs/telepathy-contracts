@@ -4,25 +4,33 @@ import {SSZ} from "src/libraries/SimpleSerialize.sol";
 
 library BeaconOracleHelper {
     /// @notice Beacon block constants
-    uint256 internal constant BEACON_STATE_ROOT_INDEX = 11;
-    uint256 internal constant BASE_DEPOSIT_INDEX = 6336;
-    uint256 internal constant BASE_WITHDRAWAL_INDEX = 103360;
-    uint256 internal constant EXECUTION_PAYLOAD_BLOCK_NUMBER_INDEX = 3222;
+    uint256 internal constant SLOT_IDX = 8;
+    uint256 internal constant PROPOSER_INDEX_IDX = 9;
+    uint256 internal constant BEACON_STATE_ROOT_IDX = 11;
+    uint256 internal constant GRAFFITI_IDX = 194;
+    uint256 internal constant BASE_DEPOSIT_IDX = 6336;
+    uint256 internal constant BASE_WITHDRAWAL_IDX = 103360;
+    uint256 internal constant EXECUTION_PAYLOAD_BLOCK_NUMBER_IDX = 3222;
+
+    /// @notice Beacon state constants
+    uint256 internal constant BASE_BEACON_BLOCK_ROOTS_IDX = 303104;
+    uint256 internal constant BASE_BEACON_STATE_ROOTS_IDX = 311296;
+    uint256 public constant SLOTS_PER_HISTORICAL_ROOT = 8192;
 
     /// @notice Validator proof constants
-    uint256 internal constant BASE_VALIDATOR_INDEX = 94557999988736;
+    uint256 internal constant BASE_VALIDATOR_IDX = 94557999988736;
     uint256 internal constant VALIDATOR_FIELDS_LENGTH = 8;
-    uint256 internal constant PUBKEY_INDEX = 0;
-    uint256 internal constant WITHDRAWAL_CREDENTIALS_INDEX = 1;
-    uint256 internal constant EFFECTIVE_BALANCE_INDEX = 2;
-    uint256 internal constant SLASHED_INDEX = 3;
-    uint256 internal constant ACTIVATION_ELIGIBILITY_EPOCH_INDEX = 4;
-    uint256 internal constant ACTIVATION_EPOCH_INDEX = 5;
-    uint256 internal constant EXIT_EPOCH_INDEX = 6;
-    uint256 internal constant WITHDRAWABLE_EPOCH_INDEX = 7;
+    uint256 internal constant PUBKEY_IDX = 0;
+    uint256 internal constant WITHDRAWAL_CREDENTIALS_IDX = 1;
+    uint256 internal constant EFFECTIVE_BALANCE_IDX = 2;
+    uint256 internal constant SLASHED_IDX = 3;
+    uint256 internal constant ACTIVATION_ELIGIBILITY_EPOCH_IDX = 4;
+    uint256 internal constant ACTIVATION_EPOCH_IDX = 5;
+    uint256 internal constant EXIT_EPOCH_IDX = 6;
+    uint256 internal constant WITHDRAWABLE_EPOCH_IDX = 7;
 
     /// @notice Balance constants
-    uint256 internal constant BASE_BALANCE_INDEX = 24189255811072;
+    uint256 internal constant BASE_BALANCE_IDX = 24189255811072;
 
     /// @notice Errors
     // Beacon State Proof Errors
@@ -30,10 +38,15 @@ library BeaconOracleHelper {
     error InvalidCompleteValidatorProof(uint256 validatorIndex);
     error InvalidValidatorFieldProof(ValidatorField field, uint256 validatorIndex);
     error InvalidBalanceProof(uint256 validatorIndex);
+    error InvalidTargetBeaconBlockProof();
+    error InvalidTargetBeaconStateProof();
 
     // Beacon Block Proof Errors
+    error InvalidSlotProof();
     error InvalidBeaconStateRootProof();
+    error InvalidGraffitiProof();
     error InvalidBlockNumberProof();
+    error InvalidProposerIndexProof();
     error InvalidDepositProof(bytes32 validatorPubkeyHash);
     error InvalidWithdrawalProofIndex(uint256 validatorIndex);
     error InvalidWithdrawalProofAmount(uint256 validatorIndex);
@@ -42,6 +55,12 @@ library BeaconOracleHelper {
         uint256 slot;
         bytes32 beaconStateRoot;
         bytes32[] beaconStateRootProof;
+    }
+
+    struct TargetBeaconBlockRootProofInfo {
+        uint256 targetSlot;
+        bytes32 targetBeaconBlockRoot;
+        bytes32[] targetBeaconBlockRootProof;
     }
 
     struct ValidatorProofInfo {
@@ -83,6 +102,23 @@ library BeaconOracleHelper {
         WithdrawableEpoch
     }
 
+    function _verifySlot(
+        uint256 _slot,
+        bytes32[] memory _slotProof,
+        bytes32 _blockHeaderRoot
+    ) internal pure {
+        if (
+            !SSZ.isValidMerkleBranch(
+                SSZ.toLittleEndian(_slot),
+                SLOT_IDX,
+                _slotProof,
+                _blockHeaderRoot
+            )
+        ) {
+            revert InvalidSlotProof();
+        }
+    }
+
     function _verifyBlockNumber(
         uint256 _blockNumber,
         bytes32[] memory _blockNumberProof,
@@ -91,7 +127,7 @@ library BeaconOracleHelper {
         if (
             !SSZ.isValidMerkleBranch(
                 SSZ.toLittleEndian(_blockNumber),
-                EXECUTION_PAYLOAD_BLOCK_NUMBER_INDEX,
+                EXECUTION_PAYLOAD_BLOCK_NUMBER_IDX,
                 _blockNumberProof,
                 _blockHeaderRoot
             )
@@ -107,12 +143,71 @@ library BeaconOracleHelper {
         if (
             !SSZ.isValidMerkleBranch(
                 _beaconStateRootProofInfo.beaconStateRoot,
-                BEACON_STATE_ROOT_INDEX,
+                BEACON_STATE_ROOT_IDX,
                 _beaconStateRootProofInfo.beaconStateRootProof,
                 _blockHeaderRoot
             )
         ) {
             revert InvalidBeaconStateRootProof();
+        }
+    }
+
+    function _verifyProposerIndex(
+        uint256 _proposerIndex,
+        bytes32[] memory _proposerIndexProof,
+        bytes32 _beaconBlockRoot
+    ) internal pure {
+        if (
+            !SSZ.isValidMerkleBranch(
+                SSZ.toLittleEndian(_proposerIndex),
+                PROPOSER_INDEX_IDX,
+                _proposerIndexProof,
+                _beaconBlockRoot
+            )
+        ) {
+            revert InvalidProposerIndexProof();
+        }
+    }
+
+    function _verifyTargetBeaconBlockRoot(TargetBeaconBlockRootProofInfo calldata _targetBeaconBlockRootProofInfo, bytes32 _beaconStateRoot)
+        internal
+        pure
+    {
+        if (!SSZ.isValidMerkleBranch(
+            _targetBeaconBlockRootProofInfo.targetBeaconBlockRoot,
+            BASE_BEACON_BLOCK_ROOTS_IDX + _targetBeaconBlockRootProofInfo.targetSlot % SLOTS_PER_HISTORICAL_ROOT,
+            _targetBeaconBlockRootProofInfo.targetBeaconBlockRootProof,
+            _beaconStateRoot
+        )) {
+            revert InvalidTargetBeaconBlockProof();
+        }
+    }
+
+    function _verifyTargetBeaconStateRoot(bytes32[] calldata _targetBeaconStateRootProof, uint256 _targetSlot, bytes32 _targetBeaconStateRoot, bytes32 _beaconStateRoot)
+        internal
+        pure
+    {
+        if (!SSZ.isValidMerkleBranch(
+            _targetBeaconStateRoot,
+            BASE_BEACON_STATE_ROOTS_IDX + _targetSlot % SLOTS_PER_HISTORICAL_ROOT,
+            _targetBeaconStateRootProof,
+            _beaconStateRoot
+        )) {
+            revert InvalidTargetBeaconStateProof();
+        }
+    }
+
+    function _verifyGraffiti(bytes32 _graffiti, bytes32[] calldata _graffitiProof, bytes32 _blockHeaderRoot)
+        internal
+        pure
+    {
+        if (!SSZ.isValidMerkleBranch(
+            _graffiti,
+            GRAFFITI_IDX,
+            _graffitiProof,
+            _blockHeaderRoot
+        )) {
+            revert InvalidGraffitiProof();
         }
     }
 
@@ -133,7 +228,7 @@ library BeaconOracleHelper {
         if (
             !SSZ.isValidMerkleBranch(
                 _validatorProofInfo.validatorRoot,
-                BASE_VALIDATOR_INDEX + _validatorProofInfo.validatorIndex,
+                BASE_VALIDATOR_IDX + _validatorProofInfo.validatorIndex,
                 _validatorProofInfo.validatorProof,
                 _beaconStateRoot
             )
@@ -152,7 +247,7 @@ library BeaconOracleHelper {
         if (
             !SSZ.isValidMerkleBranch(
                 _pubkeyHash,
-                ((((BASE_DEPOSIT_INDEX + _depositIndex) * 2) + 1) * 4) + 0,
+                ((((BASE_DEPOSIT_IDX + _depositIndex) * 2) + 1) * 4) + 0,
                 _depositedPubkeyProof,
                 _blockHeaderRoot
             )
@@ -173,7 +268,7 @@ library BeaconOracleHelper {
         // 1) Verify the validator index
         if (!SSZ.isValidMerkleBranch(
             SSZ.toLittleEndian(_validatorIndex),
-            ((BASE_WITHDRAWAL_INDEX + _withdrawalIndex) * 4) + 1,
+            ((BASE_WITHDRAWAL_IDX + _withdrawalIndex) * 4) + 1,
             _withdrawalValidatorIndexProof,
             _blockHeaderRoot
         )) {
@@ -182,7 +277,7 @@ library BeaconOracleHelper {
         // 2) Verify the amount withdrawn
         if (!SSZ.isValidMerkleBranch(
             SSZ.toLittleEndian(_amount),
-            ((BASE_WITHDRAWAL_INDEX + _withdrawalIndex) * 4) + 3,
+            ((BASE_WITHDRAWAL_IDX + _withdrawalIndex) * 4) + 3,
             _withdrawalAmountProof,
             _blockHeaderRoot
         )) {
@@ -191,7 +286,7 @@ library BeaconOracleHelper {
     }
 
     /// @notice Proves the validator balance against the beacon state root
-    /// @dev The validator balance is stored in a packed array of 4 64-bit integers, so we prove the combined balance at gindex (BASE_BALANCE_INDEX + (validatorIndex / 4)
+    /// @dev The validator balance is stored in a packed array of 4 64-bit integers, so we prove the combined balance at gindex (BASE_BALANCE_IDX + (validatorIndex / 4)
     function _verifyValidatorBalance(
         bytes32[] memory _balanceProof,
         uint256 _validatorIndex,
@@ -201,7 +296,7 @@ library BeaconOracleHelper {
         if (
             !SSZ.isValidMerkleBranch(
                 _combinedBalance,
-                BASE_BALANCE_INDEX + (_validatorIndex / 4),
+                BASE_BALANCE_IDX + (_validatorIndex / 4),
                 _balanceProof,
                 _beaconStateRoot
             )
@@ -297,19 +392,19 @@ library BeaconOracleHelper {
     /// @notice Returns the gindex for a validator field
     function _getFieldGIndex(ValidatorField _field) internal pure returns (uint256) {
         if (_field == ValidatorField.Pubkey) {
-            return VALIDATOR_FIELDS_LENGTH + PUBKEY_INDEX;
+            return VALIDATOR_FIELDS_LENGTH + PUBKEY_IDX;
         } else if (_field == ValidatorField.WithdrawalCredentials) {
-            return VALIDATOR_FIELDS_LENGTH + WITHDRAWAL_CREDENTIALS_INDEX;
+            return VALIDATOR_FIELDS_LENGTH + WITHDRAWAL_CREDENTIALS_IDX;
         } else if (_field == ValidatorField.Slashed) {
-            return VALIDATOR_FIELDS_LENGTH + SLASHED_INDEX;
+            return VALIDATOR_FIELDS_LENGTH + SLASHED_IDX;
         } else if (_field == ValidatorField.ActivationEligibilityEpoch) {
-            return VALIDATOR_FIELDS_LENGTH + ACTIVATION_ELIGIBILITY_EPOCH_INDEX;
+            return VALIDATOR_FIELDS_LENGTH + ACTIVATION_ELIGIBILITY_EPOCH_IDX;
         } else if (_field == ValidatorField.ActivationEpoch) {
-            return VALIDATOR_FIELDS_LENGTH + ACTIVATION_EPOCH_INDEX;
+            return VALIDATOR_FIELDS_LENGTH + ACTIVATION_EPOCH_IDX;
         } else if (_field == ValidatorField.ExitEpoch) {
-            return VALIDATOR_FIELDS_LENGTH + EXIT_EPOCH_INDEX;
+            return VALIDATOR_FIELDS_LENGTH + EXIT_EPOCH_IDX;
         } else {
-            return VALIDATOR_FIELDS_LENGTH + WITHDRAWABLE_EPOCH_INDEX;
+            return VALIDATOR_FIELDS_LENGTH + WITHDRAWABLE_EPOCH_IDX;
         }
     }
 }
