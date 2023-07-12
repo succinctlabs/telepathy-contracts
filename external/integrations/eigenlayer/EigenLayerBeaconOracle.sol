@@ -38,10 +38,10 @@ contract EigenLayerBeaconOracle is ILightClientUpdater, EigenLayerBeaconOracleSt
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
         // Verify block number against block header root
-        BeaconOracleHelper._verifyBlockNumber(_blockNumber, _blockNumberProof, blockHeaderRoot);
+        BeaconOracleHelper.verifyBlockNumber(_blockNumber, _blockNumberProof, blockHeaderRoot);
 
         // Verify beacon state root against block header root
-        BeaconOracleHelper._verifyBeaconStateRoot(_beaconStateRootProofInfo, blockHeaderRoot);
+        BeaconOracleHelper.verifyBeaconStateRoot(_beaconStateRootProofInfo, blockHeaderRoot);
 
         // Store the header root
         blockNumberToStateRoot[_blockNumber] = _beaconStateRootProofInfo.beaconStateRoot;

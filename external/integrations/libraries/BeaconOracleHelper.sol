@@ -102,7 +102,7 @@ library BeaconOracleHelper {
         WithdrawableEpoch
     }
 
-    function _verifySlot(
+    function verifySlot(
         uint256 _slot,
         bytes32[] memory _slotProof,
         bytes32 _blockHeaderRoot
@@ -119,7 +119,7 @@ library BeaconOracleHelper {
         }
     }
 
-    function _verifyBlockNumber(
+    function verifyBlockNumber(
         uint256 _blockNumber,
         bytes32[] memory _blockNumberProof,
         bytes32 _blockHeaderRoot
@@ -136,7 +136,7 @@ library BeaconOracleHelper {
         }
     }
 
-    function _verifyBeaconStateRoot(
+    function verifyBeaconStateRoot(
         BeaconStateRootProofInfo calldata _beaconStateRootProofInfo,
         bytes32 _blockHeaderRoot
     ) internal pure {
@@ -152,7 +152,7 @@ library BeaconOracleHelper {
         }
     }
 
-    function _verifyProposerIndex(
+    function verifyProposerIndex(
         uint256 _proposerIndex,
         bytes32[] memory _proposerIndexProof,
         bytes32 _beaconBlockRoot
@@ -169,7 +169,7 @@ library BeaconOracleHelper {
         }
     }
 
-    function _verifyTargetBeaconBlockRoot(TargetBeaconBlockRootProofInfo calldata _targetBeaconBlockRootProofInfo, bytes32 _beaconStateRoot)
+    function verifyTargetBeaconBlockRoot(TargetBeaconBlockRootProofInfo calldata _targetBeaconBlockRootProofInfo, bytes32 _beaconStateRoot)
         internal
         pure
     {
@@ -183,7 +183,7 @@ library BeaconOracleHelper {
         }
     }
 
-    function _verifyTargetBeaconStateRoot(bytes32[] calldata _targetBeaconStateRootProof, uint256 _targetSlot, bytes32 _targetBeaconStateRoot, bytes32 _beaconStateRoot)
+    function verifyTargetBeaconStateRoot(bytes32[] calldata _targetBeaconStateRootProof, uint256 _targetSlot, bytes32 _targetBeaconStateRoot, bytes32 _beaconStateRoot)
         internal
         pure
     {
@@ -197,7 +197,7 @@ library BeaconOracleHelper {
         }
     }
 
-    function _verifyGraffiti(bytes32 _graffiti, bytes32[] calldata _graffitiProof, bytes32 _blockHeaderRoot)
+    function verifyGraffiti(bytes32 _graffiti, bytes32[] calldata _graffitiProof, bytes32 _blockHeaderRoot)
         internal
         pure
     {
@@ -211,17 +211,17 @@ library BeaconOracleHelper {
         }
     }
 
-    function _verifyValidatorRoot(
+    function verifyValidatorRoot(
         BeaconStateRootProofInfo calldata _beaconStateRootProofInfo,
         ValidatorProofInfo calldata _validatorProofInfo,
         bytes32 _blockHeaderRoot
     ) internal pure {
-        _verifyBeaconStateRoot(_beaconStateRootProofInfo, _blockHeaderRoot);
+        verifyBeaconStateRoot(_beaconStateRootProofInfo, _blockHeaderRoot);
 
-        _verifyValidatorRoot(_validatorProofInfo, _beaconStateRootProofInfo.beaconStateRoot);
+        verifyValidatorRoot(_validatorProofInfo, _beaconStateRootProofInfo.beaconStateRoot);
     }
 
-    function _verifyValidatorRoot(
+    function verifyValidatorRoot(
         ValidatorProofInfo calldata _validatorProofInfo,
         bytes32 _beaconStateRoot
     ) internal pure {
@@ -238,7 +238,7 @@ library BeaconOracleHelper {
     }
 
     /// @notice Proves the gindex for the specified pubkey at _depositIndex
-    function _verifyValidatorDeposited(
+    function verifyValidatorDeposited(
         uint256 _depositIndex,
         bytes32 _pubkeyHash,
         bytes32[] memory _depositedPubkeyProof,
@@ -257,7 +257,7 @@ library BeaconOracleHelper {
     }
 
     /// @notice Proves the amount that a specified validator withdrew at _withdrawalIndex
-    function _verifyValidatorWithdrawal(
+    function verifyValidatorWithdrawal(
         uint256 _withdrawalIndex,
         uint256 _validatorIndex,
         uint256 _amount,
@@ -287,7 +287,7 @@ library BeaconOracleHelper {
 
     /// @notice Proves the validator balance against the beacon state root
     /// @dev The validator balance is stored in a packed array of 4 64-bit integers, so we prove the combined balance at gindex (BASE_BALANCE_IDX + (validatorIndex / 4)
-    function _verifyValidatorBalance(
+    function verifyValidatorBalance(
         bytes32[] memory _balanceProof,
         uint256 _validatorIndex,
         bytes32 _combinedBalance,
@@ -306,7 +306,7 @@ library BeaconOracleHelper {
     }
 
     /// @notice Proves a validator field against the validator root
-    function _verifyValidatorField(
+    function verifyValidatorField(
         bytes32 _validatorRoot,
         uint256 _validatorIndex,
         bytes32 _leaf,
@@ -315,7 +315,7 @@ library BeaconOracleHelper {
     ) internal pure {
         if (
             !SSZ.isValidMerkleBranch(
-                _leaf, _getFieldGIndex(_field), _validatorFieldProof, _validatorRoot
+                _leaf, getFieldGIndex(_field), _validatorFieldProof, _validatorRoot
             )
         ) {
             revert InvalidValidatorFieldProof(_field, _validatorIndex);
@@ -323,7 +323,7 @@ library BeaconOracleHelper {
     }
 
     /// @notice Checks complete validator struct against validator root
-    function _verifyCompleteValidatorStruct(
+    function verifyCompleteValidatorStruct(
         bytes32 validatorRoot,
         uint256 validatorIndex,
         Validator calldata validatorData
@@ -360,20 +360,20 @@ library BeaconOracleHelper {
 
     /// @notice Proves the balance of a validator against combined balances array
     /// @return Validator balance
-    function _proveValidatorBalance(
+    function proveValidatorBalance(
         uint256 _validatorIndex,
         bytes32 _beaconStateRoot,
         // Combined balances of 4 validators packed into same gindex
         bytes32 _combinedBalance,
         bytes32[] calldata _balanceProof
-    ) internal pure returns (uint256) {
-        _verifyValidatorBalance(_balanceProof, _validatorIndex, _combinedBalance, _beaconStateRoot);
+    ) external pure returns (uint256) {
+        verifyValidatorBalance(_balanceProof, _validatorIndex, _combinedBalance, _beaconStateRoot);
 
-        return _getBalanceFromCombinedBalance(_validatorIndex, _combinedBalance);
+        return getBalanceFromCombinedBalance(_validatorIndex, _combinedBalance);
     }
 
     /// @notice Validator balances are stored in an array of 4 64-bit integers, we extract the validator's balance
-    function _getBalanceFromCombinedBalance(uint256 _validatorIndex, bytes32 _combinedBalance)
+    function getBalanceFromCombinedBalance(uint256 _validatorIndex, bytes32 _combinedBalance)
         internal
         pure
         returns (uint256)
@@ -390,7 +390,7 @@ library BeaconOracleHelper {
     }
 
     /// @notice Returns the gindex for a validator field
-    function _getFieldGIndex(ValidatorField _field) internal pure returns (uint256) {
+    function getFieldGIndex(ValidatorField _field) internal pure returns (uint256) {
         if (_field == ValidatorField.Pubkey) {
             return VALIDATOR_FIELDS_LENGTH + PUBKEY_IDX;
         } else if (_field == ValidatorField.WithdrawalCredentials) {

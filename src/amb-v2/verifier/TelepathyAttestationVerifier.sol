@@ -106,8 +106,7 @@ contract TelepathyAttestationVerifier is IMessageVerifier, Initializable {
         // Check that the attestation toCalldata has the correct function selector and nonce.
         bytes memory expectedToCalldata =
             abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, _message.nonce());
-        if (keccak256(abi.encode(response.toCalldata)) != keccak256(abi.encode(expectedToCalldata)))
-        {
+        if (keccak256(response.toCalldata) != keccak256(expectedToCalldata)) {
             revert InvalidToCalldata(response.toCalldata);
         }
 

@@ -60,7 +60,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
         uint32 sourceChain = _message.sourceChainId();
 
         // For Mainnet, Goerli, and Gnosis as source, return ZK verification
-        if (sourceChain == 1 || sourceChain == 5 || sourceChain == 137) {
+        if (sourceChain == 1 || sourceChain == 5 || sourceChain == 100) {
             return VerifierType.ZK_EVENT;
         }
         // Otherwise use the Attestation verification

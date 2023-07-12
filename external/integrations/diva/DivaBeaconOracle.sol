@@ -37,7 +37,7 @@ contract DivaBeaconOracle {
     ) external {
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_slot);
 
-        BeaconOracleHelper._verifyValidatorDeposited(
+        BeaconOracleHelper.verifyValidatorDeposited(
             _depositIndex, _pubkeyHash, _depositedPubkeyProof, blockHeaderRoot
         );
 
@@ -56,7 +56,7 @@ contract DivaBeaconOracle {
     ) external {
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_slot);
 
-        BeaconOracleHelper._verifyValidatorWithdrawal(
+        BeaconOracleHelper.verifyValidatorWithdrawal(
                 _withdrawalIndex, _validatorIndex, _amount, _withdrawalValidatorIndexProof, _withdrawalAmountProof, blockHeaderRoot
             );
 
@@ -74,10 +74,10 @@ contract DivaBeaconOracle {
     ) external {
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
-        BeaconOracleHelper._verifyValidatorRoot(
+        BeaconOracleHelper.verifyValidatorRoot(
             _beaconStateRootProofInfo, _validatorProofInfo, blockHeaderRoot
         );
-        BeaconOracleHelper._verifyValidatorField(
+        BeaconOracleHelper.verifyValidatorField(
             _validatorProofInfo.validatorRoot,
             _validatorProofInfo.validatorIndex,
             _validatorFieldLeaf,
@@ -104,11 +104,11 @@ contract DivaBeaconOracle {
     ) external {
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
-        BeaconOracleHelper._verifyValidatorRoot(
+        BeaconOracleHelper.verifyValidatorRoot(
             _beaconStateRootProofInfo, _validatorProofInfo, blockHeaderRoot
         );
 
-        BeaconOracleHelper._verifyValidatorField(
+        BeaconOracleHelper.verifyValidatorField(
             _validatorProofInfo.validatorRoot,
             _validatorProofInfo.validatorIndex,
             SSZ.toLittleEndian(_validatorFieldLeaf),
@@ -142,12 +142,12 @@ contract DivaBeaconOracle {
     ) external {
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
-        BeaconOracleHelper._verifyValidatorRoot(
+        BeaconOracleHelper.verifyValidatorRoot(
             _beaconStateRootProofInfo, _validatorProofInfo, blockHeaderRoot
         );
 
         validatorBalances[_validatorProofInfo.validatorIndex] = BeaconOracleHelper
-            ._proveValidatorBalance(
+            .proveValidatorBalance(
             _validatorProofInfo.validatorIndex,
             _beaconStateRootProofInfo.beaconStateRoot,
             _combinedBalance,
