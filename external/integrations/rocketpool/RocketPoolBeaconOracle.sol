@@ -31,15 +31,15 @@ contract RocketPoolBeaconOracle {
     ) external {
         bytes32 blockHeaderRoot = ILightClient(lightclient).headers(_beaconStateRootProofInfo.slot);
 
-        BeaconOracleHelper._verifyValidatorRoot(
+        BeaconOracleHelper.verifyValidatorRoot(
             _beaconStateRootProofInfo, _validatorProofInfo, blockHeaderRoot
         );
 
-        BeaconOracleHelper._verifyCompleteValidatorStruct(
+        BeaconOracleHelper.verifyCompleteValidatorStruct(
             _validatorProofInfo.validatorRoot, _validatorProofInfo.validatorIndex, validatorData
         );
 
-        uint256 balance = BeaconOracleHelper._proveValidatorBalance(
+        uint256 balance = BeaconOracleHelper.proveValidatorBalance(
             _validatorProofInfo.validatorIndex,
             _beaconStateRootProofInfo.beaconStateRoot,
             _combinedBalance,
