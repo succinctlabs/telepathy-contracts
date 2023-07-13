@@ -63,8 +63,11 @@ contract TelepathyStorageV2 {
     /// @notice Whether executing messages is enabled or not.
     bool public executingEnabled;
 
+    /// @notice Whitelisted relayers that can execute messages with the ZK verifiers.
+    mapping(address => bool) public zkRelayers;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new variables
     /// without shifting down storage in the inheritance chain.
     /// See: https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#storage-gaps
-    uint256[38] private __gap;
+    uint256[37] private __gap;
 }

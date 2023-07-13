@@ -42,6 +42,9 @@ contract TargetAMBV2EventVerifierTest is Test {
     TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
     TelepathyEventVerifier eventVerifier;
+    address timelock;
+    address guardian;
+    address zkRelayer;
 
     function setUp() public {
         beaconLightClient = new LightClientMock();
@@ -68,7 +71,8 @@ contract TargetAMBV2EventVerifierTest is Test {
         TelepathyRouterV2 targetAMBImpl = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImpl), "");
         telepathyRouter = TelepathyRouterV2(address(proxy));
-        address timelock = makeAddr("timelock");
+        timelock = makeAddr("timelock");
+        guardian = makeAddr("guardian");
 
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
         WrappedInitialize.initializeRouter(
@@ -78,7 +82,7 @@ contract TargetAMBV2EventVerifierTest is Test {
             makeAddr("stateQueryGateway"),
             testParams.sourceAMBAddress,
             timelock,
-            address(this)
+            guardian
         );
         // manually override VERSION, TODO generate new fixtures for V2
         vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
@@ -91,6 +95,11 @@ contract TargetAMBV2EventVerifierTest is Test {
         telepathyRouter.setDefaultVerifier(
             VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
+
+        // Add zkRelayer to whitelist
+        zkRelayer = makeAddr("zkRelayer");
+        vm.prank(guardian);
+        telepathyRouter.setZkRelayer(zkRelayer, true);
 
         // Then initialize the contract that will be called by the TargetAMBV2
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
@@ -115,6 +124,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         getDefaultContractSetup(testParams);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -146,6 +156,7 @@ contract TargetAMBV2EventVerifierTest is Test {
 
         vm.expectRevert();
         // Execute the message and make sure that it fails.
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -168,6 +179,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         assertEq(txSlot, srcSlot);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -200,6 +212,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         getDefaultContractSetup(testParams);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -242,6 +255,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         simpleHandler.setVerifierType(VerifierType.ZK_EVENT);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -284,6 +298,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         simpleHandler.setVerifierType(VerifierType.ZK_EVENT);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -322,6 +337,7 @@ contract TargetAMBV2EventVerifierTest is Test {
             assertEq(sourceSlot, targetSlot + uint64(diffs[i]));
 
             // Execute the message and check that it succeeded
+            vm.prank(zkRelayer);
             telepathyRouter.execute(
                 abi.encode(
                     testParams.srcSlotTxSlotPack,
@@ -344,5 +360,25 @@ contract TargetAMBV2EventVerifierTest is Test {
             bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
             assertEq(simpleHandler.nonceToDataHash(i), expectedDataHash);
         }
+    }
+
+    function test_RevertExecuteMessageFromLog_WhenNotZkRelayer() public {
+        // This test is generated using `cli/src/generateTest.ts`
+        ExecuteMessageFromLogParams memory testParams = parseParams("closeSlot");
+        getDefaultContractSetup(testParams);
+
+        // Execute the message and check that it succeeded
+        vm.expectRevert();
+        telepathyRouter.execute(
+            abi.encode(
+                testParams.srcSlotTxSlotPack,
+                testParams.receiptsRootProof,
+                testParams.receiptsRoot,
+                testParams.receiptProof,
+                testParams.txIndexRLPEncoded,
+                testParams.logIndex
+            ),
+            testParams.message
+        );
     }
 }

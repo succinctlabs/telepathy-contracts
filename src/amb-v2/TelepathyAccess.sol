@@ -13,6 +13,9 @@ contract TelepathyAccessV2 is TelepathyStorageV2, AccessControlUpgradeable {
     /// @notice Emitted when the executingEnabled flag is changed.
     event ExecutingEnabledChanged(bool enabled);
 
+    /// @notice Emitted when the zkRelayer whitelist is changed.
+    event ZkRelayerChanged(address zkRelayer, bool enabled);
+
     /// @notice A random constant used to identify addresses with the permission of a 'guardian'.
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
 
@@ -45,17 +48,25 @@ contract TelepathyAccessV2 is TelepathyStorageV2, AccessControlUpgradeable {
     }
 
     /// @notice Allows the owner to control whether sending is enabled or not.
-    /// @param enabled Whether sending should be enabled or not.
-    function setSendingEnabled(bool enabled) external onlyGuardian {
-        sendingEnabled = enabled;
-        emit SendingEnabledChanged(enabled);
+    /// @param _enabled Whether sending should be enabled or not.
+    function setSendingEnabled(bool _enabled) external onlyGuardian {
+        sendingEnabled = _enabled;
+        emit SendingEnabledChanged(_enabled);
     }
 
     /// @notice Allows the owner to control whether executing is enabled or not.
-    /// @param enabled Whether executing should be enabled or not.
-    function setExecutingEnabled(bool enabled) external onlyGuardian {
-        executingEnabled = enabled;
-        emit ExecutingEnabledChanged(enabled);
+    /// @param _enabled Whether executing should be enabled or not.
+    function setExecutingEnabled(bool _enabled) external onlyGuardian {
+        executingEnabled = _enabled;
+        emit ExecutingEnabledChanged(_enabled);
+    }
+
+    /// @notice Updates the ZkRelayer whitelist with a given address.
+    /// @param _zkRelayer The address to update.
+    /// @param _enabled Whether the address should be enabled or not.
+    function setZkRelayer(address _zkRelayer, bool _enabled) external onlyGuardian {
+        zkRelayers[_zkRelayer] = _enabled;
+        emit ZkRelayerChanged(_zkRelayer, _enabled);
     }
 
     /// @notice Sets the default IMessageVerifier contract for a given VerifierType.

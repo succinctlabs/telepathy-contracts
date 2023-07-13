@@ -59,6 +59,9 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
     TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
     TelepathyStorageVerifier storageVerifier;
+    address timelock;
+    address guardian;
+    address zkRelayer;
 
     function setUp() public {
         beaconLightClient = new LightClientMock();
@@ -129,7 +132,8 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         TelepathyRouterV2 targetAMBImpl = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImpl), "");
         telepathyRouter = TelepathyRouterV2(address(proxy));
-        address timelock = makeAddr("timelock");
+        timelock = makeAddr("timelock");
+        guardian = makeAddr("guardian");
 
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
         WrappedInitialize.initializeRouter(
@@ -139,7 +143,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
             makeAddr("stateQueryGateway"),
             messageParams.sourceAMBAddress,
             timelock,
-            address(this)
+            guardian
         );
         // manually override VERSION, TODO generate new fixtures for V2
         vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
@@ -154,6 +158,11 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         );
 
         storageVerifier = TelepathyStorageVerifier(storageVerifierAddr);
+
+        // Add zkRelayer to whitelist
+        zkRelayer = makeAddr("zkRelayer");
+        vm.prank(guardian);
+        telepathyRouter.setZkRelayer(zkRelayer, true);
 
         // Then initialize the contract that will be called by the TargetAMBV2
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
@@ -176,6 +185,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         getDefaultContractSetup(messageParams);
 
         // Finally, execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -200,6 +210,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
 
         // Finally, execute the message and check that it failed
         vm.expectRevert();
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -219,6 +230,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
         getDefaultContractSetup(messageParams);
 
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -233,6 +245,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         vm.expectRevert(
             abi.encodeWithSelector(MessageAlreadyExecuted.selector, messageParams.message.getId())
         );
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -248,6 +261,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
 
         vm.expectRevert();
         // The MPT verification should fail since the SourceAMBV2 address provided is different than the one in the account proof
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -267,6 +281,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
 
         // Finally, execute the message and check that it failed
         vm.expectRevert();
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -291,6 +306,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         vm.etch(address(0), randomCode);
 
         vm.expectRevert();
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -306,6 +322,22 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
 
         vm.expectRevert();
         // Finally, execute the message and check that it failed
+        vm.prank(zkRelayer);
+        telepathyRouter.execute(
+            abi.encode(
+                messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
+            ),
+            messageParams.message
+        );
+    }
+
+    function test_RevertExecuteMessage_WhenNotZkRelayer() public {
+        // This test is generated using `cli/src/generateTest.ts`
+        ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
+        getDefaultContractSetup(messageParams);
+
+        // Finally, execute the message and check that it succeeded
+        vm.expectRevert();
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof
@@ -329,6 +361,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         );
         assertEq(storageVerifier.storageRootCache(cacheKey1), bytes32(0));
 
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams1.blockNumber, messageParams1.accountProof, messageParams1.storageProof
@@ -345,6 +378,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         );
         assertEq(storageVerifier.storageRootCache(cacheKey2), messageParams1.storageRoot);
 
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams2.blockNumber, messageParams2.accountProof, messageParams2.storageProof
@@ -361,6 +395,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         );
         assertEq(storageVerifier.storageRootCache(cacheKey3), messageParams1.storageRoot);
 
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams3.blockNumber, messageParams3.accountProof, messageParams3.storageProof
@@ -377,6 +412,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
 
         vm.expectRevert();
         // Finally, execute the message and check that it failed
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(messageParams.blockNumber, _randomProof, messageParams.storageProof),
             messageParams.message
@@ -384,6 +420,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
 
         vm.expectRevert();
         // Finally, execute the message and check that it failed
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(messageParams.blockNumber, messageParams.accountProof, _randomProof),
             messageParams.message
@@ -397,6 +434,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
 
         vm.expectRevert();
         // Finally, execute the message and check that it failed
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 messageParams.blockNumber, messageParams.accountProof, messageParams.storageProof

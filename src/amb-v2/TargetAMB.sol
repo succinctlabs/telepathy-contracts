@@ -24,6 +24,7 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
     error MessageWrongVersion(bytes32 messageId, uint8 messageVersion, uint8 currentVersion);
     error ExecutionDisabled();
     error VerifierNotFound(uint256 verifierType);
+    error NotZkRelayer(address sender);
     error VerificationFailed();
     error CallFailed();
     error InvalidSelector();
@@ -98,6 +99,13 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
         bytes memory _proofData,
         bytes memory _message
     ) internal {
+        // If the verifier is a ZK verifier, check that the sender is an allowed relayer
+        if (verifierType == VerifierType.ZK_EVENT || verifierType == VerifierType.ZK_STORAGE) {
+            if (!zkRelayers[msg.sender]) {
+                revert NotZkRelayer(msg.sender);
+            }
+        }
+
         address verifier;
         if (verifierType == VerifierType.CUSTOM) {
             verifier = _message.destinationAddress();
