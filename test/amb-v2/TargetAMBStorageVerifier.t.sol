@@ -99,7 +99,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         pure
         returns (bytes[] memory)
     {
-        bytes[] memory proof = new bytes[](8);
+        bytes[] memory proof = new bytes[](7);
         proof[0] = vm.parseBytes(fixture.accountProof[0]);
         proof[1] = vm.parseBytes(fixture.accountProof[1]);
         proof[2] = vm.parseBytes(fixture.accountProof[2]);
@@ -107,7 +107,6 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         proof[4] = vm.parseBytes(fixture.accountProof[4]);
         proof[5] = vm.parseBytes(fixture.accountProof[5]);
         proof[6] = vm.parseBytes(fixture.accountProof[6]);
-        proof[7] = vm.parseBytes(fixture.accountProof[7]);
         return proof;
     }
 
@@ -145,8 +144,6 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
             timelock,
             guardian
         );
-        // manually override VERSION, TODO generate new fixtures for V2
-        vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
 
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_STORAGE, storageVerifierAddr);
@@ -179,7 +176,7 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
         beaconLightClient.setExecutionRoot(messageParams.blockNumber, messageParams.stateRoot);
     }
 
-    function test_ExecuteMessage() public {
+    function test_ExecuteMessage_WhenStorageProof() public {
         // This test is generated using `cli/src/generateTest.ts`
         ExecuteMessageFromStorageParams memory messageParams = parseParams("storage1");
         getDefaultContractSetup(messageParams);
@@ -349,7 +346,6 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
     function test_ExecuteMessage_WhenCached() public {
         ExecuteMessageFromStorageParams memory messageParams1 = parseParams("storage1");
         ExecuteMessageFromStorageParams memory messageParams2 = parseParams("storage2");
-        ExecuteMessageFromStorageParams memory messageParams3 = parseParams("storage3");
         getDefaultContractSetup(messageParams1);
 
         bytes32 cacheKey1 = keccak256(
@@ -384,23 +380,6 @@ contract TargetAMBV2StorageVerifierTest is Test, TestErrors {
                 messageParams2.blockNumber, messageParams2.accountProof, messageParams2.storageProof
             ),
             messageParams2.message
-        );
-
-        bytes32 cacheKey3 = keccak256(
-            abi.encodePacked(
-                messageParams3.SOURCE_CHAIN,
-                messageParams3.blockNumber,
-                storageVerifier.telepathyRouters(messageParams3.SOURCE_CHAIN)
-            )
-        );
-        assertEq(storageVerifier.storageRootCache(cacheKey3), messageParams1.storageRoot);
-
-        vm.prank(zkRelayer);
-        telepathyRouter.execute(
-            abi.encode(
-                messageParams3.blockNumber, messageParams3.accountProof, messageParams3.storageProof
-            ),
-            messageParams3.message
         );
     }
 

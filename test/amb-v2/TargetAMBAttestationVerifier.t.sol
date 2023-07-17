@@ -74,8 +74,6 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
             timelock,
             address(this)
         );
-        // manually override VERSION, TODO generate new fixtures for V2
-        vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
 
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_STORAGE, storageVerifierAddr);
@@ -95,9 +93,9 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         simpleHandler.setVerifierType(VerifierType.ATTESTATION_STATE_QUERY);
     }
 
-    function test_ExecuteMessage() public {
+    function test_ExecuteMessage_WhenAttestationProof() public {
         bytes memory message = Message.encode(
-            1,
+            telepathyRouter.VERSION(),
             0,
             SOURCE_CHAIN,
             SOURCE_SENDER,
@@ -138,7 +136,7 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
 
     function test_RevertExecuteMessage_WhenResponseNotSet() public {
         bytes memory message = Message.encode(
-            1,
+            telepathyRouter.VERSION(),
             0,
             SOURCE_CHAIN,
             SOURCE_SENDER,
