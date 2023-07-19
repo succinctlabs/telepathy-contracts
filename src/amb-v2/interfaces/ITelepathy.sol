@@ -17,10 +17,12 @@ interface ITelepathyRouterV2 {
 
     function send(uint32 destinationChainId, bytes32 destinationAddress, bytes calldata data)
         external
+        payable
         returns (bytes32);
 
     function send(uint32 destinationChainId, address destinationAddress, bytes calldata data)
         external
+        payable
         returns (bytes32);
 }
 

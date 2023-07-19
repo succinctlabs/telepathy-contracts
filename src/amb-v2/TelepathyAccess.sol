@@ -79,6 +79,12 @@ contract TelepathyAccessV2 is TelepathyStorageV2, AccessControlUpgradeable {
         defaultVerifiers[_verifierType] = _verifier;
     }
 
+    /// @notice Sets the address of the FeeVault.
+    /// @param _feeVault The address of the FeeVault.
+    function setFeeVault(address _feeVault) external onlyTimelock {
+        feeVault = _feeVault;
+    }
+
     /// @notice Sets the current version of the contract.
     /// @param _version The new version.
     function setVersion(uint8 _version) external onlyTimelock {

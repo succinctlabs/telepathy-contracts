@@ -1,30 +1,30 @@
 pragma solidity 0.8.16;
 
-import {ITelepathyRouter} from "src/amb/interfaces/ITelepathy.sol";
-import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
+import {ITelepathyRouterV2} from "src/amb-v2/interfaces/ITelepathy.sol";
+import {TelepathyHandlerV2} from "src/amb-v2/interfaces/TelepathyHandler.sol";
 
 contract SourceCounter {
-    ITelepathyRouter router;
+    ITelepathyRouterV2 router;
     uint32 targetChainId;
 
     constructor(address _router, uint32 _targetChainId) {
-        router = ITelepathyRouter(_router);
+        router = ITelepathyRouterV2(_router);
         targetChainId = _targetChainId;
     }
 
     // Increment counter on target chain by given amount
-    function increment(uint256 amount, address targetCounter) external virtual {
+    function increment(uint256 amount, address targetCounter) external payable virtual {
         bytes memory msgData = abi.encode(amount);
-        router.send(targetChainId, targetCounter, msgData);
+        router.send{value: msg.value}(targetChainId, targetCounter, msgData);
     }
 }
 
-contract TargetCounter is TelepathyHandler {
+contract TargetCounter is TelepathyHandlerV2 {
     uint256 public counter = 0;
 
     event Incremented(uint32 sourceChainId, address sender, uint256 amount);
 
-    constructor(address _router) TelepathyHandler(_router) {}
+    constructor(address _router) TelepathyHandlerV2(_router) {}
 
     // Handle messages being sent and decoding
     function handleTelepathyImpl(uint32 sourceChainId, address sender, bytes memory msgData)

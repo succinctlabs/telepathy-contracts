@@ -16,3 +16,7 @@
 	path = lib/optimism-bedrock-contracts
 	url = https://github.com/succinctlabs/optimism-bedrock-contracts
 	branch = main
+[submodule "lib/telepathy-v2"]
+	path = lib/telepathy-v2
+	url = https://github.com/succinctlabs/telepathy-v2
+	branch = main

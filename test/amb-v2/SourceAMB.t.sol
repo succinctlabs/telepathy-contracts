@@ -10,7 +10,6 @@ import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {Bytes32} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
 import {VerifierType} from "src/amb-v2/verifier/interfaces/IMessageVerifier.sol";
-import {MerkleProof} from "src/libraries/MerkleProof.sol";
 
 contract SourceAMBV2Test is Test {
     using Message for bytes;
@@ -21,6 +20,7 @@ contract SourceAMBV2Test is Test {
     address constant DEFAULT_DESTINATION_ADDR = 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990;
     bytes32 constant DEFAULT_DESTINATION_ADDR_BYTES32 = bytes32("0x690B9A9E9aa1C9dB991C7721a92d35");
     bytes constant DEFAULT_DESTINATION_DATA = hex"deadbeef";
+    uint256 constant DEFAULT_FEE = 0.1 ether;
 
     TelepathyRouterV2 telepathyRouter;
 
@@ -51,6 +51,8 @@ contract SourceAMBV2Test is Test {
         telepathyRouter.setDefaultVerifier(
             VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
+
+        vm.deal(bob, DEFAULT_FEE);
     }
 
     function test_Send_WhenAddressDestination() public {
@@ -69,7 +71,7 @@ contract SourceAMBV2Test is Test {
         vm.expectEmit(true, true, true, true);
         emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
-        bytes32 messageId = telepathyRouter.send(
+        bytes32 messageId = telepathyRouter.send{value: DEFAULT_FEE}(
             DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageId, expectedMessageId);
@@ -91,19 +93,42 @@ contract SourceAMBV2Test is Test {
         vm.expectEmit(true, true, true, true);
         emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
+        bytes32 messageId = telepathyRouter.send{value: DEFAULT_FEE}(
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR_BYTES32, DEFAULT_DESTINATION_DATA
+        );
+        assertEq(messageId, expectedMessageId);
+    }
+
+    function test_Send_WhenNoFee() public {
+        vm.startPrank(bob);
+        bytes memory expectedMessage = Message.encode(
+            telepathyRouter.VERSION(),
+            SourceAMBV2(telepathyRouter).nonce(),
+            uint32(block.chainid),
+            bob,
+            DEFAULT_DESTINATION_CHAIN_ID,
+            DEFAULT_DESTINATION_ADDR_BYTES32,
+            DEFAULT_DESTINATION_DATA
+        );
+        bytes32 expectedMessageId = keccak256(expectedMessage);
+
+        vm.expectEmit(true, true, true, true);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+
         bytes32 messageId = telepathyRouter.send(
             DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR_BYTES32, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageId, expectedMessageId);
     }
 
-    function testFuzz_Send_MsgSender(address sender) public {
-        vm.startPrank(sender);
+    function testFuzz_Send_MsgSender(address _sender) public {
+        vm.deal(_sender, DEFAULT_FEE);
+        vm.startPrank(_sender);
         bytes memory expectedMessage = Message.encode(
             telepathyRouter.VERSION(),
             SourceAMBV2(telepathyRouter).nonce(),
             uint32(block.chainid),
-            sender,
+            _sender,
             DEFAULT_DESTINATION_CHAIN_ID,
             Bytes32.fromAddress(DEFAULT_DESTINATION_ADDR),
             DEFAULT_DESTINATION_DATA
@@ -113,7 +138,7 @@ contract SourceAMBV2Test is Test {
         vm.expectEmit(true, true, true, true);
         emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
-        bytes32 messageId = telepathyRouter.send(
+        bytes32 messageId = telepathyRouter.send{value: DEFAULT_FEE}(
             DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageId, expectedMessageId);
@@ -137,8 +162,9 @@ contract SourceAMBV2Test is Test {
         vm.expectEmit(true, true, true, true);
         emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
-        bytes32 messageId =
-            telepathyRouter.send(_chainId, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA);
+        bytes32 messageId = telepathyRouter.send{value: DEFAULT_FEE}(
+            _chainId, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
+        );
         assertEq(messageId, expectedMessageId);
     }
 
@@ -158,7 +184,7 @@ contract SourceAMBV2Test is Test {
         vm.expectEmit(true, true, true, true);
         emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
-        bytes32 messageId = telepathyRouter.send(
+        bytes32 messageId = telepathyRouter.send{value: DEFAULT_FEE}(
             DEFAULT_DESTINATION_CHAIN_ID, _destinationAddress, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageId, expectedMessageId);
@@ -180,7 +206,7 @@ contract SourceAMBV2Test is Test {
         vm.expectEmit(true, true, true, true);
         emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
-        bytes32 messageId = telepathyRouter.send(
+        bytes32 messageId = telepathyRouter.send{value: DEFAULT_FEE}(
             DEFAULT_DESTINATION_CHAIN_ID, _destinationAddress, DEFAULT_DESTINATION_DATA
         );
         assertEq(messageId, expectedMessageId);
@@ -202,8 +228,32 @@ contract SourceAMBV2Test is Test {
         vm.expectEmit(true, true, true, true);
         emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
 
-        bytes32 messageId =
-            telepathyRouter.send(DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, _data);
+        bytes32 messageId = telepathyRouter.send{value: DEFAULT_FEE}(
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, _data
+        );
+        assertEq(messageId, expectedMessageId);
+    }
+
+    function testFuzz_Send_Fee(uint256 _fee) public {
+        vm.deal(bob, _fee);
+        vm.startPrank(bob);
+        bytes memory expectedMessage = Message.encode(
+            telepathyRouter.VERSION(),
+            SourceAMBV2(telepathyRouter).nonce(),
+            uint32(block.chainid),
+            bob,
+            DEFAULT_DESTINATION_CHAIN_ID,
+            Bytes32.fromAddress(DEFAULT_DESTINATION_ADDR),
+            DEFAULT_DESTINATION_DATA
+        );
+        bytes32 expectedMessageId = keccak256(expectedMessage);
+
+        vm.expectEmit(true, true, true, true);
+        emit SentMessage(SourceAMBV2(telepathyRouter).nonce(), expectedMessageId, expectedMessage);
+
+        bytes32 messageId = telepathyRouter.send{value: _fee}(
+            DEFAULT_DESTINATION_CHAIN_ID, DEFAULT_DESTINATION_ADDR, DEFAULT_DESTINATION_DATA
+        );
         assertEq(messageId, expectedMessageId);
     }
 }

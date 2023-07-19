@@ -66,8 +66,12 @@ contract TelepathyStorageV2 {
     /// @notice Whitelisted relayers that can execute messages with the ZK verifiers.
     mapping(address => bool) public zkRelayers;
 
+    /// @notice A reference to the contract where fees are sent.
+    /// @dev During the send functions, this is used to add msg.value to the sender's balance.
+    address public feeVault;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new variables
     /// without shifting down storage in the inheritance chain.
     /// See: https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#storage-gaps
-    uint256[37] private __gap;
+    uint256[36] private __gap;
 }

@@ -29,11 +29,13 @@ contract TelepathyRouterV2 is SourceAMBV2, TargetAMBV2, TelepathyAccessV2, UUPSU
     /// @notice Initializes the contract and the parent contracts once.
     /// @param _sendingEnabled Whether the router is allowed to send messages.
     /// @param _executingEnabled Whether the router is allowed to execute messages.
+    /// @param _feeVault The address of the IFeeVault.
     /// @param _timelock The address of the timelock.
     /// @param _guardian The address of the guardian.
     function initialize(
         bool _sendingEnabled,
         bool _executingEnabled,
+        address _feeVault,
         address _timelock,
         address _guardian
     ) external initializer {
@@ -46,6 +48,7 @@ contract TelepathyRouterV2 is SourceAMBV2, TargetAMBV2, TelepathyAccessV2, UUPSU
 
         sendingEnabled = _sendingEnabled;
         executingEnabled = _executingEnabled;
+        feeVault = _feeVault;
         version = VERSION;
     }
 

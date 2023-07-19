@@ -16,8 +16,8 @@ contract CountMessenger is TelepathyHandlerV2 {
     constructor(address _telepathyRouter) TelepathyHandlerV2(_telepathyRouter) {}
 
     /// @notice Sends a cross-chain increment message.
-    function sendIncrement(uint32 _dstChainId) external {
-        ITelepathyRouterV2(telepathyRouter).send(_dstChainId, address(this), "");
+    function sendIncrement(uint32 _dstChainId) external payable {
+        ITelepathyRouterV2(telepathyRouter).send{value: msg.value}(_dstChainId, address(this), "");
     }
 
     /// @notice Recieve a cross-chain increment message.
