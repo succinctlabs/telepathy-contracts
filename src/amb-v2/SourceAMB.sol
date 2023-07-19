@@ -37,7 +37,10 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
         (bytes memory message, bytes32 messageId) =
             _getMessageAndId(_destinationChainId, _destinationAddress, _data);
         messages[nonce] = messageId;
-        emit SentMessage(nonce++, messageId, message);
+        emit SentMessage(nonce, messageId, message);
+        unchecked {
+            ++nonce;
+        }
         return messageId;
     }
 
@@ -55,7 +58,10 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
         (bytes memory message, bytes32 messageId) =
             _getMessageAndId(_destinationChainId, Bytes32.fromAddress(_destinationAddress), _data);
         messages[nonce] = messageId;
-        emit SentMessage(nonce++, messageId, message);
+        emit SentMessage(nonce, messageId, message);
+        unchecked {
+            ++nonce;
+        }
         return messageId;
     }
 
