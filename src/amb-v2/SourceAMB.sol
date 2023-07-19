@@ -15,7 +15,6 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
 
     error SendingDisabled();
 
-    /// @notice Modifier to require that sending is enabled.
     modifier isSendingEnabled() {
         if (!sendingEnabled) {
             revert SendingDisabled();
