@@ -64,6 +64,13 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
         return messageId;
     }
 
+    /// @notice Gets the messageId for a nonce.
+    /// @param _nonce The nonce of the message, assigned when the message is sent.
+    /// @return messageId The hash of message contents, used as a unique identifier for a message.
+    function getMessageId(uint64 _nonce) external view returns (bytes32) {
+        return messages[_nonce];
+    }
+
     /// @notice Gets the message and message root from the user-provided arguments to `send`
     /// @param _destinationChainId The chain id that specifies the destination chain.
     /// @param _destinationAddress The contract address that will be called on the destination
@@ -86,12 +93,5 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
             _data
         );
         messageId = keccak256(message);
-    }
-
-    /// @notice Gets the messageId for a nonce.
-    /// @param _nonce The nonce of the message, assigned when the message is sent.
-    /// @return messageId The hash of message contents, used as a unique identifier for a message.
-    function getMessageId(uint64 _nonce) external view returns (bytes32) {
-        return messages[_nonce];
     }
 }
