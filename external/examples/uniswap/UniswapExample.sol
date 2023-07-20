@@ -5,8 +5,8 @@ import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 
-import {ITelepathyRouter} from "src/amb/interfaces/ITelepathy.sol";
-import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
+import {ITelepathyRouterV2} from "src/amb-v2/interfaces/ITelepathy.sol";
+import {TelepathyHandlerV2} from "src/amb-v2/interfaces/TelepathyHandler.sol";
 
 contract CrossChainTWAPRoute {
     ITelepathyRouter router;
@@ -21,7 +21,7 @@ contract CrossChainTWAPRoute {
     );
 
     constructor(address _router) {
-        router = ITelepathyRouter(_router);
+        router = ITelepathyRouterV2(_router);
     }
 
     function setDeliveringContract(uint32 chainId, address _contract) external {
@@ -51,17 +51,18 @@ contract CrossChainTWAPRoute {
 
     function routePrice(uint32 chainId, address poolAddress, uint32 twapInterval)
         external
+        payable
         returns (uint256 priceX96)
     {
         require(deliveringContracts[chainId] != address(0), "TWAP Route: otherSideContract not set");
         priceX96 = getPrice(poolAddress, twapInterval);
         bytes memory data = abi.encode(poolAddress, twapInterval, block.timestamp, priceX96);
-        router.send(chainId, deliveringContracts[chainId], data);
+        router.send{value: msg.value}(chainId, deliveringContracts[chainId], data);
         emit Route(chainId, poolAddress, twapInterval, block.timestamp, priceX96);
     }
 }
 
-contract CrossChainTWAPReceiver is TelepathyHandler {
+contract CrossChainTWAPReceiver is TelepathyHandlerV2 {
     uint32 srcChainId;
     address sourceAddress;
 
@@ -69,7 +70,7 @@ contract CrossChainTWAPReceiver is TelepathyHandler {
     mapping(bytes32 => uint256) public timestampMap;
 
     constructor(uint32 _srcChainId, address _sourceAddress, address _telepathyReceiver)
-        TelepathyHandler(_telepathyReceiver)
+        TelepathyHandlerV2(_telepathyReceiver)
     {
         srcChainId = _srcChainId;
         sourceAddress = _sourceAddress;

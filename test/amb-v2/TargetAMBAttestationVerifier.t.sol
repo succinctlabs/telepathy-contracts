@@ -74,8 +74,6 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
             timelock,
             address(this)
         );
-        // manually override VERSION, TODO generate new fixtures for V2
-        vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
 
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_STORAGE, storageVerifierAddr);
@@ -95,9 +93,9 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         simpleHandler.setVerifierType(VerifierType.ATTESTATION_STATE_QUERY);
     }
 
-    function test_ExecuteMessage() public {
+    function test_ExecuteMessage_WhenAttestationProof() public {
         bytes memory message = Message.encode(
-            1,
+            telepathyRouter.VERSION(),
             0,
             SOURCE_CHAIN,
             SOURCE_SENDER,
@@ -138,7 +136,7 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
 
     function test_RevertExecuteMessage_WhenResponseNotSet() public {
         bytes memory message = Message.encode(
-            1,
+            telepathyRouter.VERSION(),
             0,
             SOURCE_CHAIN,
             SOURCE_SENDER,
@@ -154,5 +152,242 @@ contract TargetAMBV2AttestationVerifier is Test, TestErrors {
         vm.prank(address(mockStateQueryGateway));
         vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
         telepathyRouter.execute(hex"", message);
+    }
+
+    function test_RevertExecuteMessage_WhenResponseSrcChainInvalid() public {
+        bytes memory message = Message.encode(
+            telepathyRouter.VERSION(),
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        bytes memory messageIdBytes = abi.encode(message.getId());
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
+                DESTINATION_CHAIN,
+                0,
+                SOURCE_SENDER,
+                SOURCE_TELEPATHY_ROUTER,
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
+                messageIdBytes
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockStateQueryGateway));
+        vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
+        telepathyRouter.execute(hex"", message);
+    }
+
+    function test_RevertExecuteMessage_WhenResponseTelepathyRouterInvalid() public {
+        bytes memory message = Message.encode(
+            telepathyRouter.VERSION(),
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        bytes memory messageIdBytes = abi.encode(message.getId());
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
+                SOURCE_CHAIN,
+                0,
+                SOURCE_SENDER,
+                address(0),
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
+                messageIdBytes
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockStateQueryGateway));
+        vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
+        telepathyRouter.execute(hex"", message);
+    }
+
+    function test_RevertExecuteMessage_WhenResponseToCalldataInvalid() public {
+        bytes memory message = Message.encode(
+            telepathyRouter.VERSION(),
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        bytes memory messageIdBytes = abi.encode(message.getId());
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
+                SOURCE_CHAIN,
+                0,
+                SOURCE_SENDER,
+                SOURCE_TELEPATHY_ROUTER,
+                hex"deadbeef",
+                messageIdBytes
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockStateQueryGateway));
+        vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
+        telepathyRouter.execute(hex"", message);
+    }
+
+    function test_RevertExecuteMessage_WhenResponseMsgNonceInvalid() public {
+        bytes memory message = Message.encode(
+            telepathyRouter.VERSION(),
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        bytes memory messageIdBytes = abi.encode(message.getId());
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
+                SOURCE_CHAIN,
+                0,
+                SOURCE_SENDER,
+                SOURCE_TELEPATHY_ROUTER,
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 1),
+                messageIdBytes
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockStateQueryGateway));
+        vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
+        telepathyRouter.execute(hex"", message);
+    }
+
+    function test_RevertExecuteMessage_WhenResponseResultInvalidFormat() public {
+        bytes memory message = Message.encode(
+            telepathyRouter.VERSION(),
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
+                SOURCE_CHAIN,
+                0,
+                SOURCE_SENDER,
+                SOURCE_TELEPATHY_ROUTER,
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
+                hex"deadbeef"
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockStateQueryGateway));
+        vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
+        telepathyRouter.execute(hex"", message);
+    }
+
+    function test_RevertExecuteMessage_WhenResponseResultInvalidData() public {
+        bytes memory message = Message.encode(
+            telepathyRouter.VERSION(),
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
+                SOURCE_CHAIN,
+                0,
+                SOURCE_SENDER,
+                SOURCE_TELEPATHY_ROUTER,
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
+                abi.encode(bytes32(0))
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockStateQueryGateway));
+        vm.expectRevert(abi.encodeWithSelector(VerificationFailed.selector));
+        telepathyRouter.execute(hex"", message);
+    }
+
+    function testFuzz_ExecuteMessage_ProofData(bytes memory _proofData) public {
+        bytes memory message = Message.encode(
+            telepathyRouter.VERSION(),
+            0,
+            SOURCE_CHAIN,
+            SOURCE_SENDER,
+            DESTINATION_CHAIN,
+            Bytes32.fromAddress(DESTINATION_HANDLER),
+            MESSAGE_DATA
+        );
+
+        vm.chainId(SOURCE_CHAIN);
+        vm.prank(SOURCE_SENDER);
+        telepathyRouter.send(DESTINATION_CHAIN, DESTINATION_HANDLER, MESSAGE_DATA);
+
+        bytes memory messageIdBytes = abi.encode(message.getId());
+        mockStateQueryGateway.setCurrentResponse(
+            StateQueryResponse(
+                SOURCE_CHAIN,
+                0,
+                SOURCE_SENDER,
+                SOURCE_TELEPATHY_ROUTER,
+                abi.encodeWithSelector(SourceAMBV2.getMessageId.selector, 0),
+                messageIdBytes
+            )
+        );
+
+        vm.chainId(DESTINATION_CHAIN);
+        vm.prank(address(mockStateQueryGateway));
+        telepathyRouter.execute(_proofData, message);
+
+        assertTrue(
+            telepathyRouter.messageStatus(message.getId()) == MessageStatus.EXECUTION_SUCCEEDED
+        );
+
+        // Check that the simpleHandler processed the message correctly.
+        assertEq(simpleHandler.nonce(), 1);
+        bytes32 expectedDataHash = keccak256(MESSAGE_DATA);
+        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
     }
 }

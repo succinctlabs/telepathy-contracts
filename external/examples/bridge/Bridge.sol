@@ -3,16 +3,14 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-import {ITelepathyRouter} from "src/amb/interfaces/ITelepathy.sol";
-import {TelepathyHandler} from "src/amb/interfaces/TelepathyHandler.sol";
-
-import "./Tokens.sol";
+import {ITelepathyRouterV2} from "src/amb-v2/interfaces/ITelepathy.sol";
+import {TelepathyHandlerV2} from "src/amb-v2/interfaces/TelepathyHandler.sol";
+import {Tokens} from "examples/bridge/Tokens.sol";
 
 contract Deposit is Ownable {
     uint256 public constant FEE = 0.001 ether;
 
-    ITelepathyRouter router;
+    ITelepathyRouterV2 router;
     address depositToken;
     address foreignWithdraw;
 
@@ -25,7 +23,7 @@ contract Deposit is Ownable {
     );
 
     constructor(address _router, address _depositToken) {
-        router = ITelepathyRouter(_router);
+        router = ITelepathyRouterV2(_router);
         depositToken = _depositToken;
     }
 
@@ -56,24 +54,12 @@ contract Deposit is Ownable {
         require(foreignWithdraw != address(0), "Unset foreign withdraw contract address");
         IERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);
         bytes memory msgData = abi.encode(recipient, amount, tokenAddress);
-        router.send(chainId, foreignWithdraw, msgData);
+        router.send{value: msg.value}(chainId, foreignWithdraw, msgData);
         emit DepositEvent(msg.sender, recipient, amount, tokenAddress, chainId);
-    }
-
-    /// @notice to claimFees to the owner of the contract
-    function claimFees() external onlyOwner {
-        address payable owner = payable(msg.sender);
-        owner.transfer(address(this).balance);
-    }
-
-    /// @notice to claimFees to a specific address
-    function claimFees(address _feeRecipient) external onlyOwner {
-        address payable feeRecipient = payable(_feeRecipient);
-        feeRecipient.transfer(address(this).balance);
     }
 }
 
-contract Withdraw is Ownable, TelepathyHandler {
+contract Withdraw is Ownable, TelepathyHandlerV2 {
     address depositAddress;
     uint32 sourceChainId;
     /// @notice the token that will be transferred to the recipient
@@ -92,7 +78,7 @@ contract Withdraw is Ownable, TelepathyHandler {
     /// @param _telepathyReceiver the address of the telepathy receiver contract on this chain that can call `handleTelepathy`
     /// @param _sourceChainId the chain id of the source chain where deposits are being made
     constructor(address _depositAddress, address _telepathyReceiver, uint32 _sourceChainId)
-        TelepathyHandler(_telepathyReceiver)
+        TelepathyHandlerV2(_telepathyReceiver)
     {
         depositAddress = _depositAddress;
         sourceChainId = _sourceChainId;

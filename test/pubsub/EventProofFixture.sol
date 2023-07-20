@@ -1,6 +1,6 @@
 pragma solidity 0.8.16;
 
-import "forge-std/Common.sol";
+import "forge-std/Base.sol";
 
 contract EventProofFixture is CommonBase {
     struct Fixture {

@@ -16,14 +16,16 @@ contract TelepathyRouterV2Test is Test {
         TelepathyRouterV2 telepathyRouter = new TelepathyRouterV2();
 
         vm.expectRevert();
-        telepathyRouter.initialize(true, true, address(this), address(this));
+        telepathyRouter.initialize(true, true, address(this), address(this), address(this));
     }
 
     function test_InitializeProxy() public {
         TelepathyRouterV2 implementation = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(implementation), "");
 
-        TelepathyRouterV2(address(proxy)).initialize(true, true, address(this), address(this));
+        TelepathyRouterV2(address(proxy)).initialize(
+            true, true, address(this), address(this), address(this)
+        );
     }
 }
 

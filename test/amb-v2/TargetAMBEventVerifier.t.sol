@@ -42,6 +42,9 @@ contract TargetAMBV2EventVerifierTest is Test {
     TelepathyRouterV2 telepathyRouter;
     SimpleHandler simpleHandler;
     TelepathyEventVerifier eventVerifier;
+    address timelock;
+    address guardian;
+    address zkRelayer;
 
     function setUp() public {
         beaconLightClient = new LightClientMock();
@@ -68,7 +71,8 @@ contract TargetAMBV2EventVerifierTest is Test {
         TelepathyRouterV2 targetAMBImpl = new TelepathyRouterV2();
         UUPSProxy proxy = new UUPSProxy(address(targetAMBImpl), "");
         telepathyRouter = TelepathyRouterV2(address(proxy));
-        address timelock = makeAddr("timelock");
+        timelock = makeAddr("timelock");
+        guardian = makeAddr("guardian");
 
         (address storageVerifierAddr, address eventVerifierAddr, address attestationVerifierAddr) =
         WrappedInitialize.initializeRouter(
@@ -78,10 +82,8 @@ contract TargetAMBV2EventVerifierTest is Test {
             makeAddr("stateQueryGateway"),
             testParams.sourceAMBAddress,
             timelock,
-            address(this)
+            guardian
         );
-        // manually override VERSION, TODO generate new fixtures for V2
-        vm.store(address(telepathyRouter), bytes32(uint256(8)), bytes32(uint256(uint8(1))));
 
         vm.prank(timelock);
         telepathyRouter.setDefaultVerifier(VerifierType.ZK_STORAGE, storageVerifierAddr);
@@ -91,6 +93,11 @@ contract TargetAMBV2EventVerifierTest is Test {
         telepathyRouter.setDefaultVerifier(
             VerifierType.ATTESTATION_STATE_QUERY, attestationVerifierAddr
         );
+
+        // Add zkRelayer to whitelist
+        zkRelayer = makeAddr("zkRelayer");
+        vm.prank(guardian);
+        telepathyRouter.setZkRelayer(zkRelayer, true);
 
         // Then initialize the contract that will be called by the TargetAMBV2
         SimpleHandler simpleHandlerTemplate = new SimpleHandler();
@@ -109,12 +116,13 @@ contract TargetAMBV2EventVerifierTest is Test {
         vm.warp(1675221581);
     }
 
-    function test_ExecuteMessageFromLog_WhenCloseSlot() public {
+    function test_ExecuteMessageFromLog_WhenEventProof() public {
         // This test is generated using `cli/src/generateTest.ts`
-        ExecuteMessageFromLogParams memory testParams = parseParams("closeSlot");
+        ExecuteMessageFromLogParams memory testParams = parseParams("eventSlotClose");
         getDefaultContractSetup(testParams);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -141,11 +149,12 @@ contract TargetAMBV2EventVerifierTest is Test {
         // TODO add way more fuzz tests messing with various fields
 
         // This test is generated using `cli/src/generateTest.ts`
-        ExecuteMessageFromLogParams memory testParams = parseParams("closeSlot");
+        ExecuteMessageFromLogParams memory testParams = parseParams("eventSlotClose");
         getDefaultContractSetup(testParams);
 
         vm.expectRevert();
         // Execute the message and make sure that it fails.
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -161,13 +170,14 @@ contract TargetAMBV2EventVerifierTest is Test {
 
     function test_ExecuteMessageFromLog_WhenSameSlot() public {
         // This test is generated using `cli/src/generateTest.ts`
-        ExecuteMessageFromLogParams memory testParams = parseParams("sameSlot");
+        ExecuteMessageFromLogParams memory testParams = parseParams("eventSlotSame");
         getDefaultContractSetup(testParams);
 
         (uint64 srcSlot, uint64 txSlot) = abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
         assertEq(txSlot, srcSlot);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -196,10 +206,11 @@ contract TargetAMBV2EventVerifierTest is Test {
 
     function test_ExecuteMessageFromLog_WhenFarSlot() public {
         // This test is generated using `cli/src/generateTest.ts`
-        ExecuteMessageFromLogParams memory testParams = parseParams("farSlot");
+        ExecuteMessageFromLogParams memory testParams = parseParams("eventSlotFar");
         getDefaultContractSetup(testParams);
 
         // Execute the message and check that it succeeded
+        vm.prank(zkRelayer);
         telepathyRouter.execute(
             abi.encode(
                 testParams.srcSlotTxSlotPack,
@@ -222,90 +233,6 @@ contract TargetAMBV2EventVerifierTest is Test {
         assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
     }
 
-    function test_ExecuteMessageFromLog_WhenFarSlotBellatrixCapella() public {
-        // This test has tx slot in bellatrix, source slot in capella
-        ExecuteMessageFromLogParams memory testParams = parseParams("farSlotBellatrixCapella");
-        getDefaultContractSetup(testParams);
-
-        (uint64 srcSlot, uint64 txSlot) = abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
-        bytes memory message = testParams.message;
-        assertTrue(txSlot < BeaconChainForks.getCapellaSlot(message.sourceChainId()));
-        assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId()));
-
-        SimpleHandler simpleHandlerTemplate = new SimpleHandler();
-        address destination = message.destinationAddress();
-        vm.etch(address(destination), address(simpleHandlerTemplate).code);
-        simpleHandler = SimpleHandler(address(destination));
-        simpleHandler.setParams(
-            testParams.SOURCE_CHAIN, message.sourceAddress(), address(telepathyRouter)
-        );
-        simpleHandler.setVerifierType(VerifierType.ZK_EVENT);
-
-        // Execute the message and check that it succeeded
-        telepathyRouter.execute(
-            abi.encode(
-                testParams.srcSlotTxSlotPack,
-                testParams.receiptsRootProof,
-                testParams.receiptsRoot,
-                testParams.receiptProof,
-                testParams.txIndexRLPEncoded,
-                testParams.logIndex
-            ),
-            testParams.message
-        );
-        assertTrue(
-            telepathyRouter.messageStatus(testParams.message.getId())
-                == MessageStatus.EXECUTION_SUCCEEDED
-        );
-
-        // Check that the simpleHandler processed the message correctly
-        assertEq(simpleHandler.nonce(), 1);
-        bytes32 expectedDataHash = keccak256(message.data());
-        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
-    }
-
-    function test_ExecuteMessageFromLog_WhenFarSlotCapellaCapella() public {
-        // This test has tx slot in capella, source slot in capella
-        ExecuteMessageFromLogParams memory testParams = parseParams("farSlotCapellaCapella");
-        getDefaultContractSetup(testParams);
-
-        (uint64 srcSlot, uint64 txSlot) = abi.decode(testParams.srcSlotTxSlotPack, (uint64, uint64));
-        bytes memory message = testParams.message;
-        assertTrue(txSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId()));
-        assertTrue(srcSlot >= BeaconChainForks.getCapellaSlot(message.sourceChainId()));
-
-        SimpleHandler simpleHandlerTemplate = new SimpleHandler();
-        address destination = message.destinationAddress();
-        vm.etch(address(destination), address(simpleHandlerTemplate).code);
-        simpleHandler = SimpleHandler(address(destination));
-        simpleHandler.setParams(
-            testParams.SOURCE_CHAIN, message.sourceAddress(), address(telepathyRouter)
-        );
-        simpleHandler.setVerifierType(VerifierType.ZK_EVENT);
-
-        // Execute the message and check that it succeeded
-        telepathyRouter.execute(
-            abi.encode(
-                testParams.srcSlotTxSlotPack,
-                testParams.receiptsRootProof,
-                testParams.receiptsRoot,
-                testParams.receiptProof,
-                testParams.txIndexRLPEncoded,
-                testParams.logIndex
-            ),
-            testParams.message
-        );
-        assertTrue(
-            telepathyRouter.messageStatus(testParams.message.getId())
-                == MessageStatus.EXECUTION_SUCCEEDED
-        );
-
-        // Check that the simpleHandler processed the message correctly
-        assertEq(simpleHandler.nonce(), 1);
-        bytes32 expectedDataHash = keccak256(message.data());
-        assertEq(simpleHandler.nonceToDataHash(0), expectedDataHash);
-    }
-
     function test_ExecuteMessageFromLog_WhenCloseSlotBoundaryConditions() public {
         // This test is generated using `cli/src/generateTest.ts`
         uint256[] memory diffs = new uint[](3);
@@ -314,7 +241,7 @@ contract TargetAMBV2EventVerifierTest is Test {
         diffs[2] = 8193;
         for (uint256 i = 0; i < diffs.length; i++) {
             ExecuteMessageFromLogParams memory testParams =
-                parseParams(string.concat("closeSlotDiffEq", Strings.toString(diffs[i])));
+                parseParams(string.concat("eventSlotDiff", Strings.toString(diffs[i])));
             getDefaultContractSetup(testParams);
 
             (uint64 sourceSlot, uint64 targetSlot) =
@@ -322,6 +249,7 @@ contract TargetAMBV2EventVerifierTest is Test {
             assertEq(sourceSlot, targetSlot + uint64(diffs[i]));
 
             // Execute the message and check that it succeeded
+            vm.prank(zkRelayer);
             telepathyRouter.execute(
                 abi.encode(
                     testParams.srcSlotTxSlotPack,
@@ -344,5 +272,25 @@ contract TargetAMBV2EventVerifierTest is Test {
             bytes32 expectedDataHash = keccak256(abi.encode(address(0), uint256(100)));
             assertEq(simpleHandler.nonceToDataHash(i), expectedDataHash);
         }
+    }
+
+    function test_RevertExecuteMessageFromLog_WhenNotZkRelayer() public {
+        // This test is generated using `cli/src/generateTest.ts`
+        ExecuteMessageFromLogParams memory testParams = parseParams("eventSlotClose");
+        getDefaultContractSetup(testParams);
+
+        // Execute the message and check that it succeeded
+        vm.expectRevert();
+        telepathyRouter.execute(
+            abi.encode(
+                testParams.srcSlotTxSlotPack,
+                testParams.receiptsRootProof,
+                testParams.receiptsRoot,
+                testParams.receiptProof,
+                testParams.txIndexRLPEncoded,
+                testParams.logIndex
+            ),
+            testParams.message
+        );
     }
 }

@@ -5,7 +5,7 @@ import {Bytes32} from "src/libraries/Typecast.sol";
 import {Message} from "src/libraries/Message.sol";
 import {ITelepathyRouterV2} from "src/amb-v2/interfaces/ITelepathy.sol";
 import {TelepathyStorageV2} from "src/amb-v2/TelepathyStorage.sol";
-import {MerkleProof} from "src/libraries/MerkleProof.sol";
+import {IFeeVault} from "@telepathy-v2/payment/interfaces/IFeeVault.sol";
 
 /// @title Source Arbitrary Message Bridge
 /// @author Succinct Labs
@@ -15,7 +15,6 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
 
     error SendingDisabled();
 
-    /// @notice Modifier to require that sending is enabled.
     modifier isSendingEnabled() {
         if (!sendingEnabled) {
             revert SendingDisabled();
@@ -31,13 +30,18 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
     /// @return messageId A unique identifier for a message.
     function send(uint32 _destinationChainId, bytes32 _destinationAddress, bytes calldata _data)
         external
+        payable
         isSendingEnabled
         returns (bytes32)
     {
         (bytes memory message, bytes32 messageId) =
             _getMessageAndId(_destinationChainId, _destinationAddress, _data);
         messages[nonce] = messageId;
-        emit SentMessage(nonce++, messageId, message);
+        emit SentMessage(nonce, messageId, message);
+        unchecked {
+            ++nonce;
+        }
+        _depositFee(msg.sender);
         return messageId;
     }
 
@@ -49,14 +53,26 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
     /// @return messageId A unique identifier for a message.
     function send(uint32 _destinationChainId, address _destinationAddress, bytes calldata _data)
         external
+        payable
         isSendingEnabled
         returns (bytes32)
     {
         (bytes memory message, bytes32 messageId) =
             _getMessageAndId(_destinationChainId, Bytes32.fromAddress(_destinationAddress), _data);
         messages[nonce] = messageId;
-        emit SentMessage(nonce++, messageId, message);
+        emit SentMessage(nonce, messageId, message);
+        unchecked {
+            ++nonce;
+        }
+        _depositFee(msg.sender);
         return messageId;
+    }
+
+    /// @notice Gets the messageId for a nonce.
+    /// @param _nonce The nonce of the message, assigned when the message is sent.
+    /// @return messageId The hash of message contents, used as a unique identifier for a message.
+    function getMessageId(uint64 _nonce) external view returns (bytes32) {
+        return messages[_nonce];
     }
 
     /// @notice Gets the message and message root from the user-provided arguments to `send`
@@ -83,10 +99,10 @@ contract SourceAMBV2 is TelepathyStorageV2, ITelepathyRouterV2 {
         messageId = keccak256(message);
     }
 
-    /// @notice Gets the messageId for a nonce.
-    /// @param _nonce The nonce of the message, assigned when the message is sent.
-    /// @return messageId The hash of message contents, used as a unique identifier for a message.
-    function getMessageId(uint64 _nonce) external view returns (bytes32) {
-        return messages[_nonce];
+    /// @notice Deposits native currency into the fee vault for the given account.
+    function _depositFee(address _account) private {
+        if (msg.value > 0 && feeVault != address(0)) {
+            IFeeVault(feeVault).depositNative{value: msg.value}(_account);
+        }
     }
 }

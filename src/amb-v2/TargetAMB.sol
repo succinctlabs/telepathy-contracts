@@ -19,21 +19,33 @@ import {VerifierType, IMessageVerifier} from "src/amb-v2/verifier/interfaces/IMe
 contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepathyReceiverV2 {
     using Message for bytes;
 
+    error ExecutingDisabled();
     error MessageAlreadyExecuted(bytes32 messageId);
     error MessageNotForChain(bytes32 messageId, uint32 destinationChainId, uint32 currentChainId);
     error MessageWrongVersion(bytes32 messageId, uint8 messageVersion, uint8 currentVersion);
-    error ExecutionDisabled();
     error VerifierNotFound(uint256 verifierType);
+    error NotZkRelayer(address sender);
     error VerificationFailed();
     error CallFailed();
     error InvalidSelector();
 
+    modifier isExecutingEnabled() {
+        if (!executingEnabled) {
+            revert ExecutingDisabled();
+        }
+        _;
+    }
+
     /// @notice Execute a message generically
     /// @param _proofData The proof of the message, which gets used for verification.
     /// @param _message The message to be executed.
-    function execute(bytes calldata _proofData, bytes calldata _message) external nonReentrant {
+    function execute(bytes calldata _proofData, bytes calldata _message)
+        external
+        isExecutingEnabled
+        nonReentrant
+    {
         bytes32 messageId = _message.getId();
-        _checkPreconditions(messageId, _message.version(), _message.destinationChainId());
+        _checkMessagePreconditions(messageId, _message.version(), _message.destinationChainId());
 
         VerifierType _verifierType = getVerifierType(_message);
         _verifyMessage(_verifierType, _proofData, _message);
@@ -67,14 +79,15 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
         return VerifierType.ATTESTATION_STATE_QUERY;
     }
 
-    /// @notice Checks conditions before message execution.
+    /// @notice Checks message conditions before execution.
     /// @param _messageId The message unique identifier.
     /// @param _version The message version.
     /// @param _destinationChainId The destination chainId.
-    function _checkPreconditions(bytes32 _messageId, uint8 _version, uint32 _destinationChainId)
-        internal
-        view
-    {
+    function _checkMessagePreconditions(
+        bytes32 _messageId,
+        uint8 _version,
+        uint32 _destinationChainId
+    ) internal view {
         if (messageStatus[_messageId] != MessageStatus.NOT_EXECUTED) {
             revert MessageAlreadyExecuted(_messageId);
         } else if (
@@ -84,8 +97,6 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
             revert MessageNotForChain(_messageId, _destinationChainId, uint32(block.chainid));
         } else if (_version != version) {
             revert MessageWrongVersion(_messageId, _version, version);
-        } else if (!executingEnabled) {
-            revert ExecutionDisabled();
         }
     }
 
@@ -98,6 +109,13 @@ contract TargetAMBV2 is TelepathyStorageV2, ReentrancyGuardUpgradeable, ITelepat
         bytes memory _proofData,
         bytes memory _message
     ) internal {
+        // If the verifier is a ZK verifier, check that the sender is an allowed relayer
+        if (verifierType == VerifierType.ZK_EVENT || verifierType == VerifierType.ZK_STORAGE) {
+            if (!zkRelayers[msg.sender]) {
+                revert NotZkRelayer(msg.sender);
+            }
+        }
+
         address verifier;
         if (verifierType == VerifierType.CUSTOM) {
             verifier = _message.destinationAddress();
