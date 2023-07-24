@@ -20,3 +20,6 @@
 	path = lib/telepathy-v2
 	url = https://github.com/succinctlabs/telepathy-v2
 	branch = main
+[submodule "lib/safe-contracts"]
+	path = lib/safe-contracts
+	url = https://github.com/safe-global/safe-contracts

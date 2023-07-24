@@ -9,3 +9,4 @@ v3-core/=lib/v3-core/
 @uniswap=lib/
 @optimism-bedrock=lib/optimism-bedrock-contracts/
 @telepathy-v2/=lib/telepathy-v2/contracts/src/
+@safe/=lib/safe-contracts/contracts
