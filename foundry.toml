@@ -5,6 +5,7 @@ libs = ['lib']
 solc_version = "0.8.16"
 verbosity = 2
 fs_permissions = [{ access = "read-write", path = "./"}]
+ffi = true
 
 [profile.external]
 src = 'external'
