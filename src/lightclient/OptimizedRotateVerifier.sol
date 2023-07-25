@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.14;
 
-library PairingRotate {
+library Pairing {
     struct G1Point {
         uint256 X;
         uint256 Y;
@@ -198,32 +198,28 @@ library PairingRotate {
 }
 
 contract OptimizedRotateVerifier {
-    using PairingRotate for *;
+    using Pairing for *;
 
-    struct VerifyingKeyOptimizedRotate {
-        PairingRotate.G1Point alfa1;
-        PairingRotate.G2Point beta2;
-        PairingRotate.G2Point gamma2;
-        PairingRotate.G2Point delta2;
-        PairingRotate.G1Point[] IC;
+    struct VerifyingKey {
+        Pairing.G1Point alfa1;
+        Pairing.G2Point beta2;
+        Pairing.G2Point gamma2;
+        Pairing.G2Point delta2;
+        Pairing.G1Point[] IC;
     }
 
-    struct ProofOptimizedRotate {
-        PairingRotate.G1Point A;
-        PairingRotate.G2Point B;
-        PairingRotate.G1Point C;
+    struct Proof {
+        Pairing.G1Point A;
+        Pairing.G2Point B;
+        Pairing.G1Point C;
     }
 
-    function verifyingKeyOptimizedRotate()
-        internal
-        pure
-        returns (VerifyingKeyOptimizedRotate memory vk)
-    {
-        vk.alfa1 = PairingRotate.G1Point(
+    function verifyingKey() internal pure returns (VerifyingKey memory vk) {
+        vk.alfa1 = Pairing.G1Point(
             20491192805390485299153009773594534940189261866228447918068658471970481763042,
             9383485363053290200918347156157836566562967994039712273449902621266178545958
         );
-        vk.beta2 = PairingRotate.G2Point(
+        vk.beta2 = Pairing.G2Point(
             [
                 4252822878758300859123897981450591353533073413197771768651442665752259397132,
                 6375614351688725206403948262868962793625744043794305715222011528459656738731
@@ -233,7 +229,7 @@ contract OptimizedRotateVerifier {
                 10505242626370262277552901082094356697409835680220590971873171140371331206856
             ]
         );
-        vk.gamma2 = PairingRotate.G2Point(
+        vk.gamma2 = Pairing.G2Point(
             [
                 11559732032986387107991004021392285783925812861821192530917403151452391805634,
                 10857046999023057135944570762232829481370756359578518086990519993285655852781
@@ -243,46 +239,42 @@ contract OptimizedRotateVerifier {
                 8495653923123431417604973247489272438418190587263600148770280649306958101930
             ]
         );
-        vk.delta2 = PairingRotate.G2Point(
+        vk.delta2 = Pairing.G2Point(
             [
-                12679388210703369765037828076385679228376752171700027313067445990525157586508,
-                1831508645974965115746463199759753189794263143265390793996559853001417172478
+                10295999217546029321941089956739471570501415880587090327705555482729723946409,
+                16232557499831375737590126485575225563326841300300762821464857654773995289395
             ],
             [
-                7986289897232153615223394005789077254911003664501972599064784605550810071980,
-                6432158428390163757798967959770541939767029770593264100987670932733890688544
+                11866987799974191407050247747211865421499707130709714903880914882104907188940,
+                11459288863200802158329585692868650199216777527341011221291799014587701116699
             ]
         );
-        vk.IC = new PairingRotate.G1Point[](2);
-        vk.IC[0] = PairingRotate.G1Point(
+        vk.IC = new Pairing.G1Point[](2);
+        vk.IC[0] = Pairing.G1Point(
             4832501659830511459730572199389719011121028544790685657251911850868249867285,
             454981878880457230401622693650238551062581424226165983587138974441273098124
         );
-        vk.IC[1] = PairingRotate.G1Point(
+        vk.IC[1] = Pairing.G1Point(
             13923775587842495891673900921361589212484344152012449061759980292901898495823,
             12946814695300637142459835230031010605059061741538736381746033310426863916740
         );
     }
 
-    function verifyOptimizedRotate(uint256[] memory input, ProofOptimizedRotate memory proof)
-        internal
-        view
-        returns (uint256)
-    {
+    function verify(uint256[] memory input, Proof memory proof) internal view returns (uint256) {
         uint256 snark_scalar_field =
             21888242871839275222246405745257275088548364400416034343698204186575808495617;
-        VerifyingKeyOptimizedRotate memory vk = verifyingKeyOptimizedRotate();
+        VerifyingKey memory vk = verifyingKey();
         require(input.length + 1 == vk.IC.length, "verifier-bad-input");
         // Compute the linear combination vk_x
-        PairingRotate.G1Point memory vk_x = PairingRotate.G1Point(0, 0);
+        Pairing.G1Point memory vk_x = Pairing.G1Point(0, 0);
         for (uint256 i = 0; i < input.length; i++) {
             require(input[i] < snark_scalar_field, "verifier-gte-snark-scalar-field");
-            vk_x = PairingRotate.addition(vk_x, PairingRotate.scalar_mul(vk.IC[i + 1], input[i]));
+            vk_x = Pairing.addition(vk_x, Pairing.scalar_mul(vk.IC[i + 1], input[i]));
         }
-        vk_x = PairingRotate.addition(vk_x, vk.IC[0]);
+        vk_x = Pairing.addition(vk_x, vk.IC[0]);
         if (
-            !PairingRotate.pairingProd4(
-                PairingRotate.negate(proof.A),
+            !Pairing.pairingProd4(
+                Pairing.negate(proof.A),
                 proof.B,
                 vk.alfa1,
                 vk.beta2,
@@ -302,15 +294,15 @@ contract OptimizedRotateVerifier {
         uint256[2] memory c,
         uint256[1] memory input
     ) public view returns (bool r) {
-        ProofOptimizedRotate memory proof;
-        proof.A = PairingRotate.G1Point(a[0], a[1]);
-        proof.B = PairingRotate.G2Point([b[0][0], b[0][1]], [b[1][0], b[1][1]]);
-        proof.C = PairingRotate.G1Point(c[0], c[1]);
+        Proof memory proof;
+        proof.A = Pairing.G1Point(a[0], a[1]);
+        proof.B = Pairing.G2Point([b[0][0], b[0][1]], [b[1][0], b[1][1]]);
+        proof.C = Pairing.G1Point(c[0], c[1]);
         uint256[] memory inputValues = new uint[](input.length);
         for (uint256 i = 0; i < input.length; i++) {
             inputValues[i] = input[i];
         }
-        if (verifyOptimizedRotate(inputValues, proof) == 0) {
+        if (verify(inputValues, proof) == 0) {
             return true;
         } else {
             return false;
