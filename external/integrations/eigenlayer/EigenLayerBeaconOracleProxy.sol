@@ -1,12 +1,9 @@
-pragma solidity 0.8.16;
+pragma solidity ^0.8.16;
 
 import {UUPSUpgradeable} from "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-
 import {AccessControlUpgradeable} from
     "@openzeppelin-upgradeable/contracts/access/AccessControlUpgradeable.sol";
-
 import {ILightClient} from "src/lightclient/interfaces/ILightClient.sol";
-
 import {EigenLayerBeaconOracle} from "external/integrations/eigenlayer/EigenLayerBeaconOracle.sol";
 
 /// @title EigenLayer Beacon Oracle Proxy
@@ -17,11 +14,6 @@ contract EigenLayerBeaconOracleProxy is
     UUPSUpgradeable,
     AccessControlUpgradeable
 {
-    /// @notice Prevents the implementation contract from being initialized outside of the upgradeable proxy.
-    constructor() {
-        _disableInitializers();
-    }
-
     /// @notice A random constant used to identify addresses with the permission of a 'timelock'.
     bytes32 public constant TIMELOCK_ROLE = keccak256("TIMELOCK_ROLE");
 
@@ -41,8 +33,14 @@ contract EigenLayerBeaconOracleProxy is
         _;
     }
 
+    /// @notice Prevents the implementation contract from being initialized outside of the 
+    /// upgradeable proxy.
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice Initializes the contract and the parent contracts once.
-    function initialize(address _lightClient, address _timelock, address _guardian)
+    function initialize(address _lightClient, address _timelock, address _guardian, address _operator)
         external
         initializer
     {
@@ -56,12 +54,18 @@ contract EigenLayerBeaconOracleProxy is
             revert InvalidLightClientAddress();
         }
 
+        whitelistedOracleUpdaters[_operator] = true;
         lightclient = ILightClient(_lightClient);
     }
 
     /// @notice Updates the whitelist of addresses that can update the beacon state root.
     function updateWhitelist(address _oracleUpdater, bool _isWhitelisted) external onlyGuardian {
         whitelistedOracleUpdaters[_oracleUpdater] = _isWhitelisted;
+    }
+
+    /// @notice Update the light client contract.
+    function updateLightClient(address _lightClient) external onlyTimelock {
+        lightclient = ILightClient(_lightClient);
     }
 
     /// @notice Authorizes an upgrade for the implementation contract.
