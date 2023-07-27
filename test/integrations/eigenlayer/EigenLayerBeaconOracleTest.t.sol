@@ -17,12 +17,15 @@ import {UUPSProxy} from "src/libraries/Proxy.sol";
 import {LightClientMock} from "src/lightclient/LightClientMock.sol";
 
 struct BeaconOracleUpdateFixture {
-    bytes32 beaconStateRoot;
-    bytes32[] beaconStateRootProof;
-    uint256 blockNumber;
-    bytes32[] blockNumberProof;
-    bytes32 headerRoot;
-    uint256 slot;
+    bytes32 sourceHeaderRoot;
+    uint256 sourceSlot;
+    bytes32 sourceStateRoot;
+    bytes32[] sourceStateRootProof;
+    bytes32 targetHeaderRoot;
+    bytes32[] targetHeaderRootProof;
+    uint256 targetSlot;
+    uint256 targetTimestamp;
+    bytes32[] targetTimestampProof;
 }
 
 contract TestErrors {
@@ -43,66 +46,78 @@ contract EigenLayerBeaconOracleTest is Test, TestEvents, TestErrors {
     EigenLayerBeaconOracle oracle;
     address public oracleOperator;
     address public guardian;
-    BeaconOracleUpdateFixture fixture;
-    BeaconOracleHelper.BeaconStateRootProofInfo beaconStateRootProofInfo;
+    BeaconOracleUpdateFixture fixture1;
+    BeaconOracleHelper.BeaconStateRootProofInfo beaconStateRootProofInfo1;
+    BeaconOracleHelper.TargetBeaconBlockRootProofInfo targetBeaconBlockRootProofInfo1;
     BeaconOracleUpdateFixture fixture2;
     BeaconOracleHelper.BeaconStateRootProofInfo beaconStateRootProofInfo2;
+    BeaconOracleHelper.TargetBeaconBlockRootProofInfo targetBeaconBlockRootProofInfo2;
 
     function isWhitelisted(address _oracleUpdater) public view returns (bool) {
         return oracle.whitelistedOracleUpdaters(_oracleUpdater);
     }
 
     function setUp() public {
-        // read all fixtures from entire directory
-
-        LightClientMock lightClient = new LightClientMock();
-
+        // Setup oracle operator and guardian.
         oracleOperator = makeAddr("operator");
         guardian = makeAddr("guardian");
 
+        // Setup mock light client.
+        LightClientMock lightClient = new LightClientMock();
+
+        // Initialize beacon oracle.
         EigenLayerBeaconOracleProxy EigenLayerBeaconOracleImplementation =
             new EigenLayerBeaconOracleProxy();
-
         UUPSProxy proxy = new UUPSProxy(address(EigenLayerBeaconOracleImplementation), "");
-
         oracle = EigenLayerBeaconOracleProxy(address(proxy));
         EigenLayerBeaconOracleProxy(address(proxy)).initialize(
-            address(lightClient), guardian, guardian
+            address(lightClient), guardian, guardian, address(0)
         );
 
+        // Set oracle operator.
         vm.prank(guardian);
         EigenLayerBeaconOracleProxy(address(proxy)).updateWhitelist(oracleOperator, true);
 
+        // Load fixture.
         string memory root = vm.projectRoot();
-        string memory filename = "eigenlayer_6211232";
+        string memory filename = "eigenlayer1";
         string memory path =
             string.concat(root, "/test/integrations/eigenlayer/fixtures/", filename, ".json");
         string memory file = vm.readFile(path);
         bytes memory parsed = vm.parseJson(file);
-        fixture = abi.decode(parsed, (BeaconOracleUpdateFixture));
+        fixture1 = abi.decode(parsed, (BeaconOracleUpdateFixture));
 
-        lightClient.setHeader(fixture.slot, fixture.headerRoot);
+        root = vm.projectRoot();
+        filename = "eigenlayer2";
+        path = string.concat(root, "/test/integrations/eigenlayer/fixtures/", filename, ".json");
+        file = vm.readFile(path);
+        parsed = vm.parseJson(file);
+        fixture2 = abi.decode(parsed, (BeaconOracleUpdateFixture));
 
-        string memory filename2 = "eigenlayer_6250752";
-        string memory path2 =
-            string.concat(root, "/test/integrations/eigenlayer/fixtures/", filename2, ".json");
-        string memory file2 = vm.readFile(path2);
-        bytes memory parsed2 = vm.parseJson(file2);
-        fixture2 = abi.decode(parsed2, (BeaconOracleUpdateFixture));
+        // Set light client header.
+        lightClient.setHeader(fixture1.sourceSlot, fixture1.sourceHeaderRoot);
+        lightClient.setHeader(fixture2.sourceSlot, fixture2.sourceHeaderRoot);
 
-        beaconStateRootProofInfo = BeaconOracleHelper.BeaconStateRootProofInfo({
-            slot: fixture.slot,
-            beaconStateRoot: fixture.beaconStateRoot,
-            beaconStateRootProof: fixture.beaconStateRootProof
+        beaconStateRootProofInfo1 = BeaconOracleHelper.BeaconStateRootProofInfo({
+            slot: fixture1.sourceSlot,
+            beaconStateRoot: fixture1.sourceStateRoot,
+            beaconStateRootProof: fixture1.sourceStateRootProof
         });
-
+        targetBeaconBlockRootProofInfo1 = BeaconOracleHelper.TargetBeaconBlockRootProofInfo({
+            targetSlot: fixture1.targetSlot,
+            targetBeaconBlockRoot: fixture1.targetHeaderRoot,
+            targetBeaconBlockRootProof: fixture1.targetHeaderRootProof
+        });
         beaconStateRootProofInfo2 = BeaconOracleHelper.BeaconStateRootProofInfo({
-            slot: fixture2.slot,
-            beaconStateRoot: fixture2.beaconStateRoot,
-            beaconStateRootProof: fixture2.beaconStateRootProof
+            slot: fixture2.sourceSlot,
+            beaconStateRoot: fixture2.sourceStateRoot,
+            beaconStateRootProof: fixture2.sourceStateRootProof
         });
-
-        lightClient.setHeader(fixture2.slot, fixture2.headerRoot);
+        targetBeaconBlockRootProofInfo2 = BeaconOracleHelper.TargetBeaconBlockRootProofInfo({
+            targetSlot: fixture2.targetSlot,
+            targetBeaconBlockRoot: fixture2.targetHeaderRoot,
+            targetBeaconBlockRootProof: fixture2.targetHeaderRootProof
+        });
 
         vm.warp(9999999999999);
     }
@@ -111,15 +126,21 @@ contract EigenLayerBeaconOracleTest is Test, TestEvents, TestErrors {
         vm.prank(oracleOperator);
         // Check that event is emitted
         vm.expectEmit(true, true, true, true);
-        emit BeaconStateOracleUpdate(fixture.slot, fixture.blockNumber, fixture.beaconStateRoot);
-
-        oracle.fulfillRequest(
-            beaconStateRootProofInfo, fixture.blockNumber, fixture.blockNumberProof
+        emit BeaconStateOracleUpdate(
+            fixture1.targetSlot, fixture1.targetTimestamp, fixture1.targetHeaderRoot
         );
 
-        bytes32 beaconStateRoot = oracle.blockNumberToStateRoot(fixture.blockNumber);
+        oracle.fulfillRequest(
+            beaconStateRootProofInfo1,
+            targetBeaconBlockRootProofInfo1,
+            fixture1.targetTimestampProof,
+            fixture1.targetTimestamp
+        );
 
-        assertTrue(beaconStateRoot == fixture.beaconStateRoot, "beacon state roots should be equal");
+        bytes32 beaconBlockRoot = oracle.timestampToBlockRoot(fixture1.targetTimestamp);
+        assertTrue(
+            beaconBlockRoot == fixture1.targetHeaderRoot, "beacon state roots should be equal"
+        );
     }
 
     function test_RevertFulfillRequestWhenNotWhitelisted() public {
@@ -132,21 +153,10 @@ contract EigenLayerBeaconOracleTest is Test, TestEvents, TestErrors {
         vm.prank(notOperator);
         vm.expectRevert(abi.encodeWithSelector(InvalidUpdater.selector, notOperator));
         oracle.fulfillRequest(
-            beaconStateRootProofInfo, fixture.blockNumber, fixture.blockNumberProof
-        );
-    }
-
-    function test_RevertSlotTooLow() public {
-        vm.prank(oracleOperator);
-        oracle.fulfillRequest(
-            beaconStateRootProofInfo2, fixture2.blockNumber, fixture2.blockNumberProof
-        );
-
-        vm.prank(oracleOperator);
-        // Slot number is lower than previous slot
-        vm.expectRevert(abi.encodeWithSelector(SlotNumberTooLow.selector));
-        oracle.fulfillRequest(
-            beaconStateRootProofInfo, fixture.blockNumber, fixture.blockNumberProof
+            beaconStateRootProofInfo1,
+            targetBeaconBlockRootProofInfo1,
+            fixture1.targetTimestampProof,
+            fixture1.targetTimestamp
         );
     }
 
@@ -154,23 +164,22 @@ contract EigenLayerBeaconOracleTest is Test, TestEvents, TestErrors {
         vm.prank(oracleOperator);
         vm.expectRevert(abi.encodeWithSelector(InvalidBlockNumberProof.selector));
         oracle.fulfillRequest(
-            beaconStateRootProofInfo,
-            fixture2.blockNumber,
-            // Invalid blockNumberProof
-            fixture2.blockNumberProof
+            beaconStateRootProofInfo1,
+            targetBeaconBlockRootProofInfo1,
+            fixture1.targetTimestampProof,
+            fixture1.targetTimestamp + 1
         );
     }
 
     function test_RevertInvalidBeaconStateRootProof() public {
-        BeaconOracleHelper.BeaconStateRootProofInfo memory invalidBaseProof = BeaconOracleHelper
-            .BeaconStateRootProofInfo({
-            slot: fixture.slot,
-            beaconStateRoot: fixture.beaconStateRoot,
-            // Invalid beaconStateRootProof
-            beaconStateRootProof: fixture2.beaconStateRootProof
-        });
         vm.prank(oracleOperator);
         vm.expectRevert(abi.encodeWithSelector(InvalidBeaconStateRootProof.selector));
-        oracle.fulfillRequest(invalidBaseProof, fixture.blockNumber, fixture.blockNumberProof);
+        beaconStateRootProofInfo1.beaconStateRoot = bytes32(0);
+        oracle.fulfillRequest(
+            beaconStateRootProofInfo1,
+            targetBeaconBlockRootProofInfo1,
+            fixture1.targetTimestampProof,
+            fixture1.targetTimestamp
+        );
     }
 }

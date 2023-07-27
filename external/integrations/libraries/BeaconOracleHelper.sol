@@ -11,6 +11,7 @@ library BeaconOracleHelper {
     uint256 internal constant BASE_DEPOSIT_IDX = 6336;
     uint256 internal constant BASE_WITHDRAWAL_IDX = 103360;
     uint256 internal constant EXECUTION_PAYLOAD_BLOCK_NUMBER_IDX = 3222;
+    uint256 internal constant EXECUTION_PAYLOAD_TIMESTAMP_IDX = 3225;
 
     /// @notice Beacon state constants
     uint256 internal constant BASE_BEACON_BLOCK_ROOTS_IDX = 303104;
@@ -46,6 +47,7 @@ library BeaconOracleHelper {
     error InvalidBeaconStateRootProof();
     error InvalidGraffitiProof();
     error InvalidBlockNumberProof();
+    error InvalidTimestampProof();
     error InvalidProposerIndexProof();
     error InvalidDepositProof(bytes32 validatorPubkeyHash);
     error InvalidWithdrawalProofIndex(uint256 validatorIndex);
@@ -129,6 +131,23 @@ library BeaconOracleHelper {
                 SSZ.toLittleEndian(_blockNumber),
                 EXECUTION_PAYLOAD_BLOCK_NUMBER_IDX,
                 _blockNumberProof,
+                _blockHeaderRoot
+            )
+        ) {
+            revert InvalidBlockNumberProof();
+        }
+    }
+
+     function verifyTimestamp(
+        uint256 _timestamp,
+        bytes32[] memory _timestampProof,
+        bytes32 _blockHeaderRoot
+    ) internal pure {
+        if (
+            !SSZ.isValidMerkleBranch(
+                SSZ.toLittleEndian(_timestamp),
+                EXECUTION_PAYLOAD_TIMESTAMP_IDX,
+                _timestampProof,
                 _blockHeaderRoot
             )
         ) {

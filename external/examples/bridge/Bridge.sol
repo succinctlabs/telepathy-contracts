@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {ITelepathyRouterV2} from "src/amb-v2/interfaces/ITelepathy.sol";
 import {TelepathyHandlerV2} from "src/amb-v2/interfaces/TelepathyHandler.sol";
-import {Tokens} from "examples/bridge/Tokens.sol";
+import {IERC20Ownable, Succincts} from "./Tokens.sol";
 
 contract Deposit is Ownable {
     uint256 public constant FEE = 0.001 ether;

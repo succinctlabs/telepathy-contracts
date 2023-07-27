@@ -9,7 +9,7 @@ import {ITelepathyRouterV2} from "src/amb-v2/interfaces/ITelepathy.sol";
 import {TelepathyHandlerV2} from "src/amb-v2/interfaces/TelepathyHandler.sol";
 
 contract CrossChainTWAPRoute {
-    ITelepathyRouter router;
+    ITelepathyRouterV2 router;
     mapping(uint32 => address) public deliveringContracts;
 
     event Route(

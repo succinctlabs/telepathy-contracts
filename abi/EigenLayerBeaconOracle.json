@@ -10,6 +10,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "InvalidTargetBeaconBlockProof",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -53,25 +58,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "blockNumberToStateRoot",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "components": [
           {
             "internalType": "uint256",
@@ -90,18 +76,40 @@
           }
         ],
         "internalType": "struct BeaconOracleHelper.BeaconStateRootProofInfo",
-        "name": "_beaconStateRootProofInfo",
+        "name": "_sourceBeaconStateRootProofInfo",
         "type": "tuple"
       },
       {
-        "internalType": "uint256",
-        "name": "_blockNumber",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "targetSlot",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "targetBeaconBlockRoot",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32[]",
+            "name": "targetBeaconBlockRootProof",
+            "type": "bytes32[]"
+          }
+        ],
+        "internalType": "struct BeaconOracleHelper.TargetBeaconBlockRootProofInfo",
+        "name": "_targetBeaconBlockRootProofInfo",
+        "type": "tuple"
       },
       {
         "internalType": "bytes32[]",
-        "name": "_blockNumberProof",
+        "name": "_targetTimestampProof",
         "type": "bytes32[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_targetTimestamp",
+        "type": "uint256"
       }
     ],
     "name": "fulfillRequest",
@@ -113,29 +121,16 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_blockNumber",
+        "name": "_timestamp",
         "type": "uint256"
       }
     ],
-    "name": "getBeaconStateRoot",
+    "name": "getBeaconBlockRoot",
     "outputs": [
       {
         "internalType": "bytes32",
         "name": "",
         "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "head",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -149,6 +144,25 @@
         "internalType": "contract ILightClient",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "timestampToBlockRoot",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
