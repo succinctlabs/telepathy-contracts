@@ -9,7 +9,7 @@ import {ReentrancyGuardUpgradeable} from
     "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 
 contract EigenLayerBeaconOracle is EigenLayerBeaconOracleStorage {
-    event BeaconStateOracleUpdate(uint256 slot, uint256 blockNumber, bytes32 stateRoot);
+    event EigenLayerBeaconOracleUpdate(uint256 slot, uint256 timestamp, bytes32 blockRoot);
 
     error InvalidUpdater(address updater);
     error SlotNumberTooLow();
@@ -63,7 +63,7 @@ contract EigenLayerBeaconOracle is EigenLayerBeaconOracleStorage {
         timestampToBlockRoot[_targetTimestamp] = targetBeaconBlockRoot;
 
         // Emit the event.
-        emit BeaconStateOracleUpdate(
+        emit EigenLayerBeaconOracleUpdate(
             _targetBeaconBlockRootProofInfo.targetSlot,
             _targetTimestamp,
             targetBeaconBlockRoot
