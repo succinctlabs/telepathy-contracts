@@ -36,7 +36,7 @@ contract TestErrors {
 }
 
 contract TestEvents {
-    event BeaconStateOracleUpdate(uint256 slot, uint256 blockNumber, bytes32 stateRoot);
+    event EigenLayerBeaconOracleUpdate(uint256 slot, uint256 timestamp, bytes32 blockRoot);
 }
 
 contract EigenLayerBeaconOracleTest is Test, TestEvents, TestErrors {
@@ -126,7 +126,7 @@ contract EigenLayerBeaconOracleTest is Test, TestEvents, TestErrors {
         vm.prank(oracleOperator);
         // Check that event is emitted
         vm.expectEmit(true, true, true, true);
-        emit BeaconStateOracleUpdate(
+        emit EigenLayerBeaconOracleUpdate(
             fixture1.targetSlot, fixture1.targetTimestamp, fixture1.targetHeaderRoot
         );
 

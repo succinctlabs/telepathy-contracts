@@ -71,13 +71,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "blockNumber",
+        "name": "timestamp",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "bytes32",
-        "name": "stateRoot",
+        "name": "blockRoot",
         "type": "bytes32"
       }
     ],
