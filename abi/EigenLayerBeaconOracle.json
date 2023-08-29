@@ -52,7 +52,7 @@
         "type": "bytes32"
       }
     ],
-    "name": "BeaconStateOracleUpdate",
+    "name": "EigenLayerBeaconOracleUpdate",
     "type": "event"
   },
   {
