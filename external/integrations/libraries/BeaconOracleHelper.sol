@@ -1,8 +1,10 @@
-pragma solidity 0.8.16;
+// SPDX-License-Identifier: MIT
+// Adapted from Succint Labs contract (https://github.com/succinctlabs/telepathy-contracts/blob/main/external/integrations/libraries/BeaconOracleHelper.sol)
+pragma solidity ^0.8.16;
 
-import {SSZ} from "src/libraries/SimpleSerialize.sol";
+import {SSZ} from "src/libraries/SSZ.sol";
 
-library BeaconOracleHelper {
+library BeaconProofHelper {
     /// @notice Beacon block constants
     uint256 internal constant SLOT_IDX = 8;
     uint256 internal constant PROPOSER_INDEX_IDX = 9;
@@ -52,9 +54,10 @@ library BeaconOracleHelper {
     error InvalidDepositProof(bytes32 validatorPubkeyHash);
     error InvalidWithdrawalProofIndex(uint256 validatorIndex);
     error InvalidWithdrawalProofAmount(uint256 validatorIndex);
+    error InvalidValidtorFields();
 
     struct BeaconStateRootProofInfo {
-        uint256 slot;
+        uint64 slot;
         bytes32 beaconStateRoot;
         bytes32[] beaconStateRootProof;
     }
@@ -104,28 +107,16 @@ library BeaconOracleHelper {
         WithdrawableEpoch
     }
 
-    function verifySlot(
-        uint256 _slot,
-        bytes32[] memory _slotProof,
-        bytes32 _blockHeaderRoot
-    ) internal pure {
-        if (
-            !SSZ.isValidMerkleBranch(
-                SSZ.toLittleEndian(_slot),
-                SLOT_IDX,
-                _slotProof,
-                _blockHeaderRoot
-            )
-        ) {
+    function verifySlot(uint256 _slot, bytes32[] memory _slotProof, bytes32 _blockHeaderRoot) internal pure {
+        if (!SSZ.isValidMerkleBranch(SSZ.toLittleEndian(_slot), SLOT_IDX, _slotProof, _blockHeaderRoot)) {
             revert InvalidSlotProof();
         }
     }
 
-    function verifyBlockNumber(
-        uint256 _blockNumber,
-        bytes32[] memory _blockNumberProof,
-        bytes32 _blockHeaderRoot
-    ) internal pure {
+    function verifyBlockNumber(uint256 _blockNumber, bytes32[] memory _blockNumberProof, bytes32 _blockHeaderRoot)
+        internal
+        pure
+    {
         if (
             !SSZ.isValidMerkleBranch(
                 SSZ.toLittleEndian(_blockNumber),
@@ -138,17 +129,13 @@ library BeaconOracleHelper {
         }
     }
 
-     function verifyTimestamp(
-        uint256 _timestamp,
-        bytes32[] memory _timestampProof,
-        bytes32 _blockHeaderRoot
-    ) internal pure {
+    function verifyTimestamp(uint256 _timestamp, bytes32[] memory _timestampProof, bytes32 _blockHeaderRoot)
+        internal
+        pure
+    {
         if (
             !SSZ.isValidMerkleBranch(
-                SSZ.toLittleEndian(_timestamp),
-                EXECUTION_PAYLOAD_TIMESTAMP_IDX,
-                _timestampProof,
-                _blockHeaderRoot
+                SSZ.toLittleEndian(_timestamp), EXECUTION_PAYLOAD_TIMESTAMP_IDX, _timestampProof, _blockHeaderRoot
             )
         ) {
             revert InvalidBlockNumberProof();
@@ -171,47 +158,49 @@ library BeaconOracleHelper {
         }
     }
 
-    function verifyProposerIndex(
-        uint256 _proposerIndex,
-        bytes32[] memory _proposerIndexProof,
-        bytes32 _beaconBlockRoot
-    ) internal pure {
+    function verifyProposerIndex(uint256 _proposerIndex, bytes32[] memory _proposerIndexProof, bytes32 _beaconBlockRoot)
+        internal
+        pure
+    {
         if (
             !SSZ.isValidMerkleBranch(
-                SSZ.toLittleEndian(_proposerIndex),
-                PROPOSER_INDEX_IDX,
-                _proposerIndexProof,
-                _beaconBlockRoot
+                SSZ.toLittleEndian(_proposerIndex), PROPOSER_INDEX_IDX, _proposerIndexProof, _beaconBlockRoot
             )
         ) {
             revert InvalidProposerIndexProof();
         }
     }
 
-    function verifyTargetBeaconBlockRoot(TargetBeaconBlockRootProofInfo calldata _targetBeaconBlockRootProofInfo, bytes32 _beaconStateRoot)
-        internal
-        pure
-    {
-        if (!SSZ.isValidMerkleBranch(
-            _targetBeaconBlockRootProofInfo.targetBeaconBlockRoot,
-            BASE_BEACON_BLOCK_ROOTS_IDX + _targetBeaconBlockRootProofInfo.targetSlot % SLOTS_PER_HISTORICAL_ROOT,
-            _targetBeaconBlockRootProofInfo.targetBeaconBlockRootProof,
-            _beaconStateRoot
-        )) {
+    function verifyTargetBeaconBlockRoot(
+        TargetBeaconBlockRootProofInfo calldata _targetBeaconBlockRootProofInfo,
+        bytes32 _beaconStateRoot
+    ) internal pure {
+        if (
+            !SSZ.isValidMerkleBranch(
+                _targetBeaconBlockRootProofInfo.targetBeaconBlockRoot,
+                BASE_BEACON_BLOCK_ROOTS_IDX + _targetBeaconBlockRootProofInfo.targetSlot % SLOTS_PER_HISTORICAL_ROOT,
+                _targetBeaconBlockRootProofInfo.targetBeaconBlockRootProof,
+                _beaconStateRoot
+            )
+        ) {
             revert InvalidTargetBeaconBlockProof();
         }
     }
 
-    function verifyTargetBeaconStateRoot(bytes32[] calldata _targetBeaconStateRootProof, uint256 _targetSlot, bytes32 _targetBeaconStateRoot, bytes32 _beaconStateRoot)
-        internal
-        pure
-    {
-        if (!SSZ.isValidMerkleBranch(
-            _targetBeaconStateRoot,
-            BASE_BEACON_STATE_ROOTS_IDX + _targetSlot % SLOTS_PER_HISTORICAL_ROOT,
-            _targetBeaconStateRootProof,
-            _beaconStateRoot
-        )) {
+    function verifyTargetBeaconStateRoot(
+        bytes32[] calldata _targetBeaconStateRootProof,
+        uint256 _targetSlot,
+        bytes32 _targetBeaconStateRoot,
+        bytes32 _beaconStateRoot
+    ) internal pure {
+        if (
+            !SSZ.isValidMerkleBranch(
+                _targetBeaconStateRoot,
+                BASE_BEACON_STATE_ROOTS_IDX + _targetSlot % SLOTS_PER_HISTORICAL_ROOT,
+                _targetBeaconStateRootProof,
+                _beaconStateRoot
+            )
+        ) {
             revert InvalidTargetBeaconStateProof();
         }
     }
@@ -220,12 +209,7 @@ library BeaconOracleHelper {
         internal
         pure
     {
-        if (!SSZ.isValidMerkleBranch(
-            _graffiti,
-            GRAFFITI_IDX,
-            _graffitiProof,
-            _blockHeaderRoot
-        )) {
+        if (!SSZ.isValidMerkleBranch(_graffiti, GRAFFITI_IDX, _graffitiProof, _blockHeaderRoot)) {
             revert InvalidGraffitiProof();
         }
     }
@@ -240,10 +224,10 @@ library BeaconOracleHelper {
         verifyValidatorRoot(_validatorProofInfo, _beaconStateRootProofInfo.beaconStateRoot);
     }
 
-    function verifyValidatorRoot(
-        ValidatorProofInfo calldata _validatorProofInfo,
-        bytes32 _beaconStateRoot
-    ) internal pure {
+    function verifyValidatorRoot(ValidatorProofInfo calldata _validatorProofInfo, bytes32 _beaconStateRoot)
+        internal
+        pure
+    {
         if (
             !SSZ.isValidMerkleBranch(
                 _validatorProofInfo.validatorRoot,
@@ -285,21 +269,25 @@ library BeaconOracleHelper {
         bytes32 _blockHeaderRoot
     ) internal pure {
         // 1) Verify the validator index
-        if (!SSZ.isValidMerkleBranch(
-            SSZ.toLittleEndian(_validatorIndex),
-            ((BASE_WITHDRAWAL_IDX + _withdrawalIndex) * 4) + 1,
-            _withdrawalValidatorIndexProof,
-            _blockHeaderRoot
-        )) {
+        if (
+            !SSZ.isValidMerkleBranch(
+                SSZ.toLittleEndian(_validatorIndex),
+                ((BASE_WITHDRAWAL_IDX + _withdrawalIndex) * 4) + 1,
+                _withdrawalValidatorIndexProof,
+                _blockHeaderRoot
+            )
+        ) {
             revert InvalidWithdrawalProofIndex(_validatorIndex);
         }
         // 2) Verify the amount withdrawn
-        if (!SSZ.isValidMerkleBranch(
-            SSZ.toLittleEndian(_amount),
-            ((BASE_WITHDRAWAL_IDX + _withdrawalIndex) * 4) + 3,
-            _withdrawalAmountProof,
-            _blockHeaderRoot
-        )) {
+        if (
+            !SSZ.isValidMerkleBranch(
+                SSZ.toLittleEndian(_amount),
+                ((BASE_WITHDRAWAL_IDX + _withdrawalIndex) * 4) + 3,
+                _withdrawalAmountProof,
+                _blockHeaderRoot
+            )
+        ) {
             revert InvalidWithdrawalProofAmount(_validatorIndex);
         }
     }
@@ -314,10 +302,7 @@ library BeaconOracleHelper {
     ) internal pure {
         if (
             !SSZ.isValidMerkleBranch(
-                _combinedBalance,
-                BASE_BALANCE_IDX + (_validatorIndex / 4),
-                _balanceProof,
-                _beaconStateRoot
+                _combinedBalance, BASE_BALANCE_IDX + (_validatorIndex / 4), _balanceProof, _beaconStateRoot
             )
         ) {
             revert InvalidBalanceProof(_validatorIndex);
@@ -332,12 +317,14 @@ library BeaconOracleHelper {
         bytes32[] memory _validatorFieldProof,
         ValidatorField _field
     ) internal pure {
-        if (
-            !SSZ.isValidMerkleBranch(
-                _leaf, getFieldGIndex(_field), _validatorFieldProof, _validatorRoot
-            )
-        ) {
+        if (!SSZ.isValidMerkleBranch(_leaf, getFieldGIndex(_field), _validatorFieldProof, _validatorRoot)) {
             revert InvalidValidatorFieldProof(_field, _validatorIndex);
+        }
+    }
+
+    function verifyValidatorFields(bytes32 _validatorRoot, bytes32[] calldata _validatorFields) internal pure {
+        if (SSZ.merkleizeSha256(_validatorFields) != _validatorRoot) {
+            revert InvalidValidtorFields();
         }
     }
 
@@ -347,12 +334,10 @@ library BeaconOracleHelper {
         uint256 validatorIndex,
         Validator calldata validatorData
     ) internal pure {
-        bytes32 h1 =
-            sha256(abi.encodePacked(validatorData.pubkeyHash, validatorData.withdrawalCredentials));
+        bytes32 h1 = sha256(abi.encodePacked(validatorData.pubkeyHash, validatorData.withdrawalCredentials));
         bytes32 h2 = sha256(
             abi.encodePacked(
-                SSZ.toLittleEndian(validatorData.effectiveBalance),
-                SSZ.toLittleEndian(validatorData.slashed ? 1 : 0)
+                SSZ.toLittleEndian(validatorData.effectiveBalance), SSZ.toLittleEndian(validatorData.slashed ? 1 : 0)
             )
         );
         bytes32 h3 = sha256(
@@ -363,8 +348,7 @@ library BeaconOracleHelper {
         );
         bytes32 h4 = sha256(
             abi.encodePacked(
-                SSZ.toLittleEndian(validatorData.exitEpoch),
-                SSZ.toLittleEndian(validatorData.withdrawableEpoch)
+                SSZ.toLittleEndian(validatorData.exitEpoch), SSZ.toLittleEndian(validatorData.withdrawableEpoch)
             )
         );
 
@@ -425,5 +409,41 @@ library BeaconOracleHelper {
         } else {
             return VALIDATOR_FIELDS_LENGTH + WITHDRAWABLE_EPOCH_IDX;
         }
+    }
+
+    function fromLittleEndianBytes32ToUint64(bytes32 lenum) internal pure returns (uint64 n) {
+        // Extract the least significant 8 bytes (64 bits) from the bytes32 value
+        uint256 temp = uint256(lenum) >> (256 - 64);
+
+        // Swap the byte order from little endian to big endian
+        n = uint64(
+            ((temp & 0xFF00000000000000) >> 56) | ((temp & 0x00FF000000000000) >> 40)
+                | ((temp & 0x0000FF0000000000) >> 24) | ((temp & 0x000000FF00000000) >> 8)
+                | ((temp & 0x00000000FF000000) << 8) | ((temp & 0x0000000000FF0000) << 24)
+                | ((temp & 0x000000000000FF00) << 40) | ((temp & 0x00000000000000FF) << 56)
+        );
+
+        return n;
+    }
+
+    function getPubkeyHash(bytes32[] calldata validatorFields) external returns (bytes32) {
+        return validatorFields[PUBKEY_IDX];
+    }
+
+    function getWithdrawalCredentials(bytes32[] calldata validatorFields) external returns (bytes32) {
+        return validatorFields[WITHDRAWAL_CREDENTIALS_IDX];
+    }
+
+    function getEffectiveBalanceWei(bytes32[] calldata validatorFields) external returns (uint256) {
+        return
+            uint256(BeaconProofHelper.fromLittleEndianBytes32ToUint64(validatorFields[EFFECTIVE_BALANCE_IDX]) * 1 gwei);
+    }
+
+    function getIsSlashed(bytes32[] calldata validatorFields) external returns (bool) {
+        return BeaconProofHelper.fromLittleEndianBytes32ToUint64(validatorFields[SLASHED_IDX]) == 1;
+    }
+
+    function getWithdrawableEpoch(bytes32[] calldata validatorFields) external returns (uint64) {
+        return BeaconProofHelper.fromLittleEndianBytes32ToUint64(validatorFields[WITHDRAWABLE_EPOCH_IDX]);
     }
 }

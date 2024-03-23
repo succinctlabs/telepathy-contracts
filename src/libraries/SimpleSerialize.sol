@@ -1,6 +1,6 @@
-pragma solidity 0.8.16;
-
-import {BeaconChainForks} from "src/libraries/BeaconChainForks.sol";
+// SPDX-License-Identifier: MIT
+// Adapted from Succint Labs contract (https://github.com/succinctlabs/telepathy-contracts/blob/main/src/libraries/SimpleSerialize.sol)
+pragma solidity ^0.8.16;
 
 struct BeaconBlockHeader {
     uint64 slot;
@@ -27,11 +27,7 @@ library SSZ {
         return bytes32(v);
     }
 
-    function restoreMerkleRoot(bytes32 leaf, uint256 index, bytes32[] memory branch)
-        internal
-        pure
-        returns (bytes32)
-    {
+    function restoreMerkleRoot(bytes32 leaf, uint256 index, bytes32[] memory branch) internal pure returns (bytes32) {
         require(2 ** (branch.length + 1) > index);
         bytes32 value = leaf;
         uint256 i = 0;
@@ -56,78 +52,53 @@ library SSZ {
         return root == restoredMerkleRoot;
     }
 
-    function sszBeaconBlockHeader(BeaconBlockHeader memory header)
-        internal
-        pure
-        returns (bytes32)
-    {
+    function sszBeaconBlockHeader(BeaconBlockHeader memory header) internal pure returns (bytes32) {
         bytes32 left = sha256(
             bytes.concat(
-                sha256(
-                    bytes.concat(toLittleEndian(header.slot), toLittleEndian(header.proposerIndex))
-                ),
+                sha256(bytes.concat(toLittleEndian(header.slot), toLittleEndian(header.proposerIndex))),
                 sha256(bytes.concat(header.parentRoot, header.stateRoot))
             )
         );
         bytes32 right = sha256(
             bytes.concat(
-                sha256(bytes.concat(header.bodyRoot, bytes32(0))),
-                sha256(bytes.concat(bytes32(0), bytes32(0)))
+                sha256(bytes.concat(header.bodyRoot, bytes32(0))), sha256(bytes.concat(bytes32(0), bytes32(0)))
             )
         );
 
         return sha256(bytes.concat(left, right));
     }
 
-    function computeDomain(bytes4 forkVersion, bytes32 genesisValidatorsRoot)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return bytes32(uint256(0x07 << 248))
-            | (sha256(abi.encode(forkVersion, genesisValidatorsRoot)) >> 32);
+    function computeDomain(bytes4 forkVersion, bytes32 genesisValidatorsRoot) internal pure returns (bytes32) {
+        return bytes32(uint256(0x07 << 248)) | (sha256(abi.encode(forkVersion, genesisValidatorsRoot)) >> 32);
     }
 
-    function verifyReceiptsRoot(
-        bytes32 receiptsRoot,
-        bytes32[] memory receiptsRootProof,
-        bytes32 headerRoot,
-        uint64 srcSlot,
-        uint64 txSlot,
-        uint32 sourceChainId
-    ) internal pure returns (bool) {
-        uint256 capellaForkSlot = BeaconChainForks.getCapellaSlot(sourceChainId);
-
-        // In Bellatrix we use state.historical_roots, in Capella we use state.historical_summaries
-        // We use < here because capellaForkSlot is the last slot processed using Bellatrix logic;
-        // the last batch in state.historical_roots contains the 8192 slots *before* capellaForkSlot.
-        uint256 stateToHistoricalGIndex = txSlot < capellaForkSlot ? 7 : 27;
-
-        // The list state.historical_summaries is empty at the beginning of Capella
-        uint256 historicalListIndex = txSlot < capellaForkSlot
-            ? txSlot / SLOTS_PER_HISTORICAL_ROOT
-            : (txSlot - capellaForkSlot) / SLOTS_PER_HISTORICAL_ROOT;
-
-        uint256 index;
-        if (srcSlot == txSlot) {
-            index = 8 + 3;
-            index = index * 2 ** 9 + 387;
-        } else if (srcSlot - txSlot <= SLOTS_PER_HISTORICAL_ROOT) {
-            index = 8 + 3;
-            index = index * 2 ** 5 + 6;
-            index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
-            index = index * 2 ** 9 + 387;
-        } else if (txSlot < srcSlot) {
-            index = 8 + 3;
-            index = index * 2 ** 5 + stateToHistoricalGIndex;
-            index = index * 2 + 0;
-            index = index * HISTORICAL_ROOTS_LIMIT + historicalListIndex;
-            index = index * 2 + 1;
-            index = index * SLOTS_PER_HISTORICAL_ROOT + txSlot % SLOTS_PER_HISTORICAL_ROOT;
-            index = index * 2 ** 9 + 387;
-        } else {
-            revert("TargetAMB: invalid target slot");
+    /**
+     * @notice this function returns the merkle root of a tree created from a set of leaves using sha256 as its hash function
+     *  @param leaves the leaves of the merkle tree
+     *  @return The computed Merkle root of the tree.
+     *  @dev A pre-condition to this function is that leaves.length is a power of two.  If not, the function will merkleize the inputs incorrectly.
+     */
+    function merkleizeSha256(bytes32[] memory leaves) internal pure returns (bytes32) {
+        //there are half as many nodes in the layer above the leaves
+        uint256 numNodesInLayer = leaves.length / 2;
+        //create a layer to store the internal nodes
+        bytes32[] memory layer = new bytes32[](numNodesInLayer);
+        //fill the layer with the pairwise hashes of the leaves
+        for (uint256 i = 0; i < numNodesInLayer; i++) {
+            layer[i] = sha256(abi.encodePacked(leaves[2 * i], leaves[2 * i + 1]));
         }
-        return isValidMerkleBranch(receiptsRoot, index, receiptsRootProof, headerRoot);
+        //the next layer above has half as many nodes
+        numNodesInLayer /= 2;
+        //while we haven't computed the root
+        while (numNodesInLayer != 0) {
+            //overwrite the first numNodesInLayer nodes in layer with the pairwise hashes of their children
+            for (uint256 i = 0; i < numNodesInLayer; i++) {
+                layer[i] = sha256(abi.encodePacked(layer[2 * i], layer[2 * i + 1]));
+            }
+            //the next layer above has half as many nodes
+            numNodesInLayer /= 2;
+        }
+        //the first node in the layer is the root
+        return layer[0];
     }
 }
